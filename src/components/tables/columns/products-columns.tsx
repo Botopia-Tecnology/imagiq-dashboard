@@ -15,9 +15,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Product } from "@/types"
+import { ProductCardProps } from "@/features/products/useProducts"
 
-export const productColumns: ColumnDef<Product>[] = [
+export const productColumns: ColumnDef<ProductCardProps>[] = [
   {
     id: "select",
     header: ({ table }) => (
@@ -90,12 +90,12 @@ export const productColumns: ColumnDef<Product>[] = [
     },
   },
   {
-    accessorKey: "category",
+    accessorKey: "subcategory",
     header: "Categoría",
     cell: ({ row }) => {
       return (
         <Badge variant="outline">
-          {row.getValue("category")}
+          {row.getValue("subcategory")}
         </Badge>
       )
     },
@@ -117,13 +117,8 @@ export const productColumns: ColumnDef<Product>[] = [
       )
     },
     cell: ({ row }) => {
-      const price = parseFloat(row.getValue("price"))
-      const formatted = new Intl.NumberFormat("es-CO", {
-        style: "currency",
-        currency: "USD",
-      }).format(price)
-
-      return <div className="font-medium">{formatted}</div>
+      const price = row.getValue("price") as string
+      return <div className="font-medium">{price || "N/A"}</div>
     },
   },
   {
@@ -140,11 +135,11 @@ export const productColumns: ColumnDef<Product>[] = [
       )
     },
     cell: ({ row }) => {
-      const stock = row.getValue("stock") as number
+      const stock = row.getValue("stock") as number | undefined
       return (
         <div className="flex items-center">
-          <span className="font-medium">{stock}</span>
-          {stock <= 10 && (
+          <span className="font-medium">{stock ?? 0}</span>
+          {stock !== undefined && stock <= 10 && (
             <Badge variant="destructive" className="ml-2">
               Bajo
             </Badge>
@@ -157,23 +152,24 @@ export const productColumns: ColumnDef<Product>[] = [
     accessorKey: "status",
     header: "Estado",
     cell: ({ row }) => {
-      const status = row.getValue("status") as string
+      const stock = row.original.stock
+      const status = (stock ?? 0) > 0 ? "active" : "inactive"
       return (
         <Badge
           variant={
             status === "active"
               ? "default"
-              : status === "inactive"
-              ? "secondary"
-              : "outline"
+              : "secondary"
           }
         >
-          {status === "active" ? "Activo" : status === "inactive" ? "Inactivo" : "Borrador"}
+          {status === "active" ? "Activo" : "Inactivo"}
         </Badge>
       )
     },
     filterFn: (row, id, value) => {
-      return value.includes(row.getValue(id))
+      const stock = row.original.stock
+      const status = (stock ?? 0) > 0 ? "active" : "inactive"
+      return value.includes(status)
     },
   },
   {

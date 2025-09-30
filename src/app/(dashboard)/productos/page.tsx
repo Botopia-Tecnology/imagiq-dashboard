@@ -1,19 +1,26 @@
+"use client"
+
 import { DataTable } from "@/components/tables/data-table"
 import { productColumns } from "@/components/tables/columns/products-columns"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Plus, Package, DollarSign, AlertTriangle } from "lucide-react"
-import { mockProducts } from "@/lib/mock-data"
+import { useProducts } from "@/features/products/useProducts"
 
 const categories = [
-  { label: "Smartphones", value: "Smartphones" },
-  { label: "Laptops", value: "Laptops" },
-  { label: "Audio", value: "Audio" },
-  { label: "Tablets", value: "Tablets" },
-  { label: "Gaming", value: "Gaming" },
-  { label: "Monitores", value: "Monitores" },
-  { label: "Cámaras", value: "Cámaras" },
-  { label: "Accesorios", value: "Accesorios" },
+  { label: "Smartphones", value: "Celulares" },
+  { label: "Laptops", value: "Tablets" },
+  { label: "Relojes", value: "Wearables" },
+  { label: "Aire acondicionado", value: "Aire Acondicionado" },
+  { label: "Aspiradoras", value: "Aspiradoras" },
+  { label: "Hornos-Microondas", value: "Hornos Microondas" },
+  { label: "Lavadora", value: "Lavadora" },
+  { label: "Secadora", value: "Secadora" },
+  { label: "Lavavajillas", value: "Lavavajillas" },
+   { label: "Accesorios", value: "Accesorios" },
+  { label: "Refrigeradores-Neveras", value: "Neveras" },//Nevecon
+   { label: "Refrigeradores-Nevecon", value: "Nevecon" },//Nevecon
+
 ]
 
 const statuses = [
@@ -23,11 +30,56 @@ const statuses = [
 ]
 
 export default function ProductosPage() {
+  const { products, loading, error } = useProducts()
+  console.log("Productos cargados:", products)
+
   // Calcular métricas
-  const totalProducts = mockProducts.length
-  const activeProducts = mockProducts.filter(p => p.status === 'active').length
-  const lowStockProducts = mockProducts.filter(p => p.stock <= 10).length
-  const totalValue = mockProducts.reduce((sum, p) => sum + (p.price * p.stock), 0)
+  const totalProducts = products.length
+  const activeProducts = products.filter(p => p.stock && p.stock > 0).length
+  const lowStockProducts = products.filter(p => p.stock && p.stock <= 10).length
+  const totalValue = products.reduce((sum, p) => {
+    const price = parseFloat(p.price?.replace(/[^0-9.-]+/g, "") || "0")
+    const stock = p.stock || 0
+    return sum + (price * stock)
+  }, 0)
+
+  const renderTableContent = () => {
+    if (loading) {
+      return (
+        <div className="flex items-center justify-center py-8">
+          <p className="text-muted-foreground">Cargando productos...</p>
+        </div>
+      )
+    }
+
+    if (error) {
+      return (
+        <div className="flex items-center justify-center py-8">
+          <p className="text-destructive">{error}</p>
+        </div>
+      )
+    }
+
+    return (
+      <DataTable
+        columns={productColumns}
+        data={products}
+        searchKey="name"
+        filters={[
+          {
+            id: "subcategory",
+            title: "Categoría",
+            options: categories,
+          },
+          {
+            id: "status",
+            title: "Estado",
+            options: statuses,
+          },
+        ]}
+      />
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -107,23 +159,7 @@ export default function ProductosPage() {
           <CardTitle>Lista de Productos</CardTitle>
         </CardHeader>
         <CardContent>
-          <DataTable
-            columns={productColumns}
-            data={mockProducts}
-            searchKey="name"
-            filters={[
-              {
-                id: "category",
-                title: "Categoría",
-                options: categories,
-              },
-              {
-                id: "status",
-                title: "Estado",
-                options: statuses,
-              },
-            ]}
-          />
+          {renderTableContent()}
         </CardContent>
       </Card>
     </div>
