@@ -1,5 +1,6 @@
 "use client"
 
+import { useMemo, useCallback } from "react"
 import { DataTable } from "@/components/tables/data-table"
 import { productColumns } from "@/components/tables/columns/products-columns"
 import { Button } from "@/components/ui/button"
@@ -30,7 +31,18 @@ const statuses = [
 ]
 
 export default function ProductosPage() {
-  const { products, loading, error } = useProducts()
+  const initialFilters = useMemo(() => ({ limit: 10 }), [])
+
+  const {
+    products,
+    loading,
+    error,
+    totalItems,
+    totalPages,
+    currentPage,
+    goToPage,
+    filterProducts
+  } = useProducts(initialFilters)
   console.log("Productos cargados:", products)
 
   // Calcular métricas
@@ -42,6 +54,11 @@ export default function ProductosPage() {
     const stock = p.stock || 0
     return sum + (price * stock)
   }, 0)
+
+  const handlePaginationChange = useCallback((pagination: { pageIndex: number; pageSize: number }) => {
+    const newPage = pagination.pageIndex + 1
+    goToPage(newPage)
+  }, [goToPage])
 
   const renderTableContent = () => {
     if (loading) {
@@ -77,6 +94,11 @@ export default function ProductosPage() {
             options: statuses,
           },
         ]}
+        pageCount={totalPages}
+        pageIndex={currentPage - 1}
+        pageSize={10}
+        totalItems={totalItems}
+        onPaginationChange={handlePaginationChange}
       />
     )
   }

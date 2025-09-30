@@ -40,6 +40,12 @@ interface DataTableProps<TData, TValue> {
       icon?: React.ComponentType<{ className?: string }>
     }>
   }>
+  // Paginación del servidor
+  pageCount?: number
+  pageIndex?: number
+  pageSize?: number
+  onPaginationChange?: (pagination: { pageIndex: number; pageSize: number }) => void
+  totalItems?: number
 }
 
 export function DataTable<TData, TValue>({
@@ -47,32 +53,51 @@ export function DataTable<TData, TValue>({
   data,
   searchKey,
   filters,
+  pageCount,
+  pageIndex: controlledPageIndex,
+  pageSize: controlledPageSize,
+  onPaginationChange,
+  totalItems,
 }: DataTableProps<TData, TValue>) {
   const [rowSelection, setRowSelection] = useState({})
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [sorting, setSorting] = useState<SortingState>([])
 
+  // Usar paginación controlada si se proporciona
+  const [pagination, setPagination] = useState({
+    pageIndex: controlledPageIndex ?? 0,
+    pageSize: controlledPageSize ?? 10,
+  })
+
   const table = useReactTable({
     data,
     columns,
+    pageCount: pageCount ?? -1,
     state: {
       sorting,
       columnVisibility,
       rowSelection,
       columnFilters,
+      pagination,
     },
     enableRowSelection: true,
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
+    onPaginationChange: (updater) => {
+      const newPagination = typeof updater === 'function' ? updater(pagination) : updater
+      setPagination(newPagination)
+      onPaginationChange?.(newPagination)
+    },
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
+    getPaginationRowModel: pageCount ? undefined : getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
+    manualPagination: !!pageCount,
   })
 
   return (
@@ -132,7 +157,7 @@ export function DataTable<TData, TValue>({
           </TableBody>
         </Table>
       </div>
-      <DataTablePagination table={table} />
+      <DataTablePagination table={table} totalItems={totalItems} />
     </div>
   )
 }

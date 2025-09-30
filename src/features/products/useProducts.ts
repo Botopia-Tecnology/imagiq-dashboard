@@ -252,14 +252,15 @@ export const useProducts = (
     await fetchProducts(filtersToUse, false);
   }, [initialFilters, currentFilters, fetchProducts]);
 
-  // Cargar productos iniciales y cuando cambien los filtros
+  // Cargar productos iniciales solamente
   useEffect(() => {
     const filtersToUse =
       typeof initialFilters === "function"
         ? initialFilters()
         : initialFilters || {};
     fetchProducts(filtersToUse, false);
-  }, [initialFilters, fetchProducts]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return {
     products,
