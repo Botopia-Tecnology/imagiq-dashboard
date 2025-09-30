@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useCallback } from "react"
+import { useMemo, useCallback, useState } from "react"
 import { DataTable } from "@/components/tables/data-table"
 import { productColumns } from "@/components/tables/columns/products-columns"
 import { Button } from "@/components/ui/button"
@@ -31,6 +31,7 @@ const statuses = [
 ]
 
 export default function ProductosPage() {
+  const [pageSize, setPageSize] = useState(10)
   const initialFilters = useMemo(() => ({ limit: 10 }), [])
 
   const {
@@ -57,8 +58,9 @@ export default function ProductosPage() {
 
   const handlePaginationChange = useCallback((pagination: { pageIndex: number; pageSize: number }) => {
     const newPage = pagination.pageIndex + 1
-    goToPage(newPage)
-  }, [goToPage])
+    setPageSize(pagination.pageSize)
+    filterProducts({ limit: pagination.pageSize, page: newPage })
+  }, [filterProducts])
 
   const renderTableContent = () => {
     if (loading) {
@@ -96,7 +98,7 @@ export default function ProductosPage() {
         ]}
         pageCount={totalPages}
         pageIndex={currentPage - 1}
-        pageSize={10}
+        pageSize={pageSize}
         totalItems={totalItems}
         onPaginationChange={handlePaginationChange}
       />
