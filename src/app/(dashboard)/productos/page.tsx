@@ -1,33 +1,17 @@
-import { DataTable } from "@/components/tables/data-table"
-import { productColumns } from "@/components/tables/columns/products-columns"
+"use client"
+
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Plus, Package, DollarSign, AlertTriangle } from "lucide-react"
-import { mockProducts } from "@/lib/mock-data"
-
-const categories = [
-  { label: "Smartphones", value: "Smartphones" },
-  { label: "Laptops", value: "Laptops" },
-  { label: "Audio", value: "Audio" },
-  { label: "Tablets", value: "Tablets" },
-  { label: "Gaming", value: "Gaming" },
-  { label: "Monitores", value: "Monitores" },
-  { label: "Cámaras", value: "Cámaras" },
-  { label: "Accesorios", value: "Accesorios" },
-]
-
-const statuses = [
-  { label: "Activo", value: "active" },
-  { label: "Inactivo", value: "inactive" },
-  { label: "Borrador", value: "draft" },
-]
+import { ProductsTableWrapper } from "@/components/tables/products-table-wrapper"
 
 export default function ProductosPage() {
-  // Calcular métricas
-  const totalProducts = mockProducts.length
-  const activeProducts = mockProducts.filter(p => p.status === 'active').length
-  const lowStockProducts = mockProducts.filter(p => p.stock <= 10).length
-  const totalValue = mockProducts.reduce((sum, p) => sum + (p.price * p.stock), 0)
+  // Métricas estáticas (deberían venir de una API de estadísticas separada)
+  const totalProducts = 279
+  const activeProducts = 279
+  const lowStockProducts = 200
+  const totalValue = 9501513886
+  const totalCategories = 13
 
   return (
     <div className="space-y-6">
@@ -93,7 +77,7 @@ export default function ProductosPage() {
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{categories.length}</div>
+            <div className="text-2xl font-bold">{totalCategories}</div>
             <p className="text-xs text-muted-foreground">
               Categorías disponibles
             </p>
@@ -107,23 +91,7 @@ export default function ProductosPage() {
           <CardTitle>Lista de Productos</CardTitle>
         </CardHeader>
         <CardContent>
-          <DataTable
-            columns={productColumns}
-            data={mockProducts}
-            searchKey="name"
-            filters={[
-              {
-                id: "category",
-                title: "Categoría",
-                options: categories,
-              },
-              {
-                id: "status",
-                title: "Estado",
-                options: statuses,
-              },
-            ]}
-          />
+          <ProductsTableWrapper />
         </CardContent>
       </Card>
     </div>

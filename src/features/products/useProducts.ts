@@ -1,0 +1,352 @@
+/**
+ * Hooks para manejo de productos
+ * - Obtener lista de productos con filtros
+ * - Búsqueda de productos
+ * - Obtener detalles de producto individual
+ * - Manejo de favoritos
+ * - Recomendaciones personalizadas
+ * - Tracking de visualizaciones de productos
+ */
+
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
+import {
+  productEndpoints,
+  ProductFilterParams,
+  ProductApiResponse,
+} from "@/lib/api";
+
+import {mapApiProductsToFrontend ,groupProductsByCategory} from "@/lib/productMapper";
+import { StaticImageData } from "next/image";
+
+export interface ProductColor {
+  name: string; // Nombre técnico del color (ej: "black", "white")
+  hex: string; // Código hexadecimal del color (ej: "#000000")
+  label: string; // Nombre mostrado al usuario (ej: "Negro Medianoche")
+  sku: string; // SKU específico para esta variante de color
+  price?: string; // Precio específico para este color (opcional)
+  originalPrice?: string; // Precio original antes de descuento (opcional)
+  discount?: string; // Descuento específico para este color (opcional)
+}
+
+export interface ProductCardProps {
+  id: string;
+  name: string;
+  image: string | StaticImageData;
+  colors: ProductColor[];
+  rating?: number;
+  reviewCount?: number;
+  price?: string;
+  originalPrice?: string;
+  discount?: string;
+  isNew?: boolean;
+  isFavorite?: boolean;
+  onAddToCart?: (productId: string, color: string) => void;
+  onToggleFavorite?: (productId: string) => void;
+  className?: string;
+  // Datos adicionales para la página de detalle
+  description?: string | null;
+  brand?: string;
+  model?: string;
+  category?: string;
+  subcategory?: string;
+  capacity?: string | null;
+  stock?: number;
+  sku?: string | null;
+  detailedDescription?: string | null;
+  selectedColor?: ProductColor;
+  setSelectedColor?: (color: ProductColor) => void;
+  puntos_q?: number; // Puntos Q acumulables por producto (valor fijo por ahora)
+}
+
+
+export interface ProductFilters {
+  category?: string;
+  subcategory?: string;
+  precioMin?: number;
+  precioMax?: number;
+  color?: string;
+  capacity?: string;
+  name?: string;
+  withDiscount?: boolean;
+  minStock?: number;
+  descriptionKeyword?: string; // Nuevo filtro para palabras clave en descripción
+  searchQuery?: string; // Query de búsqueda general para nombre Y desDetallada
+  page?: number; // Página actual para paginación
+  limit?: number; // Límite de productos por página
+}
+
+
+interface UseProductsReturn {
+  products: ProductCardProps[];
+  groupedProducts: Record<string, ProductCardProps[]>;
+  loading: boolean;
+  error: string | null;
+  totalItems: number;
+  totalPages: number;
+  currentPage: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+  searchProducts: (query: string) => Promise<void>;
+  filterProducts: (filters: ProductFilters) => Promise<void>;
+  loadMore: () => Promise<void>;
+  goToPage: (page: number) => Promise<void>;
+  refreshProducts: () => Promise<void>;
+  hasMore: boolean;
+}
+
+export const useProducts = (
+  initialFilters?: ProductFilters | (() => ProductFilters)
+): UseProductsReturn => {
+  const [products, setProducts] = useState<ProductCardProps[]>([]);
+  const [groupedProducts, setGroupedProducts] = useState<
+    Record<string, ProductCardProps[]>
+  >({});
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasNextPage, setHasNextPage] = useState(false);
+  const [hasPreviousPage, setHasPreviousPage] = useState(false);
+  const [currentFilters, setCurrentFilters] = useState<ProductFilters>(
+    typeof initialFilters === "function"
+      ? initialFilters()
+      : initialFilters || {}
+  );
+
+  // Función para convertir filtros del frontend a parámetros de API
+  const convertFiltersToApiParams = useCallback(
+    (filters: ProductFilters): ProductFilterParams => {
+      const params: ProductFilterParams = {
+        page: filters.page || currentPage,
+        limit: filters.limit || 50,
+        precioMin: 1, // Siempre filtrar productos con precio mayor a 0 por defecto
+      };
+
+      // Aplicar filtros específicos (pueden sobrescribir el precioMin por defecto)
+      if (filters.category) params.categoria = filters.category;
+      if (filters.subcategory) params.subcategoria = filters.subcategory;
+
+      // Manejar filtros de precio usando precioMin/precioMax
+      if (filters.precioMin !== undefined) {
+        params.precioMin = filters.precioMin;
+      }
+
+      if (filters.precioMax !== undefined) {
+        params.precioMax = filters.precioMax;
+      }
+
+      if (filters.color) params.color = filters.color;
+      if (filters.capacity) params.capacidad = filters.capacity;
+      if (filters.name) params.nombre = filters.name;
+      if (filters.withDiscount !== undefined)
+        params.conDescuento = filters.withDiscount;
+      if (filters.minStock !== undefined) params.stockMinimo = filters.minStock;
+      if (filters.descriptionKeyword) {
+        // Usar el campo desDetallada para buscar en la descripción detallada
+        params.desDetallada = filters.descriptionKeyword;
+      }
+
+      if (filters.searchQuery) {
+        // Búsqueda general: usar tanto nombre como desDetallada con OR
+        params.nombre = filters.searchQuery;
+        params.desDetallada = filters.searchQuery;
+        params.modelo = filters.searchQuery;
+        params.filterMode = "OR";
+      }
+
+      return params;
+    },
+    [currentPage]
+  );
+
+  // Función principal para obtener productos
+  const fetchProducts = useCallback(
+    async (filters: ProductFilters = {}, append = false) => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const apiParams = convertFiltersToApiParams(filters);
+        const response = await productEndpoints.getFiltered(apiParams);
+
+        if (response.success && response.data) {
+          const apiData = response.data as ProductApiResponse;
+          const mappedProducts = mapApiProductsToFrontend(apiData.products);
+
+          if (append) {
+            setProducts((prev) => [...prev, ...mappedProducts]);
+          } else {
+            setProducts(mappedProducts);
+            setGroupedProducts(groupProductsByCategory(mappedProducts));
+          }
+
+          setTotalItems(apiData.totalItems);
+          setTotalPages(apiData.totalPages);
+          setCurrentPage(apiData.currentPage);
+          setHasNextPage(apiData.hasNextPage);
+          setHasPreviousPage(apiData.hasPreviousPage);
+        } else {
+          setError(response.message || "Error al cargar productos");
+        }
+      } catch (err) {
+        console.error("Error fetching products:", err);
+        setError("Error de conexión al cargar productos");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [convertFiltersToApiParams]
+  );
+
+  // Función para buscar productos
+  const searchProducts = useCallback(
+    async (query: string) => {
+      const filters = { ...currentFilters, name: query };
+      setCurrentFilters(filters);
+      setCurrentPage(1);
+      await fetchProducts(filters, false);
+    },
+    [currentFilters, fetchProducts]
+  );
+
+  // Función para filtrar productos
+  const filterProducts = useCallback(
+    async (filters: ProductFilters) => {
+      setCurrentFilters(filters);
+      // Solo resetear a página 1 si no se especifica una página en los filtros
+      if (!filters.page) {
+        setCurrentPage(1);
+      }
+      await fetchProducts(filters, false);
+    },
+    [fetchProducts]
+  );
+
+  // Función para cargar más productos (paginación)
+  const loadMore = useCallback(async () => {
+    if (hasNextPage && !loading) {
+      setCurrentPage((prev) => prev + 1);
+      await fetchProducts(currentFilters, true);
+    }
+  }, [hasNextPage, loading, currentFilters, fetchProducts]);
+
+  // Función para ir a una página específica
+  const goToPage = useCallback(
+    async (page: number) => {
+      if (page >= 1 && page <= totalPages && !loading) {
+        const filtersWithPage = { ...currentFilters, page };
+        setCurrentFilters(filtersWithPage);
+        await fetchProducts(filtersWithPage, false);
+      }
+    },
+    [totalPages, loading, currentFilters, fetchProducts]
+  );
+
+  // Función para refrescar productos con filtros dinámicos
+  const refreshProducts = useCallback(async () => {
+    const filtersToUse =
+      typeof initialFilters === "function" ? initialFilters() : currentFilters;
+    await fetchProducts(filtersToUse, false);
+  }, [initialFilters, currentFilters, fetchProducts]);
+
+  // Cargar productos iniciales solamente
+  useEffect(() => {
+    const filtersToUse =
+      typeof initialFilters === "function"
+        ? initialFilters()
+        : initialFilters || {};
+    fetchProducts(filtersToUse, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return {
+    products,
+    groupedProducts,
+    loading,
+    error,
+    totalItems,
+    totalPages,
+    currentPage,
+    hasNextPage,
+    hasPreviousPage,
+    searchProducts,
+    filterProducts,
+    loadMore,
+    goToPage,
+    refreshProducts,
+    hasMore: hasNextPage,
+  };
+};
+
+export const useProduct = (productId: string) => {
+  const [product, setProduct] = useState<ProductCardProps | null>(null);
+  const [loading, setLoading] = useState(true); // Cambiar a true inicialmente
+  const [error, setError] = useState<string | null>(null);
+  const [relatedProducts, setRelatedProducts] = useState<ProductCardProps[]>(
+    []
+  );
+
+  useEffect(() => {
+    const fetchProduct = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const codigoMarketBase = productId;
+
+        // Usar el endpoint específico para buscar por codigoMarketBase
+        const response = await productEndpoints.getByCodigoMarket(codigoMarketBase);
+
+        if (response.success && response.data) {
+          const apiData = response.data as ProductApiResponse;
+          const mappedProducts = mapApiProductsToFrontend(apiData.products);
+
+          if (mappedProducts.length > 0) {
+            const foundProduct = mappedProducts[0]; // Tomar el primer producto encontrado
+            setProduct(foundProduct);
+
+            // Obtener productos relacionados (otros productos con el mismo modelo base)
+            const modelBase =
+              foundProduct.name.split(" ")[1] ||
+              foundProduct.name.split(" ")[0];
+            const related = mappedProducts
+              .filter(
+                (p: ProductCardProps) => p.name.includes(modelBase) && p.id !== foundProduct.id
+              )
+              .slice(0, 4);
+            setRelatedProducts(related);
+          } else {
+            setError("Producto no encontrado");
+          }
+        } else {
+          setError("Error al obtener datos del producto");
+        }
+      } catch (err) {
+        console.error("Error fetching product:", err);
+        setError("Error al cargar el producto");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (productId) {
+      fetchProduct();
+    } else {
+      setLoading(false);
+      setError("ID de producto no válido");
+    }
+  }, [productId]);
+
+  return {
+    product,
+    loading,
+    error,
+    relatedProducts,
+  };
+};
+
+
+

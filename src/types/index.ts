@@ -1,14 +1,24 @@
 export interface Product {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  stock: number;
-  category: string;
+  id: string; // codigoMarketBase
+  codigoMarket: string[];
+  name: string; // nombreMarket
+  modelo: string;
+  description?: string; // descGeneral
+  desDetallada: string[];
+  price: number; // precioNormal[0]
+  precioDescto: number[];
+  stock: number; // stock[0]
+  category: string; // categoria
+  subcategoria: string;
+  color: string[];
+  capacidad: string[];
+  sku: string[];
   status: 'active' | 'inactive' | 'draft';
-  image?: string;
-  createdAt: Date;
-  updatedAt: Date;
+  image?: string; // urlImagenes[0]
+  urlImagenes: string[];
+  urlRender3D: string[];
+  fechaInicioVigencia: string[];
+  fechaFinalVigencia: string[];
 }
 
 export interface Order {
