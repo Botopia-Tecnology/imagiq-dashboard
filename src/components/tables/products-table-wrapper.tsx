@@ -10,9 +10,8 @@ const categories = [
   { label: "Tablets", value: "Tablets" },
   { label: "Relojes", value: "Wearables" },
   { label: "Accesorios", value: "Accesorios" },
-  // {
-  //     /*Galaxy buds falta buds */
-  //   } // nombre=buds
+  { label: "Galaxy buds falta buds", value: "buds" },
+
   { label: "Televisores", value: "Televisores" },
   { label: "Barras de sonido", value: "Barras de sonido" },
   { label: "Sistemas de audio", value: "Sistemas de audio" },
@@ -67,11 +66,26 @@ export function ProductsTableWrapper() {
 
       // Aplicar filtros de categoría/subcategoría
       if (currentFilters.subcategory && currentFilters.subcategory.length > 0) {
-        filters.subcategory = currentFilters.subcategory.join(", ");
+        const hasBuds = currentFilters.subcategory.includes("buds");
+
+        if (hasBuds) {
+          const budsValues = currentFilters.subcategory.filter(v => v === "buds");
+          const otherValues = currentFilters.subcategory.filter(v => v !== "buds");
+
+          if (budsValues.length > 0) {
+            filters.name = budsValues.join(", ");
+          }
+
+          if (otherValues.length > 0) {
+            filters.subcategory = otherValues.join(", ");
+          }
+        } else {
+          filters.subcategory = currentFilters.subcategory.join(", ");
+        }
       }
 
-      // Aplicar búsqueda
-      if (searchQuery) {
+      // Aplicar búsqueda solo si no se sobreescribió con buds
+      if (searchQuery && !filters.name) {
         filters.name = searchQuery;
       }
 
@@ -92,11 +106,26 @@ export function ProductsTableWrapper() {
 
       // Aplicar filtros de categoría/subcategoría (separados por comas)
       if (currentFilters.subcategory && currentFilters.subcategory.length > 0) {
-        filters.subcategory = currentFilters.subcategory.join(", ");
+        const hasBuds = currentFilters.subcategory.includes("buds");
+
+        if (hasBuds) {
+          const budsValues = currentFilters.subcategory.filter(v => v === "buds");
+          const otherValues = currentFilters.subcategory.filter(v => v !== "buds");
+
+          if (budsValues.length > 0) {
+            filters.name = budsValues.join(", ");
+          }
+
+          if (otherValues.length > 0) {
+            filters.subcategory = otherValues.join(", ");
+          }
+        } else {
+          filters.subcategory = currentFilters.subcategory.join(", ");
+        }
       }
 
-      // Aplicar búsqueda
-      if (searchQuery) {
+      // Aplicar búsqueda solo si no se sobreescribió con buds
+      if (searchQuery && !filters.name) {
         filters.name = searchQuery;
       }
 
@@ -121,7 +150,23 @@ export function ProductsTableWrapper() {
       };
 
       if (currentFilters.subcategory && currentFilters.subcategory.length > 0) {
-        filters.subcategory = currentFilters.subcategory.join(", ");
+        const hasBuds = currentFilters.subcategory.includes("buds");
+
+        if (hasBuds) {
+          const budsValues = currentFilters.subcategory.filter(v => v === "buds");
+          const otherValues = currentFilters.subcategory.filter(v => v !== "buds");
+
+          // Combinar búsqueda con buds
+          if (budsValues.length > 0) {
+            filters.name = search ? `${search}, ${budsValues.join(", ")}` : budsValues.join(", ");
+          }
+
+          if (otherValues.length > 0) {
+            filters.subcategory = otherValues.join(", ");
+          }
+        } else {
+          filters.subcategory = currentFilters.subcategory.join(", ");
+        }
       }
 
       // Mantener ordenamiento
@@ -146,12 +191,34 @@ export function ProductsTableWrapper() {
         page: 1,
       };
 
-      // Enviar múltiples valores separados por comas
+      // Validar si alguno de los valores es "buds"
       if (value.length > 0) {
-        filters[filterId] = value.join(", ");
+        const hasBuds = value.includes("buds");
+
+        if (hasBuds) {
+          // Si contiene "buds", separar entre buds y otras categorías
+          const budsValues = value.filter(v => v === "buds");
+          const otherValues = value.filter(v => v !== "buds");
+
+          // Enviar buds como name
+          if (budsValues.length > 0) {
+            filters.name = searchQuery
+              ? `${searchQuery}, ${budsValues.join(", ")}`
+              : budsValues.join(", ");
+          }
+
+          // Enviar otras categorías como subcategory
+          if (otherValues.length > 0) {
+            filters[filterId] = otherValues.join(", ");
+          }
+        } else {
+          // Si no hay buds, enviar normalmente como subcategory
+          filters[filterId] = value.join(", ");
+        }
       }
 
-      if (searchQuery) {
+      // Mantener la búsqueda existente solo si no se incluyó con buds
+      if (searchQuery && !filters.name) {
         filters.name = searchQuery;
       }
 
