@@ -23,7 +23,9 @@ import {
 } from "@/components/ui/tooltip"
 import { ProductCardProps } from "@/features/products/useProducts"
 
-export const productColumns: ColumnDef<ProductCardProps>[] = [
+export const createProductColumns = (
+  onSortChange?: (field: string, direction: "asc" | "desc") => void
+): ColumnDef<ProductCardProps>[] => [
   {
     id: "select",
     header: ({ table }) => (
@@ -76,7 +78,12 @@ export const productColumns: ColumnDef<ProductCardProps>[] = [
       return (
         <Button
           variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          onClick={() => {
+            const isAsc = column.getIsSorted() === "asc"
+            const newDirection = isAsc ? "desc" : "asc"
+            column.toggleSorting(isAsc)
+            onSortChange?.("name", newDirection)
+          }}
         >
           Nombre
           <ArrowUpDown className="ml-2 h-4 w-4" />
@@ -124,7 +131,12 @@ export const productColumns: ColumnDef<ProductCardProps>[] = [
       return (
         <Button
           variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          onClick={() => {
+            const isAsc = column.getIsSorted() === "asc"
+            const newDirection = isAsc ? "desc" : "asc"
+            column.toggleSorting(isAsc)
+            onSortChange?.("price", newDirection)
+          }}
         >
           Precio
           <ArrowUpDown className="ml-2 h-4 w-4" />
@@ -142,7 +154,12 @@ export const productColumns: ColumnDef<ProductCardProps>[] = [
       return (
         <Button
           variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          onClick={() => {
+            const isAsc = column.getIsSorted() === "asc"
+            const newDirection = isAsc ? "desc" : "asc"
+            column.toggleSorting(isAsc)
+            onSortChange?.("stock", newDirection)
+          }}
         >
           Stock
           <ArrowUpDown className="ml-2 h-4 w-4" />

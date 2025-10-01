@@ -139,6 +139,8 @@ export interface ProductFilterParams {
   filterMode?: string;
   page?: number;
   limit?: number;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
 }
 
 
