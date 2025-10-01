@@ -107,11 +107,11 @@ export function ProductsTableWrapper() {
       title: "Categoría",
       options: categories,
     },
-    {
-      id: "status",
-      title: "Estado",
-      options: statuses,
-    },
+    // {
+    //   id: "status",
+    //   title: "Estado",
+    //   options: statuses,
+    // },
   ], [])
 
   if (error) {

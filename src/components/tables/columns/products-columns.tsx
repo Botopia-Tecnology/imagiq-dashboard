@@ -15,6 +15,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Checkbox } from "@/components/ui/checkbox"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { ProductCardProps } from "@/features/products/useProducts"
 
 export const productColumns: ColumnDef<ProductCardProps>[] = [
@@ -80,12 +86,21 @@ export const productColumns: ColumnDef<ProductCardProps>[] = [
     cell: ({ row }) => {
       const product = row.original
       return (
-        <div className="max-w-[200px]">
-          <div className="font-medium">{product.name}</div>
-          <div className="text-sm text-muted-foreground truncate">
-            {product.description}
+        <TooltipProvider>
+          <div className="max-w-[200px]">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="font-medium truncate cursor-default">{product.name}</div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{product.name}</p>
+              </TooltipContent>
+            </Tooltip>
+            <div className="text-sm text-muted-foreground truncate">
+              {product.description}
+            </div>
           </div>
-        </div>
+        </TooltipProvider>
       )
     },
   },
