@@ -46,6 +46,9 @@ interface DataTableProps<TData, TValue> {
   pageSize?: number
   onPaginationChange?: (pagination: { pageIndex: number; pageSize: number }) => void
   totalItems?: number
+  // Filtros del servidor
+  onSearchChange?: (search: string) => void
+  onFilterChange?: (filterId: string, value: string[]) => void
 }
 
 export function DataTable<TData, TValue>({
@@ -58,6 +61,8 @@ export function DataTable<TData, TValue>({
   pageSize: controlledPageSize,
   onPaginationChange,
   totalItems,
+  onSearchChange,
+  onFilterChange,
 }: DataTableProps<TData, TValue>) {
   const [rowSelection, setRowSelection] = useState({})
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
@@ -106,6 +111,8 @@ export function DataTable<TData, TValue>({
         table={table}
         searchKey={searchKey}
         filters={filters}
+        onSearchChange={onSearchChange}
+        onFilterChange={onFilterChange}
       />
       <div className="rounded-md border">
         <Table>

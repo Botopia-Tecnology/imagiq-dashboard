@@ -20,14 +20,26 @@ interface DataTableToolbarProps<TData> {
       icon?: React.ComponentType<{ className?: string }>
     }>
   }>
+  onSearchChange?: (search: string) => void
+  onFilterChange?: (filterId: string, value: string[]) => void
 }
 
 export function DataTableToolbar<TData>({
   table,
   searchKey = "name",
   filters,
+  onSearchChange,
+  onFilterChange,
 }: DataTableToolbarProps<TData>) {
   const isFiltered = table.getState().columnFilters.length > 0
+
+  const handleSearchChange = (value: string) => {
+    if (onSearchChange) {
+      onSearchChange(value)
+    } else {
+      table.getColumn(searchKey)?.setFilterValue(value)
+    }
+  }
 
   return (
     <div className="flex items-center justify-between">
@@ -35,9 +47,7 @@ export function DataTableToolbar<TData>({
         <Input
           placeholder={`Buscar por ${searchKey}...`}
           value={(table.getColumn(searchKey)?.getFilterValue() as string) ?? ""}
-          onChange={(event) =>
-            table.getColumn(searchKey)?.setFilterValue(event.target.value)
-          }
+          onChange={(event) => handleSearchChange(event.target.value)}
           className="h-8 w-[150px] lg:w-[250px]"
         />
         {filters?.map((filter) => {
@@ -48,6 +58,7 @@ export function DataTableToolbar<TData>({
               column={column}
               title={filter.title}
               options={filter.options}
+              onValueChange={onFilterChange ? (value) => onFilterChange(filter.id, value) : undefined}
             />
           ) : null
         })}

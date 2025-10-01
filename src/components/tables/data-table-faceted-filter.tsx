@@ -29,15 +29,25 @@ interface DataTableFacetedFilterProps<TData, TValue> {
     value: string
     icon?: React.ComponentType<{ className?: string }>
   }[]
+  onValueChange?: (value: string[]) => void
 }
 
 export function DataTableFacetedFilter<TData, TValue>({
   column,
   title,
   options,
+  onValueChange,
 }: DataTableFacetedFilterProps<TData, TValue>) {
   const facets = column?.getFacetedUniqueValues()
   const selectedValues = new Set(column?.getFilterValue() as string[])
+
+  const handleValueChange = (filterValues: string[]) => {
+    if (onValueChange) {
+      onValueChange(filterValues)
+    } else {
+      column?.setFilterValue(filterValues.length ? filterValues : undefined)
+    }
+  }
 
   return (
     <Popover>
@@ -98,9 +108,7 @@ export function DataTableFacetedFilter<TData, TValue>({
                         selectedValues.add(option.value)
                       }
                       const filterValues = Array.from(selectedValues)
-                      column?.setFilterValue(
-                        filterValues.length ? filterValues : undefined
-                      )
+                      handleValueChange(filterValues)
                     }}
                   >
                     <div
@@ -131,7 +139,7 @@ export function DataTableFacetedFilter<TData, TValue>({
                 <CommandSeparator />
                 <CommandGroup>
                   <CommandItem
-                    onSelect={() => column?.setFilterValue(undefined)}
+                    onSelect={() => handleValueChange([])}
                     className="justify-center text-center"
                   >
                     Limpiar filtros
