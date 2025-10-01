@@ -39,9 +39,14 @@ export function DataTableFacetedFilter<TData, TValue>({
   onValueChange,
 }: DataTableFacetedFilterProps<TData, TValue>) {
   const facets = column?.getFacetedUniqueValues()
-  const selectedValues = new Set(column?.getFilterValue() as string[])
+  const [selectedValues, setSelectedValues] = React.useState<Set<string>>(
+    new Set(column?.getFilterValue() as string[])
+  )
 
   const handleValueChange = (filterValues: string[]) => {
+    const newSelectedValues = new Set(filterValues)
+    setSelectedValues(newSelectedValues)
+
     if (onValueChange) {
       onValueChange(filterValues)
     } else {
