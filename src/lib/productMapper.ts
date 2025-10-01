@@ -127,7 +127,7 @@ export function mapApiProductToFrontend(apiProduct: ProductApiData): ProductCard
  */
 function getProductImage(apiProduct: ProductApiData): string | StaticImageData {
   // Si hay URL de imagen en la API, usarla (cuando esté disponible)
-  const firstImageUrl = apiProduct.urlImagenes.find(url => url && url.trim() !== '');
+  const firstImageUrl = apiProduct.imagePreviewUrl.find(url => url && url.trim() !== '');
   if (firstImageUrl) {
     return firstImageUrl;
   }

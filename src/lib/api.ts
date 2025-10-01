@@ -165,6 +165,7 @@ export interface ProductApiData {
   sku: string[];
   desDetallada: string[];
   stock: number[];
+  imagePreviewUrl: string[];
   urlImagenes: string[];
   urlRender3D: string[];
   precioNormal: number[];
