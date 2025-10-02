@@ -1,9 +1,39 @@
 "use client"
 
+import { lazy, Suspense } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Plus, Package, DollarSign, AlertTriangle } from "lucide-react"
-import { ProductsTableWrapper } from "@/components/tables/products-table-wrapper"
+import { Skeleton } from "@/components/ui/skeleton"
+
+const ProductsTableWrapper = lazy(() =>
+  import("@/components/tables/products-table-wrapper").then(mod => ({
+    default: mod.ProductsTableWrapper
+  }))
+)
+
+function TableSkeleton() {
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        <Skeleton className="h-10 flex-1" />
+        <Skeleton className="h-10 w-[200px]" />
+      </div>
+      <div className="rounded-md border">
+        <div className="p-4 space-y-3">
+          <Skeleton className="h-10 w-full" />
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Skeleton key={i} className="h-16 w-full" />
+          ))}
+        </div>
+      </div>
+      <div className="flex items-center justify-between">
+        <Skeleton className="h-8 w-[180px]" />
+        <Skeleton className="h-8 w-[200px]" />
+      </div>
+    </div>
+  )
+}
 
 export default function ProductosPage() {
   // Métricas estáticas (deberían venir de una API de estadísticas separada)
@@ -22,10 +52,6 @@ export default function ProductosPage() {
             Gestiona tu inventario de productos
           </p>
         </div>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          Agregar Producto
-        </Button>
       </div>
 
       {/* Métricas de productos */}
@@ -91,7 +117,9 @@ export default function ProductosPage() {
           <CardTitle>Lista de Productos</CardTitle>
         </CardHeader>
         <CardContent>
-          <ProductsTableWrapper />
+          <Suspense fallback={<TableSkeleton />}>
+            <ProductsTableWrapper />
+          </Suspense>
         </CardContent>
       </Card>
     </div>

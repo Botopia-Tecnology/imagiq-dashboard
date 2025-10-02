@@ -24,6 +24,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { Skeleton } from "@/components/ui/skeleton"
 import { DataTablePagination } from "./data-table-pagination"
 import { DataTableToolbar } from "./data-table-toolbar"
 
@@ -118,8 +119,39 @@ export function DataTable<TData, TValue>({
         onFilterChange={onFilterChange}
       />
       {loading ? (
-        <div className="flex items-center justify-center py-8 rounded-md border">
-          <p className="text-muted-foreground">Cargando productos...</p>
+        <div className="space-y-4">
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  {columns.map((_, index) => (
+                    <TableHead key={index}>
+                      <Skeleton className="h-4 w-full" />
+                    </TableHead>
+                  ))}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {Array.from({ length: 5 }).map((_, rowIndex) => (
+                  <TableRow key={rowIndex}>
+                    {columns.map((_, colIndex) => (
+                      <TableCell key={colIndex}>
+                        <Skeleton className="h-4 w-full" />
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+          <div className="flex items-center justify-between px-2">
+            <Skeleton className="h-8 w-[180px]" />
+            <div className="flex items-center space-x-6 lg:space-x-8">
+              <Skeleton className="h-8 w-[100px]" />
+              <Skeleton className="h-8 w-[100px]" />
+              <Skeleton className="h-8 w-[150px]" />
+            </div>
+          </div>
         </div>
       ) : (
         <>

@@ -229,10 +229,6 @@ export const createProductColumns = (
             <DropdownMenuItem>Ver detalles</DropdownMenuItem>
             <DropdownMenuItem>Editar producto</DropdownMenuItem>
             <DropdownMenuItem>Ver órdenes</DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-red-600">
-              Eliminar producto
-            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       )
