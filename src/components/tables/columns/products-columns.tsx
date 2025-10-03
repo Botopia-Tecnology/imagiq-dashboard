@@ -59,7 +59,7 @@ function ActionsCell({ product }: { product: ProductCardProps }) {
 }
 
 export const createProductColumns = (
-  onSortChange?: (field: string, direction: "asc" | "desc") => void
+  onSortChange?: (field: string, direction:  "desc" | "asc" ) => void
 ): ColumnDef<ProductCardProps>[] => [
   {
     id: "select",

@@ -140,7 +140,7 @@ export interface ProductFilterParams {
   page?: number;
   limit?: number;
   sortBy?: string;
-  sortOrder?: "asc" | "desc";
+  sortOrder?:  "desc"  |"asc" ;
 }
 
 

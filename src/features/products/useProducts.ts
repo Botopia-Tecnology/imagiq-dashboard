@@ -80,7 +80,7 @@ export interface ProductFilters {
   page?: number; // Página actual para paginación
   limit?: number; // Límite de productos por página
   sortBy?: string; // Campo por el cual ordenar (nombre, price, stock, etc.)
-  sortOrder?: "asc" | "desc"; // Dirección del ordenamiento
+  sortOrder?: "desc" | "asc"; // Dirección del ordenamiento
 }
 
 

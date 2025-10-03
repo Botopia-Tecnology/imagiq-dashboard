@@ -38,7 +38,7 @@ export function ProductsTableWrapper() {
   >({});
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<string | undefined>();
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc" | undefined>();
+  const [sortOrder, setSortOrder] = useState< "desc" | "asc" | undefined>();
 
   const initialFilters = useMemo(() => ({ limit: 10 }), []);
 
@@ -53,7 +53,7 @@ export function ProductsTableWrapper() {
   } = useProducts(initialFilters);
 
   const handleSortChange = useCallback(
-    (field: string, direction: "asc" | "desc") => {
+    (field: string, direction:  "desc"| "asc" ) => {
       setSortBy(field);
       setSortOrder(direction);
 

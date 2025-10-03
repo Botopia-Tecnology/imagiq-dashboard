@@ -73,9 +73,9 @@ export default function ProductDetailPage() {
 
       <div className="grid gap-6 md:grid-cols-2">
         {/* Imagen del producto */}
-        <Card>
+        <Card className="h-fit">
           <CardContent className="p-6">
-            <div className="relative aspect-square overflow-hidden rounded-lg bg-muted">
+            <div className="relative w-full h-[438px] overflow-hidden rounded-lg bg-muted">
               {typeof currentImage === 'string' ? (
                 <Image
                   key={selectedColor?.sku || 'default'}
