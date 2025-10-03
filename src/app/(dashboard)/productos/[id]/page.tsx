@@ -50,6 +50,7 @@ export default function ProductDetailPage() {
   const currentOriginalPrice = selectedColor?.originalPrice || product.originalPrice
   const currentDiscount = selectedColor?.discount || product.discount
   const currentStock = selectedColor?.stock ?? product.stock ?? 0
+  const currentImage = selectedColor?.imageUrl || product.image
 
   // Determinar el color del stock
   const getStockColor = (stock: number) => {
@@ -75,20 +76,22 @@ export default function ProductDetailPage() {
         <Card>
           <CardContent className="p-6">
             <div className="relative aspect-square overflow-hidden rounded-lg bg-muted">
-              {typeof product.image === 'string' ? (
+              {typeof currentImage === 'string' ? (
                 <Image
-                  src={product.image}
-                  alt={product.name}
+                  key={selectedColor?.sku || 'default'}
+                  src={currentImage}
+                  alt={`${product.name} - ${selectedColor?.label || ''}`}
                   fill
-                  className="object-cover"
+                  className="object-cover transition-opacity duration-300"
                   priority
                 />
               ) : (
                 <Image
-                  src={product.image}
-                  alt={product.name}
+                  key={selectedColor?.sku || 'default'}
+                  src={currentImage}
+                  alt={`${product.name} - ${selectedColor?.label || ''}`}
                   fill
-                  className="object-cover"
+                  className="object-cover transition-opacity duration-300"
                   priority
                 />
               )}
@@ -115,9 +118,11 @@ export default function ProductDetailPage() {
         <div className="space-y-6">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">{product.name}</h1>
-            {product.description && (
+            {selectedColor?.description ? (
+              <p className="mt-2 text-muted-foreground">{selectedColor.description}</p>
+            ) : product.description ? (
               <p className="mt-2 text-muted-foreground">{product.description}</p>
-            )}
+            ) : null}
           </div>
 
           {/* Precio */}
@@ -206,10 +211,14 @@ export default function ProductDetailPage() {
                   <span className="font-medium">{product.subcategory}</span>
                 </div>
               )}
-              {product.capacity && (
+              {(selectedColor?.capacity || product.capacity) && (
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Capacidad:</span>
-                  <span className="font-medium">{product.capacity}</span>
+                  <span className="text-muted-foreground">
+                    Capacidad {selectedColor ? `(${selectedColor.label})` : ''}:
+                  </span>
+                  <span className="font-medium">
+                    {selectedColor?.capacity || product.capacity}
+                  </span>
                 </div>
               )}
               {currentStock !== undefined && (
@@ -228,12 +237,6 @@ export default function ProductDetailPage() {
                   <span className="font-medium">{product.stock} unidades</span>
                 </div>
               )}
-              {product.sku && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">SKU:</span>
-                  <span className="font-medium">{product.sku}</span>
-                </div>
-              )}
               {selectedColor?.sku && (
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">SKU del color:</span>
@@ -246,14 +249,21 @@ export default function ProductDetailPage() {
       </div>
 
       {/* Descripción detallada */}
-      {product.detailedDescription && (
+      {(selectedColor?.description || product.detailedDescription) && (
         <Card>
           <CardHeader>
-            <CardTitle>Descripción detallada</CardTitle>
+            <CardTitle>
+              Descripción detallada
+              {selectedColor && (
+                <span className="text-sm font-normal text-muted-foreground ml-2">
+                  ({selectedColor.label})
+                </span>
+              )}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground whitespace-pre-line">
-              {product.detailedDescription}
+              {selectedColor?.description || product.detailedDescription}
             </p>
           </CardContent>
         </Card>

@@ -19,6 +19,9 @@ export interface ProductColor {
   originalPrice?: string; // Precio original antes de descuento (opcional)
   discount?: string; // Descuento específico para este color (opcional)
   stock?: number; // Stock disponible para este color (opcional)
+  description?: string; // Descripción detallada de esta variante (opcional)
+  capacity?: string; // Capacidad específica de esta variante (opcional)
+  imageUrl?: string; // URL de la imagen específica de esta variante (opcional)
 }
 
 
@@ -214,6 +217,18 @@ function createProductColorsFromArray(apiProduct: ProductApiData): ProductColor[
       return total + (apiProduct.stock[idx] || 0);
     }, 0);
 
+    // Obtener descripción detallada del primer índice
+    const description = apiProduct.desDetallada[firstIndex] || '';
+
+    // Obtener capacidad del primer índice (o combinar todas si son diferentes)
+    const capacidades = [...new Set(indices.map(idx => apiProduct.capacidad[idx]).filter(Boolean))];
+    const capacity = capacidades.length > 0 ? capacidades.join(', ') : undefined;
+
+    // Obtener la URL de la imagen del primer índice
+    const imageUrl = apiProduct.imagePreviewUrl[firstIndex] && apiProduct.imagePreviewUrl[firstIndex].trim() !== ''
+      ? apiProduct.imagePreviewUrl[firstIndex]
+      : undefined;
+
     colorsWithPrices.push({
       name: normalizedColor.replace(/\s+/g, '-'),
       hex: colorInfo.hex,
@@ -222,7 +237,10 @@ function createProductColorsFromArray(apiProduct: ProductApiData): ProductColor[
       originalPrice,
       discount,
       sku: apiProduct.sku[firstIndex],
-      stock: stockTotal
+      stock: stockTotal,
+      description,
+      capacity,
+      imageUrl
     });
   });
   
