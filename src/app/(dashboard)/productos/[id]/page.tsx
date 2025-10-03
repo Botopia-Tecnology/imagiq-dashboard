@@ -1,0 +1,322 @@
+"use client"
+
+import { useEffect, useState } from "react"
+import { useParams, useRouter } from "next/navigation"
+import Image from "next/image"
+import { ArrowLeft, ShoppingCart, Heart, Share2, Package, AlertCircle } from "lucide-react"
+
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Skeleton } from "@/components/ui/skeleton"
+import { useProduct } from "@/features/products/useProducts"
+import { ProductCardProps, ProductColor } from "@/features/products/useProducts"
+
+export default function ProductDetailPage() {
+  const params = useParams()
+  const router = useRouter()
+  const productId = params.id as string
+
+  const { product, loading, error } = useProduct(productId)
+  const [selectedColor, setSelectedColor] = useState<ProductColor | null>(null)
+
+  // Establecer el primer color como seleccionado por defecto
+  useEffect(() => {
+    if (product && product.colors.length > 0 && !selectedColor) {
+      setSelectedColor(product.colors[0])
+    }
+  }, [product, selectedColor])
+  console.log(product)
+
+  if (loading) {
+    return <ProductDetailSkeleton />
+  }
+
+  if (error || !product) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
+        <AlertCircle className="h-12 w-12 text-muted-foreground" />
+        <h2 className="text-2xl font-bold">Producto no encontrado</h2>
+        <p className="text-muted-foreground">{error || "No se pudo cargar el producto"}</p>
+        <Button onClick={() => router.push("/productos")}>
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Volver a productos
+        </Button>
+      </div>
+    )
+  }
+
+  const currentPrice = selectedColor?.price || product.price
+  const currentOriginalPrice = selectedColor?.originalPrice || product.originalPrice
+  const currentDiscount = selectedColor?.discount || product.discount
+  const currentStock = selectedColor?.stock ?? product.stock ?? 0
+
+  // Determinar el color del stock
+  const getStockColor = (stock: number) => {
+    if (stock === 0) return 'text-red-600'
+    if (stock <= 5) return 'text-yellow-600'
+    return 'text-green-600'
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Botón de regreso */}
+      <Button
+        variant="ghost"
+        onClick={() => router.push("/productos")}
+        className="mb-4"
+      >
+        <ArrowLeft className="mr-2 h-4 w-4" />
+        Volver a productos
+      </Button>
+
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Imagen del producto */}
+        <Card>
+          <CardContent className="p-6">
+            <div className="relative aspect-square overflow-hidden rounded-lg bg-muted">
+              {typeof product.image === 'string' ? (
+                <Image
+                  src={product.image}
+                  alt={product.name}
+                  fill
+                  className="object-cover"
+                  priority
+                />
+              ) : (
+                <Image
+                  src={product.image}
+                  alt={product.name}
+                  fill
+                  className="object-cover"
+                  priority
+                />
+              )}
+            </div>
+
+            {/* Badges */}
+            <div className="mt-4 flex gap-2">
+              {product.isNew && (
+                <Badge variant="default">Nuevo</Badge>
+              )}
+              {currentDiscount && (
+                <Badge variant="destructive">{currentDiscount}</Badge>
+              )}
+              {currentStock > 0 ? (
+                <Badge variant="default">En stock ({currentStock})</Badge>
+              ) : (
+                <Badge variant="secondary">Agotado</Badge>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Información del producto */}
+        <div className="space-y-6">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">{product.name}</h1>
+            {product.description && (
+              <p className="mt-2 text-muted-foreground">{product.description}</p>
+            )}
+          </div>
+
+          {/* Precio */}
+          <div className="flex items-baseline gap-3">
+            <span className="text-3xl font-bold">{currentPrice}</span>
+            {currentOriginalPrice && (
+              <span className="text-xl text-muted-foreground line-through">
+                {currentOriginalPrice}
+              </span>
+            )}
+          </div>
+
+          {/* Selector de colores */}
+          {product.colors.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium">
+                  Color: {selectedColor?.label}
+                </label>
+                {selectedColor?.stock !== undefined && (
+                  <span className="text-sm text-muted-foreground">
+                    {selectedColor.stock > 0 ? (
+                      <span className="text-green-600">
+                        {selectedColor.stock} disponibles
+                      </span>
+                    ) : (
+                      <span className="text-red-600">Sin stock</span>
+                    )}
+                  </span>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-3">
+                {product.colors.map((color) => (
+                  <div key={color.sku} className="flex flex-col items-center gap-1">
+                    <button
+                      onClick={() => setSelectedColor(color)}
+                      disabled={!color.stock || color.stock === 0}
+                      className={`h-10 w-10 rounded-full border-2 transition-all ${
+                        selectedColor?.sku === color.sku
+                          ? "border-primary ring-2 ring-primary ring-offset-2"
+                          : "border-border hover:border-primary/50"
+                      } ${
+                        !color.stock || color.stock === 0
+                          ? "opacity-50 cursor-not-allowed"
+                          : ""
+                      }`}
+                      style={{ backgroundColor: color.hex }}
+                      title={`${color.label} - ${color.stock || 0} disponibles`}
+                    />
+                    {(!color.stock || color.stock === 0) && (
+                      <span className="text-xs text-red-500">Agotado</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Información adicional */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Información del producto</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {product.brand && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Marca:</span>
+                  <span className="font-medium">{product.brand}</span>
+                </div>
+              )}
+              {product.model && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Modelo:</span>
+                  <span className="font-medium">{product.model}</span>
+                </div>
+              )}
+              {product.category && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Categoría:</span>
+                  <span className="font-medium">{product.category}</span>
+                </div>
+              )}
+              {product.subcategory && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Subcategoría:</span>
+                  <span className="font-medium">{product.subcategory}</span>
+                </div>
+              )}
+              {product.capacity && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Capacidad:</span>
+                  <span className="font-medium">{product.capacity}</span>
+                </div>
+              )}
+              {currentStock !== undefined && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">
+                    Stock disponible {selectedColor ? `(${selectedColor.label})` : ''}:
+                  </span>
+                  <span className={`font-medium ${getStockColor(currentStock)}`}>
+                    {currentStock} unidades
+                  </span>
+                </div>
+              )}
+              {!selectedColor && product.stock !== undefined && product.stock !== currentStock && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Stock total:</span>
+                  <span className="font-medium">{product.stock} unidades</span>
+                </div>
+              )}
+              {product.sku && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">SKU:</span>
+                  <span className="font-medium">{product.sku}</span>
+                </div>
+              )}
+              {selectedColor?.sku && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">SKU del color:</span>
+                  <span className="font-medium">{selectedColor.sku}</span>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* Descripción detallada */}
+      {product.detailedDescription && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Descripción detallada</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground whitespace-pre-line">
+              {product.detailedDescription}
+            </p>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  )
+}
+
+// Skeleton de carga
+function ProductDetailSkeleton() {
+  return (
+    <div className="space-y-6">
+      <Skeleton className="h-10 w-40" />
+
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card>
+          <CardContent className="p-6">
+            <Skeleton className="aspect-square w-full rounded-lg" />
+            <div className="mt-4 flex gap-2">
+              <Skeleton className="h-6 w-16" />
+              <Skeleton className="h-6 w-16" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="space-y-6">
+          <div>
+            <Skeleton className="h-10 w-3/4" />
+            <Skeleton className="mt-2 h-4 w-full" />
+          </div>
+
+          <Skeleton className="h-12 w-40" />
+
+          <div className="space-y-3">
+            <Skeleton className="h-4 w-24" />
+            <div className="flex gap-2">
+              <Skeleton className="h-10 w-10 rounded-full" />
+              <Skeleton className="h-10 w-10 rounded-full" />
+              <Skeleton className="h-10 w-10 rounded-full" />
+            </div>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-6 w-48" />
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="flex justify-between">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-4 w-32" />
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          <div className="flex gap-3">
+            <Skeleton className="h-12 flex-1" />
+            <Skeleton className="h-12 w-12" />
+            <Skeleton className="h-12 w-12" />
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}

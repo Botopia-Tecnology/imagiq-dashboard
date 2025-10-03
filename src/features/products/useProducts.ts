@@ -28,6 +28,7 @@ export interface ProductColor {
   price?: string; // Precio específico para este color (opcional)
   originalPrice?: string; // Precio original antes de descuento (opcional)
   discount?: string; // Descuento específico para este color (opcional)
+  stock?: number; // Stock disponible para este color (opcional)
 }
 
 export interface ProductCardProps {
