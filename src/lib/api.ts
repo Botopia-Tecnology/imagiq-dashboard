@@ -119,7 +119,7 @@ export const productEndpoints = {
     ),
   search: (query: string) =>
     apiClient.get<ProductApiResponse>(`/api/products/filtered?nombre=${query}`),
-  
+  getSummary: () => apiClient.get<ProductSummary>("/api/products/summary"),
 };
 
 // Product filter parameters interface
@@ -152,6 +152,12 @@ export interface ProductApiResponse {
   currentPage: number;
   hasNextPage: boolean;
   hasPreviousPage: boolean;
+}
+
+export interface ProductSummary {
+  productsTotal: number;
+  totalValue: number;
+  lowStock: number;
 }
 
 export interface ProductApiData {
