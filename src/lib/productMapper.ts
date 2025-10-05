@@ -234,9 +234,13 @@ function createProductColorsFromArray(apiProduct: ProductApiData): ProductColor[
     // Primero intentar usar imageDetailsUrls si existe, sino usar urlImagenes
     let imageDetailsUrls: string[] | undefined;
     if (apiProduct.imageDetailsUrls && apiProduct.imageDetailsUrls[firstIndex]) {
-      imageDetailsUrls = apiProduct.imageDetailsUrls[firstIndex].filter(url => url && url.trim() !== '');
+      const filteredUrls = apiProduct.imageDetailsUrls[firstIndex].filter(url => url && url.trim() !== '');
+      imageDetailsUrls = filteredUrls.length > 0 ? filteredUrls : [emptyImg.src];
     } else if (apiProduct.urlImagenes[firstIndex]) {
-      imageDetailsUrls = apiProduct.urlImagenes[firstIndex].split(',').map(url => url.trim()).filter(url => url !== '');
+      const filteredUrls = apiProduct.urlImagenes[firstIndex].split(',').map(url => url.trim()).filter(url => url !== '');
+      imageDetailsUrls = filteredUrls.length > 0 ? filteredUrls : [emptyImg.src];
+    } else {
+      imageDetailsUrls = [emptyImg.src];
     }
 
     colorsWithPrices.push({

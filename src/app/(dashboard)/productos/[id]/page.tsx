@@ -85,15 +85,16 @@ export default function ProductDetailPage() {
             {/* Imagen de Preview */}
             <div className="space-y-2">
               <h3 className="text-sm font-medium text-muted-foreground">Imagen preview</h3>
-              <div className="relative w-full h-[438px] overflow-hidden rounded-lg bg-muted">
+              <div className="relative w-full h-64 overflow-hidden rounded-lg bg-muted group">
                 {typeof currentImage === 'string' ? (
                   <Image
                     key={selectedColor?.sku || 'default'}
                     src={currentImage}
                     alt={`${product.name} - ${selectedColor?.label || ''}`}
                     fill
-                    className="object-cover transition-opacity duration-300"
+                    
                     priority
+                    className="object-contain"
                   />
                 ) : (
                   <Image
@@ -101,7 +102,7 @@ export default function ProductDetailPage() {
                     src={currentImage}
                     alt={`${product.name} - ${selectedColor?.label || ''}`}
                     fill
-                    className="object-cover transition-opacity duration-300"
+                    className="object-contain"
                     priority
                   />
                 )}
@@ -161,7 +162,7 @@ export default function ProductDetailPage() {
                 </div>
 
                 {/* Miniaturas */}
-                <div className="flex gap-2 overflow-x-auto pb-2">
+                <div className="flex gap-2 overflow-x-auto pb-2 pt-2 pl-2">
                   {selectedColor.imageDetailsUrls.map((url, index) => (
                     <button
                       key={index}
