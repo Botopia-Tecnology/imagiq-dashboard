@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Image from "next/image"
-import { ArrowLeft, ShoppingCart, Heart, Share2, Package, AlertCircle } from "lucide-react"
+import { ArrowLeft, ShoppingCart, Heart, Share2, Package, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -19,6 +19,7 @@ export default function ProductDetailPage() {
 
   const { product, loading, error } = useProduct(productId)
   const [selectedColor, setSelectedColor] = useState<ProductColor | null>(null)
+  const [currentImageIndex, setCurrentImageIndex] = useState(0)
 
   // Establecer el primer color como seleccionado por defecto
   useEffect(() => {
@@ -26,6 +27,12 @@ export default function ProductDetailPage() {
       setSelectedColor(product.colors[0])
     }
   }, [product, selectedColor])
+
+  // Reiniciar el índice de imagen cuando cambie el color
+  useEffect(() => {
+    setCurrentImageIndex(0)
+  }, [selectedColor])
+
   console.log(product)
 
   if (loading) {
@@ -75,27 +82,107 @@ export default function ProductDetailPage() {
         {/* Imagen del producto */}
         <Card className="h-fit">
           <CardContent className="p-6">
-            <div className="relative w-full h-[438px] overflow-hidden rounded-lg bg-muted">
-              {typeof currentImage === 'string' ? (
-                <Image
-                  key={selectedColor?.sku || 'default'}
-                  src={currentImage}
-                  alt={`${product.name} - ${selectedColor?.label || ''}`}
-                  fill
-                  className="object-cover transition-opacity duration-300"
-                  priority
-                />
-              ) : (
-                <Image
-                  key={selectedColor?.sku || 'default'}
-                  src={currentImage}
-                  alt={`${product.name} - ${selectedColor?.label || ''}`}
-                  fill
-                  className="object-cover transition-opacity duration-300"
-                  priority
-                />
-              )}
+            {/* Imagen de Preview */}
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium text-muted-foreground">Imagen preview</h3>
+              <div className="relative w-full h-[438px] overflow-hidden rounded-lg bg-muted">
+                {typeof currentImage === 'string' ? (
+                  <Image
+                    key={selectedColor?.sku || 'default'}
+                    src={currentImage}
+                    alt={`${product.name} - ${selectedColor?.label || ''}`}
+                    fill
+                    className="object-cover transition-opacity duration-300"
+                    priority
+                  />
+                ) : (
+                  <Image
+                    key={selectedColor?.sku || 'default'}
+                    src={currentImage}
+                    alt={`${product.name} - ${selectedColor?.label || ''}`}
+                    fill
+                    className="object-cover transition-opacity duration-300"
+                    priority
+                  />
+                )}
+              </div>
             </div>
+
+            {/* Imágenes detalladas - Carrusel */}
+            {selectedColor?.imageDetailsUrls && selectedColor.imageDetailsUrls.length > 0 && (
+              <div className="mt-6 space-y-2">
+                <h3 className="text-sm font-medium text-muted-foreground">Imágenes de detalle</h3>
+                <div className="relative w-full h-64 overflow-hidden rounded-lg bg-muted group">
+                  <Image
+                    src={selectedColor.imageDetailsUrls[currentImageIndex]}
+                    alt={`${product.name} - ${selectedColor.label} - Detalle ${currentImageIndex + 1}`}
+                    fill
+                    className="object-contain"
+                  />
+
+                  {/* Botones de navegación */}
+                  {selectedColor.imageDetailsUrls.length > 1 && (
+                    <>
+                      <button
+                        onClick={() => setCurrentImageIndex((prev) =>
+                          prev === 0 ? selectedColor.imageDetailsUrls!.length - 1 : prev - 1
+                        )}
+                        className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <ChevronLeft className="h-5 w-5" />
+                      </button>
+                      <button
+                        onClick={() => setCurrentImageIndex((prev) =>
+                          prev === selectedColor.imageDetailsUrls!.length - 1 ? 0 : prev + 1
+                        )}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <ChevronRight className="h-5 w-5" />
+                      </button>
+                    </>
+                  )}
+
+                  {/* Indicadores de página */}
+                  {selectedColor.imageDetailsUrls.length > 1 && (
+                    <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
+                      {selectedColor.imageDetailsUrls.map((_, index) => (
+                        <button
+                          key={index}
+                          onClick={() => setCurrentImageIndex(index)}
+                          className={`h-2 rounded-full transition-all ${
+                            index === currentImageIndex
+                              ? 'w-8 bg-white'
+                              : 'w-2 bg-white/50 hover:bg-white/75'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Miniaturas */}
+                <div className="flex gap-2 overflow-x-auto pb-2">
+                  {selectedColor.imageDetailsUrls.map((url, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentImageIndex(index)}
+                      className={`relative flex-shrink-0 w-20 h-20 overflow-hidden rounded-lg border-2 transition-all ${
+                        index === currentImageIndex
+                          ? 'border-primary ring-2 ring-primary ring-offset-2'
+                          : 'border-border hover:border-primary/50'
+                      }`}
+                    >
+                      <Image
+                        src={url}
+                        alt={`${product.name} - Miniatura ${index + 1}`}
+                        fill
+                        className="object-cover"
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Badges */}
             <div className="mt-4 flex gap-2">
@@ -245,29 +332,29 @@ export default function ProductDetailPage() {
               )}
             </CardContent>
           </Card>
+
+          {/* Descripción detallada */}
+          {(selectedColor?.description || product.detailedDescription) && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">
+                  Descripción detallada
+                  {selectedColor && (
+                    <span className="text-sm font-normal text-muted-foreground ml-2">
+                      ({selectedColor.label})
+                    </span>
+                  )}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground whitespace-pre-line">
+                  {selectedColor?.description || product.detailedDescription}
+                </p>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
-
-      {/* Descripción detallada */}
-      {(selectedColor?.description || product.detailedDescription) && (
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              Descripción detallada
-              {selectedColor && (
-                <span className="text-sm font-normal text-muted-foreground ml-2">
-                  ({selectedColor.label})
-                </span>
-              )}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground whitespace-pre-line">
-              {selectedColor?.description || product.detailedDescription}
-            </p>
-          </CardContent>
-        </Card>
-      )}
     </div>
   )
 }

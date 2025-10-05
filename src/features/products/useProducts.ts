@@ -32,6 +32,7 @@ export interface ProductColor {
   description?: string; // Descripción detallada de esta variante (opcional)
   capacity?: string; // Capacidad específica de esta variante (opcional)
   imageUrl?: string; // URL de la imagen específica de esta variante (opcional)
+  imageDetailsUrls?: string[]; // URLs de las imágenes detalladas de esta variante (opcional)
 }
 
 export interface ProductCardProps {

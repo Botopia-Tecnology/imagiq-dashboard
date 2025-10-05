@@ -22,6 +22,7 @@ export interface ProductColor {
   description?: string; // Descripción detallada de esta variante (opcional)
   capacity?: string; // Capacidad específica de esta variante (opcional)
   imageUrl?: string; // URL de la imagen específica de esta variante (opcional)
+  imageDetailsUrls?: string[]; // URLs de las imágenes detalladas de esta variante (opcional)
 }
 
 
@@ -229,6 +230,15 @@ function createProductColorsFromArray(apiProduct: ProductApiData): ProductColor[
       ? apiProduct.imagePreviewUrl[firstIndex]
       : undefined;
 
+    // Obtener las URLs de imágenes detalladas del primer índice
+    // Primero intentar usar imageDetailsUrls si existe, sino usar urlImagenes
+    let imageDetailsUrls: string[] | undefined;
+    if (apiProduct.imageDetailsUrls && apiProduct.imageDetailsUrls[firstIndex]) {
+      imageDetailsUrls = apiProduct.imageDetailsUrls[firstIndex].filter(url => url && url.trim() !== '');
+    } else if (apiProduct.urlImagenes[firstIndex]) {
+      imageDetailsUrls = apiProduct.urlImagenes[firstIndex].split(',').map(url => url.trim()).filter(url => url !== '');
+    }
+
     colorsWithPrices.push({
       name: normalizedColor.replace(/\s+/g, '-'),
       hex: colorInfo.hex,
@@ -240,7 +250,8 @@ function createProductColorsFromArray(apiProduct: ProductApiData): ProductColor[
       stock: stockTotal,
       description,
       capacity,
-      imageUrl
+      imageUrl,
+      imageDetailsUrls
     });
   });
   

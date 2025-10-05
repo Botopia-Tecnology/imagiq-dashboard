@@ -45,9 +45,8 @@ function ActionsCell({ product }: { product: ProductCardProps }) {
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => router.push(`/productos/${product.id}`)}>
-          Ver detalles
+          Ver/Editar detalles
         </DropdownMenuItem>
-        <DropdownMenuItem>Editar producto</DropdownMenuItem>
         <DropdownMenuItem>Ver órdenes</DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem className="text-red-600">

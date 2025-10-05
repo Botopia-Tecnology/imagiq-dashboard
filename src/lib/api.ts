@@ -174,6 +174,7 @@ export interface ProductApiData {
   desDetallada: string[];
   stock: number[];
   imagePreviewUrl: string[];
+  imageDetailsUrls?: string[][]; // Array de arrays de URLs de imágenes detalladas
   urlImagenes: string[];
   urlRender3D: string[];
   precioNormal: number[];
