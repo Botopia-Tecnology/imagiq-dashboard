@@ -51,6 +51,8 @@ interface DataTableProps<TData, TValue> {
   onFilterChange?: (filterId: string, value: string[]) => void
   // Estado de carga
   loading?: boolean
+  // Visibilidad inicial de columnas
+  initialColumnVisibility?: VisibilityState
 }
 
 export function DataTable<TData, TValue>({
@@ -66,9 +68,10 @@ export function DataTable<TData, TValue>({
   onSearchChange,
   onFilterChange,
   loading = false,
+  initialColumnVisibility,
 }: DataTableProps<TData, TValue>) {
   const [rowSelection, setRowSelection] = useState({})
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(initialColumnVisibility ?? {})
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [sorting, setSorting] = useState<SortingState>([])
 
@@ -123,7 +126,7 @@ export function DataTable<TData, TValue>({
         </div>
       ) : (
         <>
-          <div className="rounded-md border">
+          <div className="w-full overflow-auto rounded-md border">
             <Table>
               <TableHeader>
                 {table.getHeaderGroups().map((headerGroup) => (

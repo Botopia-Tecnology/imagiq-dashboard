@@ -69,7 +69,7 @@ export default function CrearCampaignSmsPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="sm" onClick={handleGoBack}>
           <ArrowLeft className="mr-2 h-4 w-4" />
@@ -85,7 +85,7 @@ export default function CrearCampaignSmsPage() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Form */}
-        <div className="space-y-6">
+        <div className="space-y-3">
           {/* Campaign Info */}
           <Card>
             <CardHeader>
@@ -94,7 +94,7 @@ export default function CrearCampaignSmsPage() {
                 Información de la Campaña
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3">
               <div className="space-y-2">
                 <Label htmlFor="campaignName">Nombre de la Campaña</Label>
                 <Input
@@ -154,7 +154,7 @@ export default function CrearCampaignSmsPage() {
                 Configuración del SMS
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="fromNumber">Número de Envío</Label>
@@ -236,7 +236,7 @@ export default function CrearCampaignSmsPage() {
             <CardHeader>
               <CardTitle>Cumplimiento y Regulaciones</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3">
               <div className="flex items-center space-x-2">
                 <Switch
                   id="includeOptOut"
@@ -283,7 +283,7 @@ export default function CrearCampaignSmsPage() {
                 Programación
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3">
               <div className="flex items-center space-x-2">
                 <Switch
                   id="sendImmediately"
@@ -317,7 +317,7 @@ export default function CrearCampaignSmsPage() {
         </div>
 
         {/* Preview */}
-        <div className="space-y-6">
+        <div className="space-y-3">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -340,7 +340,7 @@ export default function CrearCampaignSmsPage() {
             <CardHeader>
               <CardTitle>Análisis del Mensaje</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3">
               <div className="grid grid-cols-2 gap-4">
                 <div className="text-center p-3 bg-muted rounded-lg">
                   <div className="text-2xl font-bold">{messageLength}</div>

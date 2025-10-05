@@ -103,7 +103,7 @@ const data = {
   navSecondary: [
     {
       title: "Facturación",
-      url: "/billing",
+      url: "/facturacion",
       icon: Receipt,
     },
     {

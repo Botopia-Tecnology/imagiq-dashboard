@@ -24,7 +24,7 @@ import {
 
 export default function InicioPage() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
         <p className="text-muted-foreground">
@@ -133,7 +133,7 @@ export default function InicioPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
+            <div className="space-y-3">
               {mockTopProducts.map((product, index) => (
                 <div key={product.name} className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -167,7 +167,7 @@ export default function InicioPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
+            <div className="space-y-3">
               {mockPaymentMethodData.map((method) => (
                 <div key={method.name} className="flex items-center justify-between">
                   <div className="flex items-center gap-3">

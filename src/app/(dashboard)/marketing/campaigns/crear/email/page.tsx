@@ -70,7 +70,7 @@ export default function CrearCampaignEmailPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="sm" onClick={handleGoBack}>
           <ArrowLeft className="mr-2 h-4 w-4" />
@@ -86,7 +86,7 @@ export default function CrearCampaignEmailPage() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Form */}
-        <div className="space-y-6">
+        <div className="space-y-3">
           {/* Campaign Info */}
           <Card>
             <CardHeader>
@@ -95,7 +95,7 @@ export default function CrearCampaignEmailPage() {
                 Información de la Campaña
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3">
               <div className="space-y-2">
                 <Label htmlFor="campaignName">Nombre de la Campaña</Label>
                 <Input
@@ -155,7 +155,7 @@ export default function CrearCampaignEmailPage() {
                 Configuración del Email
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3">
               <div className="space-y-2">
                 <Label htmlFor="subject">Asunto del Email</Label>
                 <Input
@@ -215,7 +215,7 @@ export default function CrearCampaignEmailPage() {
             <CardHeader>
               <CardTitle>Contenido del Email</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3">
               <div className="space-y-2">
                 <Label htmlFor="headerImage">Imagen de Cabecera (URL)</Label>
                 <Input
@@ -300,7 +300,7 @@ export default function CrearCampaignEmailPage() {
                 Programación y Envío
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3">
               <div className="flex items-center space-x-2">
                 <Switch
                   id="sendImmediately"
@@ -334,7 +334,7 @@ export default function CrearCampaignEmailPage() {
         </div>
 
         {/* Preview */}
-        <div className="space-y-6">
+        <div className="space-y-3">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
