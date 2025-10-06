@@ -106,11 +106,8 @@ export function EditImagesModal({
     onClose()
   }
 
-  const currentPreview = previewImage || selectedColor?.imageUrl
-
-  const currentDetails = detailImages.length > 0
-    ? detailImages
-    : selectedColor?.imageDetailsUrls || []
+  const currentPreview = previewImage
+  const currentDetails = detailImages
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -144,8 +141,8 @@ export function EditImagesModal({
           {/* Imagen Preview */}
           <div className="space-y-3">
             <Label>Imagen Preview</Label>
-            <div className="grid gap-4">
-              {currentPreview && (
+            {currentPreview ? (
+              <div className="space-y-3">
                 <div className="relative w-full h-64 rounded-lg border overflow-hidden bg-muted">
                   <Image
                     src={currentPreview}
@@ -154,7 +151,16 @@ export function EditImagesModal({
                     className="object-contain"
                   />
                 </div>
-              )}
+                <Button
+                  variant="outline"
+                  onClick={() => setPreviewImage(null)}
+                  className="w-full"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Eliminar imagen preview
+                </Button>
+              </div>
+            ) : (
               <div>
                 <input
                   type="file"
@@ -169,10 +175,10 @@ export function EditImagesModal({
                   className="w-full"
                 >
                   <Upload className="h-4 w-4 mr-2" />
-                  {previewImage ? "Cambiar" : "Subir"} imagen preview
+                  Subir imagen preview
                 </Button>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Imágenes de Detalle */}
