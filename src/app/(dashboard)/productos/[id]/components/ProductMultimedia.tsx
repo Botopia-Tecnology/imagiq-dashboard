@@ -2,10 +2,12 @@
 
 import { useState, useEffect } from "react"
 import Image from "next/image"
-import { ChevronLeft, ChevronRight } from "lucide-react"
+import { ChevronLeft, ChevronRight, Pencil } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { ProductCardProps, ProductColor } from "@/features/products/useProducts"
+import { EditImagesModal } from "./EditImagesModal"
 
 interface ProductMultimediaProps {
   product: ProductCardProps
@@ -23,6 +25,7 @@ export function ProductMultimedia({
   currentStock,
 }: ProductMultimediaProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
   // Reiniciar el índice de imagen cuando cambie el color
   useEffect(() => {
@@ -32,6 +35,18 @@ export function ProductMultimedia({
   return (
     <Card className="h-fit">
       <CardContent className="p-6">
+        {/* Botón de editar */}
+        <div className="flex justify-end mb-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsModalOpen(true)}
+            className="gap-2"
+          >
+            <Pencil className="h-4 w-4" />
+            Editar imágenes
+          </Button>
+        </div>
         {/* Imagen de Preview */}
         <div className="space-y-2">
           <h3 className="text-sm font-medium text-muted-foreground">Imagen preview</h3>
@@ -149,6 +164,14 @@ export function ProductMultimedia({
             <Badge variant="secondary">Agotado</Badge>
           )}
         </div>
+
+        {/* Modal de edición */}
+        <EditImagesModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          product={product}
+          selectedColor={selectedColor}
+        />
       </CardContent>
     </Card>
   )
