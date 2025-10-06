@@ -21,8 +21,8 @@ interface ApiResponse<T> {
 
 // API Client class
 export class ApiClient {
-  private baseURL: string;
-  private headers: Record<string, string>;
+  private readonly baseURL: string;
+  private readonly headers: Record<string, string>;
 
   constructor(baseURL: string = API_BASE_URL) {
     this.baseURL = baseURL;
@@ -85,6 +85,36 @@ export class ApiClient {
   async delete<T>(endpoint: string): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, { method: "DELETE" });
   }
+
+  async putFormData<T>(endpoint: string, formData: FormData): Promise<ApiResponse<T>> {
+    const url = `${this.baseURL}${endpoint}`;
+    const config: RequestInit = {
+      method: "PUT",
+      body: formData,
+      headers: {
+        // No incluir Content-Type para que el browser lo establezca automáticamente con boundary
+      },
+    };
+
+    try {
+      const response = await fetch(url, config);
+      const data = await response?.json();
+
+      return {
+        data: data as T,
+        success: response.ok,
+        message: data.message,
+        errors: data.errors,
+      };
+    } catch (error) {
+      console.error("API request failed:", error);
+      return {
+        data: {} as T,
+        success: false,
+        message: "Request failed",
+      };
+    }
+  }
 }
 
 // Export singleton instance
@@ -120,6 +150,8 @@ export const productEndpoints = {
   search: (query: string) =>
     apiClient.get<ProductApiResponse>(`/api/products/filtered?nombre=${query}`),
   getSummary: () => apiClient.get<ProductSummary>("/api/products/summary"),
+  updateMedia: (id: string, data: ProductMediaUpdateData) =>
+    apiClient.put<ProductMediaUpdateResponse>(`/api/products/${id}/media`, data),
 };
 
 // Product filter parameters interface
@@ -181,4 +213,21 @@ export interface ProductApiData {
   precioDescto: number[];
   fechaInicioVigencia: string[];
   fechaFinalVigencia: string[];
+}
+
+// Product media update interfaces
+export interface ProductMediaUpdateData {
+  sku: string;
+  codigoMarket: string;
+  previewImage?: string | null;
+  detailImages?: string[];
+  videos?: string[];
+  glbFile?: File | null;
+  usdzFile?: File | null;
+}
+
+export interface ProductMediaUpdateResponse {
+  success: boolean;
+  message: string;
+  data?: unknown;
 }

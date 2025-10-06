@@ -29,14 +29,19 @@ export function EditImagesModal({
   selectedColor,
 }: EditImagesModalProps) {
   const [previewImage, setPreviewImage] = useState<string | null>(null)
+  const [previewImageFile, setPreviewImageFile] = useState<File | null>(null)
   const [detailImages, setDetailImages] = useState<string[]>([])
+  const [detailImageFiles, setDetailImageFiles] = useState<File[]>([])
   const [videos, setVideos] = useState<string[]>([])
+  const [videoFiles, setVideoFiles] = useState<File[]>([])
   const [glbFile, setGlbFile] = useState<File | null>(null)
   const [usdzFile, setUsdzFile] = useState<File | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
 
   const handlePreviewImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
+      setPreviewImageFile(file)
       const reader = new FileReader()
       reader.onloadend = () => {
         setPreviewImage(reader.result as string)
@@ -48,8 +53,11 @@ export function EditImagesModal({
   const handleDetailImagesUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     if (files) {
+      const filesArray = Array.from(files)
+      setDetailImageFiles((prev) => [...prev, ...filesArray])
+
       const newImages: string[] = []
-      Array.from(files).forEach((file) => {
+      filesArray.forEach((file) => {
         const reader = new FileReader()
         reader.onloadend = () => {
           newImages.push(reader.result as string)
@@ -64,13 +72,17 @@ export function EditImagesModal({
 
   const removeDetailImage = (index: number) => {
     setDetailImages((prev) => prev.filter((_, i) => i !== index))
+    setDetailImageFiles((prev) => prev.filter((_, i) => i !== index))
   }
 
   const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     if (files) {
+      const filesArray = Array.from(files)
+      setVideoFiles((prev) => [...prev, ...filesArray])
+
       const newVideos: string[] = []
-      Array.from(files).forEach((file) => {
+      filesArray.forEach((file) => {
         const url = URL.createObjectURL(file)
         newVideos.push(url)
       })
@@ -80,6 +92,7 @@ export function EditImagesModal({
 
   const removeVideo = (index: number) => {
     setVideos((prev) => prev.filter((_, i) => i !== index))
+    setVideoFiles((prev) => prev.filter((_, i) => i !== index))
   }
 
   const handleGlbUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -96,14 +109,62 @@ export function EditImagesModal({
     }
   }
 
-  const handleSave = () => {
-    // Aquí implementarías la lógica para guardar las imágenes, videos y archivos AR
-    console.log("Preview Image:", previewImage)
-    console.log("Detail Images:", detailImages)
-    console.log("Videos:", videos)
-    console.log("GLB File:", glbFile)
-    console.log("USDZ File:", usdzFile)
-    onClose()
+  const handleSave = async () => {
+    if (!selectedColor) {
+      alert("No se ha seleccionado un color")
+      return
+    }
+
+    setIsLoading(true)
+
+    try {
+      const formData = new FormData()
+      formData.append("sku", selectedColor.sku)
+      formData.append("codigoMarket", product.id)
+
+      // Agregar imagen preview
+      if (previewImageFile) {
+        formData.append("previewImage", previewImageFile)
+      }
+
+      // Agregar imágenes de detalle
+      detailImageFiles.forEach((file) => {
+        formData.append("detailImages", file)
+      })
+
+      // Agregar videos
+      videoFiles.forEach((file) => {
+        formData.append("videos", file)
+      })
+
+      // Agregar archivos AR
+      if (glbFile) {
+        formData.append("glbFile", glbFile)
+      }
+      if (usdzFile) {
+        formData.append("usdzFile", usdzFile)
+      }
+
+      // Hacer petición con FormData
+      const response = await fetch(`/api/products/${product.id}/media`, {
+        method: "PUT",
+        body: formData,
+      })
+
+      const data = await response.json()
+
+      if (response.ok && data.success) {
+        alert("Multimedia actualizada correctamente")
+        onClose()
+      } else {
+        alert(`Error: ${data.message}`)
+      }
+    } catch (error) {
+      console.error("Error al actualizar multimedia:", error)
+      alert("Error al actualizar multimedia")
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const currentPreview = previewImage
@@ -153,7 +214,10 @@ export function EditImagesModal({
                 </div>
                 <Button
                   variant="outline"
-                  onClick={() => setPreviewImage(null)}
+                  onClick={() => {
+                    setPreviewImage(null)
+                    setPreviewImageFile(null)
+                  }}
                   className="w-full"
                 >
                   <Trash2 className="h-4 w-4 mr-2" />
@@ -385,11 +449,11 @@ export function EditImagesModal({
 
         {/* Botones de acción */}
         <div className="flex justify-end gap-3 pt-4 border-t">
-          <Button variant="outline" onClick={onClose}>
+          <Button variant="outline" onClick={onClose} disabled={isLoading}>
             Cancelar
           </Button>
-          <Button onClick={handleSave}>
-            Guardar cambios
+          <Button onClick={handleSave} disabled={isLoading}>
+            {isLoading ? "Guardando..." : "Guardar cambios"}
           </Button>
         </div>
       </DialogContent>
