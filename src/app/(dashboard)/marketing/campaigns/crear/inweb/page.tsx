@@ -340,50 +340,7 @@ export default function CrearCampaignInWebPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="title">Título</Label>
-                  <Badge variant={isTitleValid ? "secondary" : "destructive"}>
-                    {titleLength}/50
-                  </Badge>
-                </div>
-                <Input
-                  id="title"
-                  placeholder="¡Oferta especial disponible!"
-                  value={inWebData.title}
-                  onChange={(e) => setInWebData(prev => ({ ...prev, title: e.target.value }))}
-                  className={!isTitleValid ? "border-red-500" : ""}
-                />
-                {!isTitleValid && (
-                  <div className="flex items-center gap-2 text-sm text-red-600">
-                    <AlertCircle className="h-4 w-4" />
-                    El título es muy largo. Máximo 50 caracteres.
-                  </div>
-                )}
-              </div>
 
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="message">Mensaje</Label>
-                  <Badge variant={isMessageValid ? "secondary" : "destructive"}>
-                    {messageLength}/120
-                  </Badge>
-                </div>
-                <Textarea
-                  id="message"
-                  rows={3}
-                  placeholder="Descubre nuestras ofertas exclusivas con descuentos de hasta 50%"
-                  value={inWebData.message}
-                  onChange={(e) => setInWebData(prev => ({ ...prev, message: e.target.value }))}
-                  className={!isMessageValid ? "border-red-500" : ""}
-                />
-                {!isMessageValid && (
-                  <div className="flex items-center gap-2 text-sm text-red-600">
-                    <AlertCircle className="h-4 w-4" />
-                    El mensaje es muy largo. Máximo 120 caracteres.
-                  </div>
-                )}
-              </div>
 
               <div className="space-y-2">
                 <Label htmlFor="url">URL de Destino</Label>
@@ -395,49 +352,6 @@ export default function CrearCampaignInWebPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="icon">Icono (URL)</Label>
-                  <Input
-                    id="icon"
-                    placeholder="https://ejemplo.com/icon.png"
-                    value={inWebData.icon}
-                    onChange={(e) => setInWebData(prev => ({ ...prev, icon: e.target.value }))}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="image">Imagen (URL)</Label>
-                  <Input
-                    id="image"
-                    placeholder="https://ejemplo.com/banner.jpg"
-                    value={inWebData.image}
-                    onChange={(e) => setInWebData(prev => ({ ...prev, image: e.target.value }))}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="actionButton1">Botón de Acción 1</Label>
-                  <Input
-                    id="actionButton1"
-                    placeholder="Ver Ofertas"
-                    value={inWebData.actionButton1}
-                    onChange={(e) => setInWebData(prev => ({ ...prev, actionButton1: e.target.value }))}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="actionButton2">Botón de Acción 2</Label>
-                  <Input
-                    id="actionButton2"
-                    placeholder="Recordar Después"
-                    value={inWebData.actionButton2}
-                    onChange={(e) => setInWebData(prev => ({ ...prev, actionButton2: e.target.value }))}
-                  />
-                </div>
-              </div>
             </CardContent>
           </Card>
 
@@ -506,39 +420,6 @@ export default function CrearCampaignInWebPage() {
             </CardContent>
           </Card>
 
-          {/* Campaign Stats */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Estadísticas Estimadas</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="text-center p-3 bg-muted rounded-lg">
-                  <div className="text-2xl font-bold">~2.5%</div>
-                  <div className="text-sm text-muted-foreground">CTR Estimado</div>
-                </div>
-                <div className="text-center p-3 bg-muted rounded-lg">
-                  <div className="text-2xl font-bold">~15%</div>
-                  <div className="text-sm text-muted-foreground">Tasa de Opt-out</div>
-                </div>
-              </div>
-
-              <Separator />
-
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Plataformas seleccionadas:</span>
-                  <span className="font-medium">{inWebData.platforms.length}/4</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Validación:</span>
-                  <Badge variant={isTitleValid && isMessageValid ? "default" : "destructive"}>
-                    {isTitleValid && isMessageValid ? "Válido" : "Revisar"}
-                  </Badge>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </div>
       </div>
     </div>

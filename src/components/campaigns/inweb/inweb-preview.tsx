@@ -117,75 +117,7 @@ export function InWebPreview({
 
   const ChromeNotification = displayStyle === "popup" ? ChromeNotificationPopup : ChromeNotificationSlider;
 
-  // macOS Safari Notification - Pop-up
-  const SafariNotificationPopup = () => (
-    <div className="relative">
-      {/* Overlay oscuro para simular el efecto bloqueante */}
-      <div className="absolute inset-0 bg-black/50 rounded-lg" />
-      <div className="relative bg-white/95 backdrop-blur-md border border-gray-200 rounded-xl shadow-2xl p-4 max-w-sm z-10">
-        <div className="flex items-start gap-3">
-          <img
-            src={icon || defaultIcon}
-            alt="Icon"
-            className="w-12 h-12 rounded-xl object-cover flex-shrink-0"
-          />
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between mb-1">
-              <h4 className="font-semibold text-gray-900 text-sm">
-                {companyName}
-              </h4>
-              <span className="text-xs text-gray-500">ahora</span>
-            </div>
-            <h5 className="font-medium text-gray-800 text-sm mb-1">
-              {title}
-            </h5>
-            <p className="text-sm text-gray-600 line-clamp-2">
-              {message}
-            </p>
-          </div>
-        </div>
 
-        {image && (
-          <div className="mt-3 rounded-lg overflow-hidden">
-            <img
-              src={image}
-              alt="Notification"
-              className="w-full h-28 object-cover"
-            />
-          </div>
-        )}
-      </div>
-    </div>
-  );
-
-  // macOS Safari Notification - Slider
-  const SafariNotificationSlider = () => (
-    <div className="bg-white/95 backdrop-blur-md border border-gray-200 rounded-xl shadow-lg p-3 max-w-xs animate-in slide-in-from-right">
-      <div className="flex items-start gap-2">
-        <img
-          src={icon || defaultIcon}
-          alt="Icon"
-          className="w-10 h-10 rounded-xl object-cover flex-shrink-0"
-        />
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between mb-1">
-            <h4 className="font-semibold text-gray-900 text-xs">
-              {companyName}
-            </h4>
-            <span className="text-xs text-gray-500">ahora</span>
-          </div>
-          <h5 className="font-medium text-gray-800 text-xs mb-1">
-            {title}
-          </h5>
-          <p className="text-xs text-gray-600 line-clamp-2">
-            {message}
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-
-  const SafariNotification = displayStyle === "popup" ? SafariNotificationPopup : SafariNotificationSlider;
 
   // Mobile Chrome Notification - Pop-up
   const MobileNotificationPopup = () => (
@@ -268,10 +200,6 @@ export function InWebPreview({
             <Chrome className="h-4 w-4" />
             Chrome
           </TabsTrigger>
-          <TabsTrigger value="safari" className="flex items-center gap-2">
-            <Apple className="h-4 w-4" />
-            Safari
-          </TabsTrigger>
           <TabsTrigger value="mobile" className="flex items-center gap-2">
             <Globe className="h-4 w-4" />
             Móvil
@@ -296,24 +224,6 @@ export function InWebPreview({
           </div>
         </TabsContent>
 
-        <TabsContent value="safari" className="space-y-4">
-          <div className="p-6 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900 rounded-lg">
-            <div className="mb-4">
-              <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-1">
-                Safari macOS - {displayStyle === "popup" ? "Pop-up (Bloqueante)" : "Slider (Toast)"}
-              </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                {displayStyle === "popup"
-                  ? "Notificación modal en el centro de la pantalla"
-                  : "Notificación nativa de macOS en la esquina"}
-              </p>
-            </div>
-            <div className="flex justify-center">
-              <SafariNotification />
-            </div>
-          </div>
-        </TabsContent>
-
         <TabsContent value="mobile" className="space-y-4">
           <div className="p-6 bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-950 dark:to-emerald-950 rounded-lg">
             <div className="mb-4">
@@ -333,32 +243,6 @@ export function InWebPreview({
         </TabsContent>
       </Tabs>
 
-      {/* Technical Info */}
-      <div className="p-4 bg-muted rounded-lg">
-        <h4 className="font-medium mb-2">Información Técnica</h4>
-        <div className="grid grid-cols-2 gap-4 text-sm">
-          <div>
-            <div className="font-medium text-gray-700 dark:text-gray-300">Título</div>
-            <div className="text-gray-600 dark:text-gray-400">{title.length}/50 caracteres</div>
-          </div>
-          <div>
-            <div className="font-medium text-gray-700 dark:text-gray-300">Mensaje</div>
-            <div className="text-gray-600 dark:text-gray-400">{message.length}/120 caracteres</div>
-          </div>
-          <div>
-            <div className="font-medium text-gray-700 dark:text-gray-300">Estilo</div>
-            <Badge variant={displayStyle === "popup" ? "default" : "secondary"}>
-              {displayStyle === "popup" ? "Pop-up (Bloqueante)" : "Slider (Toast)"}
-            </Badge>
-          </div>
-          <div>
-            <div className="font-medium text-gray-700 dark:text-gray-300">Estado</div>
-            <Badge variant="secondary">
-              {title.length <= 50 && message.length <= 120 ? "Válido" : "Revisar límites"}
-            </Badge>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
