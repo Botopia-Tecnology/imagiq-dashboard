@@ -43,16 +43,9 @@ export default function CrearCampaignInWebPage() {
     campaignName: string;
     campaignType: string;
     targetAudience: string;
-    title: string;
-    message: string;
-    icon: string;
+  
     image: string;
     url: string;
-    companyName: string;
-    actionButton1: string;
-    actionButton1Url: string;
-    actionButton2: string;
-    actionButton2Url: string;
     displayStyle: "popup" | "slider";
     requireInteraction: boolean;
     silent: boolean;
@@ -92,18 +85,10 @@ export default function CrearCampaignInWebPage() {
     targetAudience: "all",
 
     // Notification Content
-    title: "",
-    message: "",
-    icon: "",
     image: "",
     url: "",
-    companyName: "Tu Empresa",
+  
 
-    // Action Buttons
-    actionButton1: "",
-    actionButton1Url: "",
-    actionButton2: "",
-    actionButton2Url: "",
 
     // Behavior Settings
     displayStyle: "popup", // "popup" (bloqueante) o "slider" (tipo toast)
@@ -154,10 +139,7 @@ export default function CrearCampaignInWebPage() {
     htmlContent: "",
   });
 
-  const titleLength = inWebData.title.length;
-  const messageLength = inWebData.message.length;
-  const isTitleValid = titleLength <= 50;
-  const isMessageValid = messageLength <= 120;
+
 
   const handleGoBack = () => {
     router.push("/marketing/campaigns");
@@ -583,14 +565,7 @@ export default function CrearCampaignInWebPage() {
             </CardHeader>
             <CardContent>
               <InWebPreview
-                title={inWebData.title}
-                message={inWebData.message}
-                icon={inWebData.icon}
                 image={inWebData.image}
-                actionButton1={inWebData.actionButton1}
-                actionButton2={inWebData.actionButton2}
-                url={inWebData.url}
-                companyName={inWebData.companyName}
                 displayStyle={inWebData.displayStyle}
                 contentType={inWebData.contentType}
                 htmlContent={inWebData.htmlContent}
