@@ -398,7 +398,7 @@ export default function CrearCampaignInWebPage() {
 
         {/* Preview */}
         <div className="space-y-3">
-          <Card>
+          <Card className="sticky top-4">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Eye className="h-5 w-5" />
