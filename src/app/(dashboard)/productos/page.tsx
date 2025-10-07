@@ -1,17 +1,57 @@
 "use client"
 
+import { lazy, Suspense, useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Plus, Package, DollarSign, AlertTriangle } from "lucide-react"
-import { ProductsTableWrapper } from "@/components/tables/products-table-wrapper"
+import { Skeleton } from "@/components/ui/skeleton"
+import { productEndpoints, ProductSummary } from "@/lib/api"
+
+const ProductsTableWrapper = lazy(() =>
+  import("@/components/tables/products-table-wrapper").then(mod => ({
+    default: mod.ProductsTableWrapper
+  }))
+)
+
+function TableSkeleton() {
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        <Skeleton className="h-10 flex-1" />
+        <Skeleton className="h-10 w-[200px]" />
+      </div>
+      <div className="rounded-md border">
+        <div className="p-4 space-y-3">
+          <Skeleton className="h-10 w-full" />
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Skeleton key={i} className="h-16 w-full" />
+          ))}
+        </div>
+      </div>
+      <div className="flex items-center justify-between">
+        <Skeleton className="h-8 w-[180px]" />
+        <Skeleton className="h-8 w-[200px]" />
+      </div>
+    </div>
+  )
+}
 
 export default function ProductosPage() {
-  // Métricas estáticas (deberían venir de una API de estadísticas separada)
-  const totalProducts = 279
-  const activeProducts = 279
-  const lowStockProducts = 200
-  const totalValue = 9501513886
-  const totalCategories = 13
+  const [summary, setSummary] = useState<ProductSummary | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchSummary = async () => {
+      setIsLoading(true)
+      const response = await productEndpoints.getSummary()
+      if (response.success) {
+        setSummary(response.data)
+      }
+      setIsLoading(false)
+    }
+
+    fetchSummary()
+  }, [])
 
   return (
     <div className="space-y-6">
@@ -22,10 +62,6 @@ export default function ProductosPage() {
             Gestiona tu inventario de productos
           </p>
         </div>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          Agregar Producto
-        </Button>
       </div>
 
       {/* Métricas de productos */}
@@ -36,10 +72,19 @@ export default function ProductosPage() {
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalProducts}</div>
-            <p className="text-xs text-muted-foreground">
-              {activeProducts} activos
-            </p>
+            {isLoading ? (
+              <>
+                <Skeleton className="h-8 w-16 mb-2" />
+                <Skeleton className="h-4 w-24" />
+              </>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">{summary?.productsTotal ?? 0}</div>
+                <p className="text-xs text-muted-foreground">
+                  {summary?.productsTotal ?? 0} únicos
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -49,12 +94,21 @@ export default function ProductosPage() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              ${totalValue.toLocaleString()}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Valor del inventario
-            </p>
+            {isLoading ? (
+              <>
+                <Skeleton className="h-8 w-32 mb-2" />
+                <Skeleton className="h-4 w-28" />
+              </>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">
+                  ${(summary?.totalValue ?? 0).toLocaleString()}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Valor del inventario
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -64,10 +118,19 @@ export default function ProductosPage() {
             <AlertTriangle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{lowStockProducts}</div>
-            <p className="text-xs text-muted-foreground">
-              Productos con stock ≤ 10
-            </p>
+            {isLoading ? (
+              <>
+                <Skeleton className="h-8 w-16 mb-2" />
+                <Skeleton className="h-4 w-36" />
+              </>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">{summary?.lowStock ?? 0}</div>
+                <p className="text-xs text-muted-foreground">
+                  Productos con stock ≤ 10
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -77,10 +140,19 @@ export default function ProductosPage() {
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalCategories}</div>
-            <p className="text-xs text-muted-foreground">
-              Categorías disponibles
-            </p>
+            {isLoading ? (
+              <>
+                <Skeleton className="h-8 w-12 mb-2" />
+                <Skeleton className="h-4 w-32" />
+              </>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">13</div>
+                <p className="text-xs text-muted-foreground">
+                  Categorías disponibles
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -91,7 +163,9 @@ export default function ProductosPage() {
           <CardTitle>Lista de Productos</CardTitle>
         </CardHeader>
         <CardContent>
-          <ProductsTableWrapper />
+          <Suspense fallback={<TableSkeleton />}>
+            <ProductsTableWrapper />
+          </Suspense>
         </CardContent>
       </Card>
     </div>

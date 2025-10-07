@@ -3,6 +3,7 @@
 import { ColumnDef } from "@tanstack/react-table"
 import { ArrowUpDown, MoreHorizontal } from "lucide-react"
 import Image from "next/image"
+import { useRouter } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -15,9 +16,46 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Checkbox } from "@/components/ui/checkbox"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { ProductCardProps } from "@/features/products/useProducts"
 
-export const productColumns: ColumnDef<ProductCardProps>[] = [
+// Componente separado para la celda de acciones que usa useRouter
+function ActionsCell({ product }: { product: ProductCardProps }) {
+  const router = useRouter()
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" className="h-8 w-8 p-0">
+          <span className="sr-only">Abrir menú</span>
+          <MoreHorizontal className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+        <DropdownMenuItem
+          onClick={() => navigator.clipboard.writeText(product.id)}
+        >
+          Copiar ID del producto
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => router.push(`/productos/${product.id}`)}>
+          Ver/Editar detalles
+        </DropdownMenuItem>
+        <DropdownMenuItem>Ver órdenes</DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
+export const createProductColumns = (
+  onSortChange?: (field: string, direction:  "desc" | "asc" ) => void
+): ColumnDef<ProductCardProps>[] => [
   {
     id: "select",
     header: ({ table }) => (
@@ -70,7 +108,12 @@ export const productColumns: ColumnDef<ProductCardProps>[] = [
       return (
         <Button
           variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          onClick={() => {
+            const isAsc = column.getIsSorted() === "asc"
+            const newDirection = isAsc ? "desc" : "asc"
+            column.toggleSorting(isAsc)
+            onSortChange?.("name", newDirection)
+          }}
         >
           Nombre
           <ArrowUpDown className="ml-2 h-4 w-4" />
@@ -80,12 +123,21 @@ export const productColumns: ColumnDef<ProductCardProps>[] = [
     cell: ({ row }) => {
       const product = row.original
       return (
-        <div className="max-w-[200px]">
-          <div className="font-medium">{product.name}</div>
-          <div className="text-sm text-muted-foreground truncate">
-            {product.description}
+        <TooltipProvider>
+          <div className="max-w-[200px]">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="font-medium truncate cursor-default">{product.name}</div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{product.name}</p>
+              </TooltipContent>
+            </Tooltip>
+            <div className="text-sm text-muted-foreground truncate">
+              {product.description}
+            </div>
           </div>
-        </div>
+        </TooltipProvider>
       )
     },
   },
@@ -109,7 +161,12 @@ export const productColumns: ColumnDef<ProductCardProps>[] = [
       return (
         <Button
           variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          onClick={() => {
+            const isAsc = column.getIsSorted() === "asc"
+            const newDirection = isAsc ? "desc" : "asc"
+            column.toggleSorting(isAsc)
+            onSortChange?.("price", newDirection)
+          }}
         >
           Precio
           <ArrowUpDown className="ml-2 h-4 w-4" />
@@ -127,7 +184,12 @@ export const productColumns: ColumnDef<ProductCardProps>[] = [
       return (
         <Button
           variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          onClick={() => {
+            const isAsc = column.getIsSorted() === "asc"
+            const newDirection = isAsc ? "desc" : "asc"
+            column.toggleSorting(isAsc)
+            onSortChange?.("stock", newDirection)
+          }}
         >
           Stock
           <ArrowUpDown className="ml-2 h-4 w-4" />
@@ -175,35 +237,6 @@ export const productColumns: ColumnDef<ProductCardProps>[] = [
   {
     id: "actions",
     enableHiding: false,
-    cell: ({ row }) => {
-      const product = row.original
-
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Abrir menú</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-            <DropdownMenuItem
-              onClick={() => navigator.clipboard.writeText(product.id)}
-            >
-              Copiar ID del producto
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>Ver detalles</DropdownMenuItem>
-            <DropdownMenuItem>Editar producto</DropdownMenuItem>
-            <DropdownMenuItem>Ver órdenes</DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-red-600">
-              Eliminar producto
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      )
-    },
+    cell: ({ row }) => <ActionsCell product={row.original} />,
   },
 ]

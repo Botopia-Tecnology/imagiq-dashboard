@@ -28,6 +28,11 @@ export interface ProductColor {
   price?: string; // Precio específico para este color (opcional)
   originalPrice?: string; // Precio original antes de descuento (opcional)
   discount?: string; // Descuento específico para este color (opcional)
+  stock?: number; // Stock disponible para este color (opcional)
+  description?: string; // Descripción detallada de esta variante (opcional)
+  capacity?: string; // Capacidad específica de esta variante (opcional)
+  imageUrl?: string; // URL de la imagen específica de esta variante (opcional)
+  imageDetailsUrls?: string[]; // URLs de las imágenes detalladas de esta variante (opcional)
 }
 
 export interface ProductCardProps {
@@ -75,6 +80,8 @@ export interface ProductFilters {
   searchQuery?: string; // Query de búsqueda general para nombre Y desDetallada
   page?: number; // Página actual para paginación
   limit?: number; // Límite de productos por página
+  sortBy?: string; // Campo por el cual ordenar (nombre, price, stock, etc.)
+  sortOrder?: "desc" | "asc"; // Dirección del ordenamiento
 }
 
 
@@ -155,6 +162,21 @@ export const useProducts = (
         params.desDetallada = filters.searchQuery;
         params.modelo = filters.searchQuery;
         params.filterMode = "OR";
+      }
+
+      // Agregar parámetros de ordenamiento
+      if (filters.sortBy) {
+        // Mapear nombres de campos del frontend a nombres de campos del backend
+        const fieldMap: Record<string, string> = {
+          name: "nombre",
+          price: "precio",
+          stock: "stock",
+        };
+        params.sortBy = fieldMap[filters.sortBy] || filters.sortBy;
+      }
+
+      if (filters.sortOrder) {
+        params.sortOrder = filters.sortOrder;
       }
 
       return params;

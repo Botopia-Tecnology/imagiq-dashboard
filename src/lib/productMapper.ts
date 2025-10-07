@@ -18,6 +18,11 @@ export interface ProductColor {
   price?: string; // Precio específico para este color (opcional)
   originalPrice?: string; // Precio original antes de descuento (opcional)
   discount?: string; // Descuento específico para este color (opcional)
+  stock?: number; // Stock disponible para este color (opcional)
+  description?: string; // Descripción detallada de esta variante (opcional)
+  capacity?: string; // Capacidad específica de esta variante (opcional)
+  imageUrl?: string; // URL de la imagen específica de esta variante (opcional)
+  imageDetailsUrls?: string[]; // URLs de las imágenes detalladas de esta variante (opcional)
 }
 
 
@@ -182,32 +187,62 @@ function createProductColorsFromArray(apiProduct: ProductApiData): ProductColor[
     const normalizedColor = color.toLowerCase().trim();
     const colorInfo = colorMap[normalizedColor] || { hex: '#808080', label: color };
     const formatPrice = (price: number) => `$ ${price.toLocaleString('es-CO')}`;
-    
+
     // Encontrar el precio más bajo entre todas las variantes de este color
     const preciosNormalesValidos = preciosNormales.filter(p => p > 0);
     const preciosDescuentoValidos = preciosDescuento.filter(p => p > 0);
-    
-    const precioNormalMin = preciosNormalesValidos.length > 0 
-      ? Math.min(...preciosNormalesValidos) 
+
+    const precioNormalMin = preciosNormalesValidos.length > 0
+      ? Math.min(...preciosNormalesValidos)
       : 0;
-    const precioDesctoMin = preciosDescuentoValidos.length > 0 
-      ? Math.min(...preciosDescuentoValidos) 
+    const precioDesctoMin = preciosDescuentoValidos.length > 0
+      ? Math.min(...preciosDescuentoValidos)
       : precioNormalMin;
-    
+
     const price = formatPrice(precioDesctoMin);
     let originalPrice: string | undefined;
     let discount: string | undefined;
-    
+
     // Si hay descuento real
     if (precioDesctoMin > 0 && precioDesctoMin < precioNormalMin && precioNormalMin > 0) {
       originalPrice = formatPrice(precioNormalMin);
       const discountPercent = Math.round(((precioNormalMin - precioDesctoMin) / precioNormalMin) * 100);
       discount = `-${discountPercent}%`;
     }
-    
+
     // Usar el primer SKU disponible para este color
     const firstIndex = indices[0];
-    
+
+    // Calcular el stock total para este color sumando todos los índices
+    const stockTotal = indices.reduce((total, idx) => {
+      return total + (apiProduct.stock[idx] || 0);
+    }, 0);
+
+    // Obtener descripción detallada del primer índice
+    const description = apiProduct.desDetallada[firstIndex] || '';
+
+    // Obtener capacidad del primer índice (o combinar todas si son diferentes)
+    const capacidades = [...new Set(indices.map(idx => apiProduct.capacidad[idx]).filter(Boolean))];
+    const capacity = capacidades.length > 0 ? capacidades.join(', ') : undefined;
+
+    // Obtener la URL de la imagen del primer índice
+    const imageUrl = apiProduct.imagePreviewUrl[firstIndex] && apiProduct.imagePreviewUrl[firstIndex].trim() !== ''
+      ? apiProduct.imagePreviewUrl[firstIndex]
+      : undefined;
+
+    // Obtener las URLs de imágenes detalladas del primer índice
+    // Primero intentar usar imageDetailsUrls si existe, sino usar urlImagenes
+    let imageDetailsUrls: string[] | undefined;
+    if (apiProduct.imageDetailsUrls && apiProduct.imageDetailsUrls[firstIndex]) {
+      const filteredUrls = apiProduct.imageDetailsUrls[firstIndex].filter(url => url && url.trim() !== '');
+      imageDetailsUrls = filteredUrls.length > 0 ? filteredUrls : [emptyImg.src];
+    } else if (apiProduct.urlImagenes[firstIndex]) {
+      const filteredUrls = apiProduct.urlImagenes[firstIndex].split(',').map(url => url.trim()).filter(url => url !== '');
+      imageDetailsUrls = filteredUrls.length > 0 ? filteredUrls : [emptyImg.src];
+    } else {
+      imageDetailsUrls = [emptyImg.src];
+    }
+
     colorsWithPrices.push({
       name: normalizedColor.replace(/\s+/g, '-'),
       hex: colorInfo.hex,
@@ -215,7 +250,12 @@ function createProductColorsFromArray(apiProduct: ProductApiData): ProductColor[
       price,
       originalPrice,
       discount,
-      sku: apiProduct.sku[firstIndex]
+      sku: apiProduct.sku[firstIndex],
+      stock: stockTotal,
+      description,
+      capacity,
+      imageUrl,
+      imageDetailsUrls
     });
   });
   
