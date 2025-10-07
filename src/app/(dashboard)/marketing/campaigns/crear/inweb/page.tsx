@@ -482,7 +482,7 @@ export default function CrearCampaignInWebPage() {
                       }))
                     }
                     rows={8}
-                    className="font-mono text-sm"
+                    className="font-mono text-sm max-h-96 overflow-y-auto"
                   />
                   <p className="text-xs text-muted-foreground">
                     Puedes usar HTML y CSS inline para personalizar el contenido
