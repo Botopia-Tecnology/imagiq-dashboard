@@ -11,9 +11,10 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
-import { ArrowLeft, Globe, Save, Send, Eye, Clock, Target, Users, Settings, Zap, AlertCircle } from "lucide-react";
+import { ArrowLeft, Globe, Save, Send, Eye, Clock, Target, Settings, AlertCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { InWebPreview } from "@/components/campaigns/inweb/inweb-preview";
+import { AudienceSegmentation, AudienceSegmentationData } from "@/components/campaigns/audience-segmentation";
 
 export default function CrearCampaignInWebPage() {
   const router = useRouter();
@@ -50,6 +51,13 @@ export default function CrearCampaignInWebPage() {
     geoLocation: "",
     deviceType: "all",
     browserLanguage: "all",
+
+    // Audience Segmentation
+    selectedCities: [] as string[],
+    purchaseOperator: "equal",
+    purchaseCount: 0,
+    minAge: 18,
+    maxAge: 65,
 
     // Timing
     sendImmediately: true,
@@ -98,6 +106,13 @@ export default function CrearCampaignInWebPage() {
       platforms: prev.platforms.includes(platform)
         ? prev.platforms.filter(p => p !== platform)
         : [...prev.platforms, platform]
+    }));
+  };
+
+  const handleSegmentationChange = (segmentationData: AudienceSegmentationData) => {
+    setInWebData(prev => ({
+      ...prev,
+      ...segmentationData
     }));
   };
 
@@ -180,6 +195,18 @@ export default function CrearCampaignInWebPage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Audience Segmentation */}
+          <AudienceSegmentation
+            data={{
+              selectedCities: inWebData.selectedCities,
+              purchaseOperator: inWebData.purchaseOperator,
+              purchaseCount: inWebData.purchaseCount,
+              minAge: inWebData.minAge,
+              maxAge: inWebData.maxAge,
+            }}
+            onChange={handleSegmentationChange}
+          />
 
           {/* Notification Content */}
           <Card>
