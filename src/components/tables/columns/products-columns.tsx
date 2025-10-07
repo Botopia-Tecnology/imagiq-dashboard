@@ -48,10 +48,6 @@ function ActionsCell({ product }: { product: ProductCardProps }) {
           Ver/Editar detalles
         </DropdownMenuItem>
         <DropdownMenuItem>Ver órdenes</DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem className="text-red-600">
-          Eliminar producto
-        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   )
