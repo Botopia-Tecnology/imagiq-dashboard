@@ -173,7 +173,7 @@ export default function EventDrivenCampaignsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -205,7 +205,7 @@ export default function EventDrivenCampaignsPage() {
             <DialogHeader>
               <DialogTitle>Crear Nueva Campaña Basada en Eventos</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4 py-4">
+            <div className="space-y-3 py-4">
               <div>
                 <Label htmlFor="campaignName">Nombre de la Campaña</Label>
                 <Input
@@ -323,7 +323,7 @@ export default function EventDrivenCampaignsPage() {
               </Button>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {campaigns.map((campaign) => (
                 <Card key={campaign.id} className="hover:shadow-md transition-shadow">
                   <CardContent className="p-6">

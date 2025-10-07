@@ -174,7 +174,7 @@ export default function UsuariosPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -202,7 +202,7 @@ export default function UsuariosPage() {
       <UserStatsCards stats={stats} />
 
       {/* Main Content */}
-      <Tabs defaultValue="users" className="space-y-6">
+      <Tabs defaultValue="users" className="space-y-3">
         <TabsList>
           <TabsTrigger value="users" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
@@ -218,7 +218,7 @@ export default function UsuariosPage() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="users" className="space-y-6">
+        <TabsContent value="users" className="space-y-3">
           <Card>
             <CardHeader>
               <CardTitle>Lista de Usuarios</CardTitle>
@@ -235,7 +235,7 @@ export default function UsuariosPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="activity" className="space-y-6">
+        <TabsContent value="activity" className="space-y-3">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -244,7 +244,7 @@ export default function UsuariosPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {userActivity.map((activity) => {
                   const user = users.find(u => u.id === activity.userId);
                   return (
@@ -289,7 +289,7 @@ export default function UsuariosPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="permissions" className="space-y-6">
+        <TabsContent value="permissions" className="space-y-3">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -298,7 +298,7 @@ export default function UsuariosPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-6">
+              <div className="space-y-3">
                 {Object.entries(rolePermissions).map(([role, permissions]) => (
                   <div key={role} className="space-y-2">
                     <h3 className="font-medium flex items-center gap-2">

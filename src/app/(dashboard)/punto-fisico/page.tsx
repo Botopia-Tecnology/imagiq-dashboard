@@ -165,7 +165,7 @@ export default function PuntoFisicoPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -263,7 +263,7 @@ export default function PuntoFisicoPage() {
       </div>
 
       {/* Main Content */}
-      <Tabs defaultValue="stores" className="space-y-6">
+      <Tabs defaultValue="stores" className="space-y-3">
         <TabsList>
           <TabsTrigger value="stores" className="flex items-center gap-2">
             <Store className="h-4 w-4" />
@@ -279,7 +279,7 @@ export default function PuntoFisicoPage() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="stores" className="space-y-6">
+        <TabsContent value="stores" className="space-y-3">
           {/* Search */}
           <div className="flex items-center gap-4">
             <div className="relative flex-1 max-w-sm">
@@ -318,7 +318,7 @@ export default function PuntoFisicoPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="analytics" className="space-y-6">
+        <TabsContent value="analytics" className="space-y-3">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -334,7 +334,7 @@ export default function PuntoFisicoPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="settings" className="space-y-6">
+        <TabsContent value="settings" className="space-y-3">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">

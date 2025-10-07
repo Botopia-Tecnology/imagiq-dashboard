@@ -21,23 +21,200 @@ export interface Product {
   fechaFinalVigencia: string[];
 }
 
-export interface Order {
+// Website Categories
+export interface WebsiteCategory {
   id: string;
-  customerName: string;
-  customerEmail: string;
-  total: number;
-  status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
-  paymentMethod: string;
-  items: OrderItem[];
+  name: string;
+  slug: string;
+  description?: string;
+  image?: string;
+  order: number;
+  isActive: boolean;
+  productsCount?: number;
+  subcategories: WebsiteSubcategory[];
   createdAt: Date;
   updatedAt: Date;
 }
 
+export interface WebsiteSubcategory {
+  id: string;
+  categoryId: string;
+  name: string;
+  slug: string;
+  description?: string;
+  image?: string;
+  order: number;
+  isActive: boolean;
+  productsCount?: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Customer Analytics
+export interface Customer {
+  id: string;
+  email: string;
+  name?: string;
+  phone?: string;
+  avatar?: string;
+
+  // Segmentation
+  segment: CustomerSegment;
+  tags: string[];
+
+  // Lifecycle
+  status: 'active' | 'inactive' | 'churned' | 'new';
+  lifecycleStage: 'lead' | 'prospect' | 'customer' | 'loyal' | 'at_risk' | 'churned';
+
+  // Engagement metrics
+  totalOrders: number;
+  totalSpent: number;
+  averageOrderValue: number;
+  lastOrderDate?: Date;
+  firstOrderDate?: Date;
+
+  // Behavior metrics (from PostHog)
+  sessionsCount: number;
+  pageviewsCount: number;
+  avgSessionDuration: number;
+  lastSeenAt?: Date;
+
+  // Device & Location
+  device?: 'desktop' | 'mobile' | 'tablet';
+  browser?: string;
+  country?: string;
+  city?: string;
+
+  // Marketing attribution
+  acquisitionSource?: string;
+  acquisitionMedium?: string;
+  acquisitionCampaign?: string;
+
+  // Timestamps
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export type CustomerSegment =
+  | 'vip'           // High value, frequent buyers
+  | 'loyal'         // Regular repeat customers
+  | 'promising'     // New customers with high potential
+  | 'at_risk'       // Previously active, now declining
+  | 'hibernating'   // Haven't purchased in long time
+  | 'lost'          // Churned customers
+  | 'new'           // First-time visitors/buyers
+
+export interface CustomerCohort {
+  id: string;
+  name: string;
+  description?: string;
+  conditions: CohortCondition[];
+  customersCount: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface CohortCondition {
+  field: string;
+  operator: 'equals' | 'contains' | 'greater_than' | 'less_than' | 'in' | 'not_in';
+  value: any;
+}
+
+export interface CustomerJourney {
+  customerId: string;
+  events: JourneyEvent[];
+}
+
+export interface JourneyEvent {
+  id: string;
+  type: 'pageview' | 'purchase' | 'cart_add' | 'email_open' | 'ad_click' | 'custom';
+  timestamp: Date;
+  properties?: Record<string, any>;
+}
+
+export interface CustomerInsight {
+  type: 'funnel' | 'retention' | 'path' | 'trend';
+  data: any;
+  generatedAt: Date;
+}
+
+export type OrderStatus = 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'refunded';
+export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded';
+export type PaymentMethod = 'credit_card' | 'debit_card' | 'paypal' | 'bank_transfer' | 'cash' | 'other';
+export type FulfillmentStatus = 'unfulfilled' | 'partial' | 'fulfilled';
+
+export interface Order {
+  id: string;
+  orderNumber: string;
+
+  // Customer info
+  customerId?: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone?: string;
+
+  // Order details
+  items: OrderItem[];
+  subtotal: number;
+  tax: number;
+  shipping: number;
+  discount: number;
+  total: number;
+
+  // Status tracking
+  status: OrderStatus;
+  paymentStatus: PaymentStatus;
+  fulfillmentStatus: FulfillmentStatus;
+
+  // Payment info
+  paymentMethod: PaymentMethod;
+  paymentMethodDisplay: string;
+  transactionId?: string;
+
+  // Shipping info
+  shippingAddress?: ShippingAddress;
+  trackingNumber?: string;
+  carrier?: string;
+  estimatedDelivery?: Date;
+
+  // Metadata
+  notes?: string;
+  internalNotes?: string;
+  tags?: string[];
+  source?: 'web' | 'mobile' | 'physical_store' | 'phone';
+
+  // Timestamps
+  createdAt: Date;
+  updatedAt: Date;
+  confirmedAt?: Date;
+  shippedAt?: Date;
+  deliveredAt?: Date;
+  cancelledAt?: Date;
+}
+
 export interface OrderItem {
+  id: string;
   productId: string;
   productName: string;
+  productImage?: string;
+  sku?: string;
   quantity: number;
-  price: number;
+  unitPrice: number;
+  discount: number;
+  tax: number;
+  total: number;
+  variant?: string;
+}
+
+export interface ShippingAddress {
+  fullName: string;
+  phone: string;
+  addressLine1: string;
+  addressLine2?: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
 }
 
 export interface Customer {

@@ -12,11 +12,11 @@ export default function BannersPage() {
   const router = useRouter();
 
   const handleCreateBanner = () => {
-    router.push('/marketing/banners/crear');
+    router.push('/marketing/banners/crear/seleccionar-tipo');
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Banners Hero</h1>
@@ -77,7 +77,7 @@ export default function BannersPage() {
             <CardTitle>Tipos de Banner Hero</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
+            <div className="space-y-3">
               <div className="flex items-center justify-between p-3 rounded-lg border">
                 <div className="flex items-center gap-3">
                   <Image className="h-8 w-8 text-blue-600" />

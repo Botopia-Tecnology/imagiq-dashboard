@@ -100,7 +100,7 @@ export default function BodegaPage() {
   }, []);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -166,7 +166,7 @@ export default function BodegaPage() {
         </div>
 
         {/* Side Panel */}
-        <div className="space-y-6">
+        <div className="space-y-3">
           {/* Shift Control */}
           <Card>
             <CardHeader className="pb-3">

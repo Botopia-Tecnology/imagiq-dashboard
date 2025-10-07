@@ -24,6 +24,11 @@ export default function CrearBannerPage() {
   const searchParams = useSearchParams();
   const typeFromUrl = searchParams.get('type') as 'image' | 'video' | 'component' | null;
 
+  // Parámetros de configuración del banner
+  const bannerPlacement = searchParams.get('type'); // hero, subheader, category-top, etc.
+  const deviceType = searchParams.get('device'); // same, different
+  const subcategory = searchParams.get('subcategory');
+
   const [bannerData, setBannerData] = useState<Partial<HeroBanner>>({
     name: "",
     type: typeFromUrl || "image",
@@ -46,7 +51,7 @@ export default function CrearBannerPage() {
   } as Partial<HeroBanner> & { hasEndDate: boolean });
 
   const handleGoBack = () => {
-    router.push('/marketing/banners');
+    router.push('/marketing/banners/crear/seleccionar-tipo');
   };
 
   const handleSave = () => {
@@ -58,28 +63,38 @@ export default function CrearBannerPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="sm" onClick={handleGoBack}>
           <ArrowLeft className="mr-2 h-4 w-4" />
           Volver
         </Button>
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Crear Banner Hero</h1>
+        <div className="flex-1">
+          <div className="flex items-center gap-2">
+            <h1 className="text-3xl font-bold tracking-tight">Crear Banner</h1>
+            {bannerPlacement && (
+              <Badge variant="secondary" className="capitalize">
+                {bannerPlacement.replace('-', ' ')}
+              </Badge>
+            )}
+            {deviceType === 'different' && (
+              <Badge variant="outline">Diseños separados</Badge>
+            )}
+          </div>
           <p className="text-muted-foreground">
-            Configura tu nuevo banner para el hero section
+            Configura tu nuevo banner {subcategory && `para ${subcategory}`}
           </p>
         </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Form */}
-        <div className="space-y-6">
+        <div className="space-y-3">
           <Card>
             <CardHeader>
               <CardTitle>Información Básica</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3">
               <div className="space-y-2">
                 <Label htmlFor="name">Nombre del Banner</Label>
                 <Input
@@ -146,7 +161,7 @@ export default function CrearBannerPage() {
                   {bannerData.type === "image" ? "Imagen del Banner" : "Video del Banner"}
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-3">
                 <div className="space-y-2">
                   <Label htmlFor="mediaUrl">
                     URL {bannerData.type === "image" ? "de la Imagen" : "del Video"}
@@ -183,7 +198,7 @@ export default function CrearBannerPage() {
                 <CardHeader>
                   <CardTitle>Contenido del Componente</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-3">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="title">Título Principal</Label>
@@ -296,7 +311,7 @@ export default function CrearBannerPage() {
             <CardHeader>
               <CardTitle>Programación</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3">
               <div className="space-y-2">
                 <Label>Fecha de Inicio</Label>
                 <Popover>
@@ -365,7 +380,7 @@ export default function CrearBannerPage() {
         </div>
 
         {/* Preview */}
-        <div className="space-y-6">
+        <div className="space-y-3">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -382,7 +397,7 @@ export default function CrearBannerPage() {
             <CardHeader>
               <CardTitle>Información del Banner</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3">
               <div className="space-y-3">
                 <div>
                   <h3 className="font-semibold">{bannerData.name || "Nombre del Banner"}</h3>
