@@ -515,6 +515,38 @@ export default function CrearCampaignInWebPage() {
                 <Label htmlFor="sendImmediately">Enviar inmediatamente</Label>
               </div>
 
+              {!inWebData.sendImmediately && (
+                <div className="space-y-3 pt-2 border-t">
+                  <div className="space-y-2">
+                    <Label htmlFor="scheduledDate">Fecha y Hora de Envío</Label>
+                    <Input
+                      id="scheduledDate"
+                      type="datetime-local"
+                      value={
+                        inWebData.scheduledDate
+                          ? new Date(
+                              inWebData.scheduledDate.getTime() -
+                                inWebData.scheduledDate.getTimezoneOffset() *
+                                  60000
+                            )
+                              .toISOString()
+                              .slice(0, 16)
+                          : ""
+                      }
+                      onChange={(e) =>
+                        setInWebData((prev) => ({
+                          ...prev,
+                          scheduledDate: e.target.value
+                            ? new Date(e.target.value)
+                            : null,
+                        }))
+                      }
+                      min={new Date().toISOString().slice(0, 16)}
+                    />
+                  </div>
+                </div>
+              )}
+
               <div className="flex items-center space-x-2">
                 <Switch
                   id="enableABTest"
