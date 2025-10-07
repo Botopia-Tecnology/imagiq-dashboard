@@ -364,10 +364,10 @@ export default function CrearCampaignInWebPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="3600">1 hora</SelectItem>
-                      <SelectItem value="86400">24 horas</SelectItem>
-                      <SelectItem value="604800">7 días</SelectItem>
-                      <SelectItem value="2592000">30 días</SelectItem>
+                      <SelectItem value="3600">10</SelectItem>
+                      <SelectItem value="86400">60</SelectItem>
+                      <SelectItem value="604800">120</SelectItem>
+                      <SelectItem value="2592000">180</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
