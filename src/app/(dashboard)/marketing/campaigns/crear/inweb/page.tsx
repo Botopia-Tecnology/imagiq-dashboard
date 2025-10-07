@@ -6,15 +6,35 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
-import { ArrowLeft, Globe, Save, Send, Eye, Clock, Target, Settings, AlertCircle } from "lucide-react";
+import {
+  ArrowLeft,
+  Globe,
+  Save,
+  Send,
+  Eye,
+  Clock,
+  Target,
+  Settings,
+  AlertCircle,
+  Upload,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { InWebPreview } from "@/components/campaigns/inweb/inweb-preview";
-import { AudienceSegmentation, AudienceSegmentationData } from "@/components/campaigns/audience-segmentation";
+import {
+  AudienceSegmentation,
+  AudienceSegmentationData,
+} from "@/components/campaigns/audience-segmentation";
 
 export default function CrearCampaignInWebPage() {
   const router = useRouter();
@@ -63,6 +83,8 @@ export default function CrearCampaignInWebPage() {
     urgency: string;
     enableFallback: boolean;
     fallbackMessage: string;
+    contentType: "image" | "html";
+    htmlContent: string;
   }>({
     // Campaign Info
     campaignName: "",
@@ -125,7 +147,11 @@ export default function CrearCampaignInWebPage() {
     ttl: 86400, // 24 hours in seconds
     urgency: "normal",
     enableFallback: true,
-    fallbackMessage: ""
+    fallbackMessage: "",
+
+    // Content Type
+    contentType: "image",
+    htmlContent: "",
   });
 
   const titleLength = inWebData.title.length;
@@ -134,7 +160,7 @@ export default function CrearCampaignInWebPage() {
   const isMessageValid = messageLength <= 120;
 
   const handleGoBack = () => {
-    router.push('/marketing/campaigns');
+    router.push("/marketing/campaigns");
   };
 
   const handleSave = () => {
@@ -146,18 +172,20 @@ export default function CrearCampaignInWebPage() {
   };
 
   const handlePlatformToggle = (platform: string) => {
-    setInWebData(prev => ({
+    setInWebData((prev) => ({
       ...prev,
       platforms: prev.platforms.includes(platform)
-        ? prev.platforms.filter(p => p !== platform)
-        : [...prev.platforms, platform]
+        ? prev.platforms.filter((p) => p !== platform)
+        : [...prev.platforms, platform],
     }));
   };
 
-  const handleSegmentationChange = (segmentationData: AudienceSegmentationData) => {
-    setInWebData(prev => ({
+  const handleSegmentationChange = (
+    segmentationData: AudienceSegmentationData
+  ) => {
+    setInWebData((prev) => ({
       ...prev,
-      ...segmentationData
+      ...segmentationData,
     }));
   };
 
@@ -169,7 +197,9 @@ export default function CrearCampaignInWebPage() {
           Volver
         </Button>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Crear Campaña InWeb</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Crear Campaña InWeb
+          </h1>
           <p className="text-muted-foreground">
             Configura tu campaña de notificaciones web push
           </p>
@@ -194,7 +224,12 @@ export default function CrearCampaignInWebPage() {
                   id="campaignName"
                   placeholder="Ej: Push Black Friday 2024"
                   value={inWebData.campaignName}
-                  onChange={(e) => setInWebData(prev => ({ ...prev, campaignName: e.target.value }))}
+                  onChange={(e) =>
+                    setInWebData((prev) => ({
+                      ...prev,
+                      campaignName: e.target.value,
+                    }))
+                  }
                 />
               </div>
 
@@ -202,7 +237,9 @@ export default function CrearCampaignInWebPage() {
                 <Label htmlFor="campaignType">Tipo de Campaña</Label>
                 <Select
                   value={inWebData.campaignType}
-                  onValueChange={(value) => setInWebData(prev => ({ ...prev, campaignType: value }))}
+                  onValueChange={(value) =>
+                    setInWebData((prev) => ({ ...prev, campaignType: value }))
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Seleccionar tipo" />
@@ -212,7 +249,9 @@ export default function CrearCampaignInWebPage() {
                     <SelectItem value="transactional">Transaccional</SelectItem>
                     <SelectItem value="news">Noticias</SelectItem>
                     <SelectItem value="reminder">Recordatorio</SelectItem>
-                    <SelectItem value="abandoned-cart">Carrito Abandonado</SelectItem>
+                    <SelectItem value="abandoned-cart">
+                      Carrito Abandonado
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -242,7 +281,9 @@ export default function CrearCampaignInWebPage() {
                 <Label htmlFor="displayStyle">Estilo de Presentación</Label>
                 <Select
                   value={inWebData.displayStyle}
-                  onValueChange={(value: "popup" | "slider") => setInWebData(prev => ({ ...prev, displayStyle: value }))}
+                  onValueChange={(value: "popup" | "slider") =>
+                    setInWebData((prev) => ({ ...prev, displayStyle: value }))
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Seleccionar estilo" />
@@ -255,14 +296,20 @@ export default function CrearCampaignInWebPage() {
               </div>
 
               <div className="space-y-3">
-
                 <div className="flex items-center space-x-2">
                   <Switch
                     id="enableFrequencyCap"
                     checked={inWebData.enableFrequencyCap}
-                    onCheckedChange={(checked) => setInWebData(prev => ({ ...prev, enableFrequencyCap: checked }))}
+                    onCheckedChange={(checked) =>
+                      setInWebData((prev) => ({
+                        ...prev,
+                        enableFrequencyCap: checked,
+                      }))
+                    }
                   />
-                  <Label htmlFor="enableFrequencyCap">Límite de frecuencia</Label>
+                  <Label htmlFor="enableFrequencyCap">
+                    Límite de frecuencia
+                  </Label>
                 </div>
               </div>
 
@@ -272,7 +319,12 @@ export default function CrearCampaignInWebPage() {
                     <Label>Máximo por día: {inWebData.maxPerDay}</Label>
                     <Slider
                       value={[inWebData.maxPerDay]}
-                      onValueChange={(value) => setInWebData(prev => ({ ...prev, maxPerDay: value[0] }))}
+                      onValueChange={(value) =>
+                        setInWebData((prev) => ({
+                          ...prev,
+                          maxPerDay: value[0],
+                        }))
+                      }
                       max={10}
                       min={1}
                       step={1}
@@ -282,7 +334,12 @@ export default function CrearCampaignInWebPage() {
                     <Label>Máximo por semana: {inWebData.maxPerWeek}</Label>
                     <Slider
                       value={[inWebData.maxPerWeek]}
-                      onValueChange={(value) => setInWebData(prev => ({ ...prev, maxPerWeek: value[0] }))}
+                      onValueChange={(value) =>
+                        setInWebData((prev) => ({
+                          ...prev,
+                          maxPerWeek: value[0],
+                        }))
+                      }
                       max={50}
                       min={1}
                       step={1}
@@ -296,7 +353,12 @@ export default function CrearCampaignInWebPage() {
                   <Label htmlFor="ttl">TTL (segundos)</Label>
                   <Select
                     value={inWebData.ttl.toString()}
-                    onValueChange={(value) => setInWebData(prev => ({ ...prev, ttl: parseInt(value) }))}
+                    onValueChange={(value) =>
+                      setInWebData((prev) => ({
+                        ...prev,
+                        ttl: parseInt(value),
+                      }))
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -314,7 +376,9 @@ export default function CrearCampaignInWebPage() {
                   <Label htmlFor="urgency">Urgencia</Label>
                   <Select
                     value={inWebData.urgency}
-                    onValueChange={(value) => setInWebData(prev => ({ ...prev, urgency: value }))}
+                    onValueChange={(value) =>
+                      setInWebData((prev) => ({ ...prev, urgency: value }))
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -340,18 +404,91 @@ export default function CrearCampaignInWebPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-
-
               <div className="space-y-2">
-                <Label htmlFor="url">URL de Destino</Label>
-                <Input
-                  id="url"
-                  placeholder="https://tuempresa.com/ofertas"
-                  value={inWebData.url}
-                  onChange={(e) => setInWebData(prev => ({ ...prev, url: e.target.value }))}
-                />
+                <Label htmlFor="contentType">Tipo de Contenido</Label>
+                <Select
+                  value={inWebData.contentType}
+                  onValueChange={(value: "image" | "html") =>
+                    setInWebData((prev) => ({ ...prev, contentType: value }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="image">Imagen con URL</SelectItem>
+                    <SelectItem value="html">HTML Personalizado</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
+              {inWebData.contentType === "image" ? (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="imageUpload">Subir Imagen</Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="imageUpload"
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onloadend = () => {
+                              setInWebData((prev) => ({
+                                ...prev,
+                                image: reader.result as string,
+                              }));
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                        className="flex-1"
+                      />
+                      <Upload className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="url">URL de Destino</Label>
+                    <Input
+                      id="url"
+                      placeholder="https://tuempresa.com/ofertas"
+                      value={inWebData.url}
+                      onChange={(e) =>
+                        setInWebData((prev) => ({
+                          ...prev,
+                          url: e.target.value,
+                        }))
+                      }
+                    />
+                  </div>
+                </>
+              ) : (
+                <div className="space-y-2">
+                  <Label htmlFor="htmlContent">Contenido HTML</Label>
+                  <Textarea
+                    id="htmlContent"
+                    placeholder="<div style='padding: 20px; background: linear-gradient(to right, #667eea, #764ba2); color: white;'>
+  <h2>¡Oferta Especial!</h2>
+  <p>50% de descuento en todos los productos</p>
+</div>"
+                    value={inWebData.htmlContent}
+                    onChange={(e) =>
+                      setInWebData((prev) => ({
+                        ...prev,
+                        htmlContent: e.target.value,
+                      }))
+                    }
+                    rows={8}
+                    className="font-mono text-sm"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Puedes usar HTML y CSS inline para personalizar el contenido
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -368,7 +505,12 @@ export default function CrearCampaignInWebPage() {
                 <Switch
                   id="sendImmediately"
                   checked={inWebData.sendImmediately}
-                  onCheckedChange={(checked) => setInWebData(prev => ({ ...prev, sendImmediately: checked }))}
+                  onCheckedChange={(checked) =>
+                    setInWebData((prev) => ({
+                      ...prev,
+                      sendImmediately: checked,
+                    }))
+                  }
                 />
                 <Label htmlFor="sendImmediately">Enviar inmediatamente</Label>
               </div>
@@ -377,7 +519,9 @@ export default function CrearCampaignInWebPage() {
                 <Switch
                   id="enableABTest"
                   checked={inWebData.enableABTest}
-                  onCheckedChange={(checked) => setInWebData(prev => ({ ...prev, enableABTest: checked }))}
+                  onCheckedChange={(checked) =>
+                    setInWebData((prev) => ({ ...prev, enableABTest: checked }))
+                  }
                 />
                 <Label htmlFor="enableABTest">Habilitar prueba A/B</Label>
               </div>
@@ -416,10 +560,11 @@ export default function CrearCampaignInWebPage() {
                 url={inWebData.url}
                 companyName={inWebData.companyName}
                 displayStyle={inWebData.displayStyle}
+                contentType={inWebData.contentType}
+                htmlContent={inWebData.htmlContent}
               />
             </CardContent>
           </Card>
-
         </div>
       </div>
     </div>

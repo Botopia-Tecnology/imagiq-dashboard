@@ -14,6 +14,8 @@ interface InWebPreviewProps {
   url?: string;
   companyName?: string;
   displayStyle?: "popup" | "slider";
+  contentType?: "image" | "html";
+  htmlContent?: string;
 }
 
 export function InWebPreview({
@@ -26,7 +28,9 @@ export function InWebPreview({
   badge,
   url = "https://tuempresa.com",
   companyName = "Tu Empresa",
-  displayStyle = "popup"
+  displayStyle = "popup",
+  contentType = "image",
+  htmlContent = ""
 }: InWebPreviewProps) {
   const defaultIcon = "https://images.unsplash.com/photo-1572044162444-ad60f128bdea?w=64&h=64&fit=crop&crop=center";
 
@@ -61,7 +65,12 @@ export function InWebPreview({
           </div>
         </div>
 
-        {image && (
+        {contentType === "html" && htmlContent ? (
+          <div
+            className="mt-3 rounded-lg overflow-hidden"
+            dangerouslySetInnerHTML={{ __html: htmlContent }}
+          />
+        ) : image ? (
           <div className="mt-3 rounded-lg overflow-hidden">
             <img
               src={image}
@@ -69,7 +78,7 @@ export function InWebPreview({
               className="w-full h-32 object-cover"
             />
           </div>
-        )}
+        ) : null}
 
         {(actionButton1 || actionButton2) && (
           <div className="flex gap-2 mt-3">
@@ -150,7 +159,12 @@ export function InWebPreview({
           </div>
         </div>
 
-        {image && (
+        {contentType === "html" && htmlContent ? (
+          <div
+            className="mt-3 rounded overflow-hidden"
+            dangerouslySetInnerHTML={{ __html: htmlContent }}
+          />
+        ) : image ? (
           <div className="mt-3 rounded overflow-hidden">
             <img
               src={image}
@@ -158,7 +172,7 @@ export function InWebPreview({
               className="w-full h-24 object-cover"
             />
           </div>
-        )}
+        ) : null}
       </div>
     </div>
   );
