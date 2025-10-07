@@ -10,6 +10,7 @@ import { Slider } from "@/components/ui/slider";
 import { Users, X } from "lucide-react";
 
 export interface AudienceSegmentationData {
+  targetAudience?: string;
   selectedCities: string[];
   purchaseOperator: string;
   purchaseCount: number;
@@ -62,6 +63,27 @@ export function AudienceSegmentation({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Audience Selector */}
+        <div className="space-y-2">
+          <Label htmlFor="targetAudience">Audiencia</Label>
+          <Select
+            value={data.targetAudience}
+            onValueChange={(value) => onChange({ ...data, targetAudience: value })}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Seleccionar audiencia" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos los usuarios</SelectItem>
+              <SelectItem value="subscribers">Solo suscriptores</SelectItem>
+              <SelectItem value="customers">Solo clientes</SelectItem>
+              <SelectItem value="visitors">Visitantes nuevos</SelectItem>
+              <SelectItem value="returning">Usuarios recurrentes</SelectItem>
+              <SelectItem value="inactive">Usuarios inactivos</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
         {/* Cities */}
         <div className="space-y-2">
           <Label htmlFor="citySelector">Ciudades</Label>

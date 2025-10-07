@@ -19,7 +19,51 @@ import { AudienceSegmentation, AudienceSegmentationData } from "@/components/cam
 export default function CrearCampaignInWebPage() {
   const router = useRouter();
 
-  const [inWebData, setInWebData] = useState({
+  const [inWebData, setInWebData] = useState<{
+    campaignName: string;
+    campaignType: string;
+    targetAudience: string;
+    title: string;
+    message: string;
+    icon: string;
+    image: string;
+    url: string;
+    companyName: string;
+    actionButton1: string;
+    actionButton1Url: string;
+    actionButton2: string;
+    actionButton2Url: string;
+    displayStyle: "popup" | "slider";
+    requireInteraction: boolean;
+    silent: boolean;
+    badge: string;
+    tag: string;
+    renotify: boolean;
+    platforms: string[];
+    geoLocation: string;
+    deviceType: string;
+    browserLanguage: string;
+    selectedCities: string[];
+    purchaseOperator: string;
+    purchaseCount: number;
+    minAge: number;
+    maxAge: number;
+    sendImmediately: boolean;
+    scheduledDate: Date | null;
+    timeZone: string;
+    quietHours: boolean;
+    quietStart: string;
+    quietEnd: string;
+    enableFrequencyCap: boolean;
+    maxPerDay: number;
+    maxPerWeek: number;
+    enableABTest: boolean;
+    abTestPercentage: number;
+    ttl: number;
+    urgency: string;
+    enableFallback: boolean;
+    fallbackMessage: string;
+  }>({
     // Campaign Info
     campaignName: "",
     campaignType: "promotional",
@@ -40,6 +84,7 @@ export default function CrearCampaignInWebPage() {
     actionButton2Url: "",
 
     // Behavior Settings
+    displayStyle: "popup", // "popup" (bloqueante) o "slider" (tipo toast)
     requireInteraction: false,
     silent: false,
     badge: "",
@@ -153,45 +198,23 @@ export default function CrearCampaignInWebPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="campaignType">Tipo de Campaña</Label>
-                  <Select
-                    value={inWebData.campaignType}
-                    onValueChange={(value) => setInWebData(prev => ({ ...prev, campaignType: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar tipo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="promotional">Promocional</SelectItem>
-                      <SelectItem value="transactional">Transaccional</SelectItem>
-                      <SelectItem value="news">Noticias</SelectItem>
-                      <SelectItem value="reminder">Recordatorio</SelectItem>
-                      <SelectItem value="abandoned-cart">Carrito Abandonado</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="targetAudience">Audiencia</Label>
-                  <Select
-                    value={inWebData.targetAudience}
-                    onValueChange={(value) => setInWebData(prev => ({ ...prev, targetAudience: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar audiencia" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todos los usuarios</SelectItem>
-                      <SelectItem value="subscribers">Solo suscriptores</SelectItem>
-                      <SelectItem value="customers">Solo clientes</SelectItem>
-                      <SelectItem value="visitors">Visitantes nuevos</SelectItem>
-                      <SelectItem value="returning">Usuarios recurrentes</SelectItem>
-                      <SelectItem value="inactive">Usuarios inactivos</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="campaignType">Tipo de Campaña</Label>
+                <Select
+                  value={inWebData.campaignType}
+                  onValueChange={(value) => setInWebData(prev => ({ ...prev, campaignType: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="promotional">Promocional</SelectItem>
+                    <SelectItem value="transactional">Transaccional</SelectItem>
+                    <SelectItem value="news">Noticias</SelectItem>
+                    <SelectItem value="reminder">Recordatorio</SelectItem>
+                    <SelectItem value="abandoned-cart">Carrito Abandonado</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </CardContent>
           </Card>
@@ -199,6 +222,7 @@ export default function CrearCampaignInWebPage() {
           {/* Audience Segmentation */}
           <AudienceSegmentation
             data={{
+              targetAudience: inWebData.targetAudience,
               selectedCities: inWebData.selectedCities,
               purchaseOperator: inWebData.purchaseOperator,
               purchaseCount: inWebData.purchaseCount,
@@ -207,6 +231,105 @@ export default function CrearCampaignInWebPage() {
             }}
             onChange={handleSegmentationChange}
           />
+
+          {/* Behavior Settings */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Configuración de Comportamiento</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="space-y-2">
+                <Label htmlFor="displayStyle">Estilo de Presentación</Label>
+                <Select
+                  value={inWebData.displayStyle}
+                  onValueChange={(value: "popup" | "slider") => setInWebData(prev => ({ ...prev, displayStyle: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar estilo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="popup">Pop-up (Bloqueante)</SelectItem>
+                    <SelectItem value="slider">Slider (Tipo Toast)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-3">
+
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="enableFrequencyCap"
+                    checked={inWebData.enableFrequencyCap}
+                    onCheckedChange={(checked) => setInWebData(prev => ({ ...prev, enableFrequencyCap: checked }))}
+                  />
+                  <Label htmlFor="enableFrequencyCap">Límite de frecuencia</Label>
+                </div>
+              </div>
+
+              {inWebData.enableFrequencyCap && (
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                  <div className="space-y-2">
+                    <Label>Máximo por día: {inWebData.maxPerDay}</Label>
+                    <Slider
+                      value={[inWebData.maxPerDay]}
+                      onValueChange={(value) => setInWebData(prev => ({ ...prev, maxPerDay: value[0] }))}
+                      max={10}
+                      min={1}
+                      step={1}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Máximo por semana: {inWebData.maxPerWeek}</Label>
+                    <Slider
+                      value={[inWebData.maxPerWeek]}
+                      onValueChange={(value) => setInWebData(prev => ({ ...prev, maxPerWeek: value[0] }))}
+                      max={50}
+                      min={1}
+                      step={1}
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="ttl">TTL (segundos)</Label>
+                  <Select
+                    value={inWebData.ttl.toString()}
+                    onValueChange={(value) => setInWebData(prev => ({ ...prev, ttl: parseInt(value) }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="3600">1 hora</SelectItem>
+                      <SelectItem value="86400">24 horas</SelectItem>
+                      <SelectItem value="604800">7 días</SelectItem>
+                      <SelectItem value="2592000">30 días</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="urgency">Urgencia</Label>
+                  <Select
+                    value={inWebData.urgency}
+                    onValueChange={(value) => setInWebData(prev => ({ ...prev, urgency: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="very-low">Muy Baja</SelectItem>
+                      <SelectItem value="low">Baja</SelectItem>
+                      <SelectItem value="normal">Normal</SelectItem>
+                      <SelectItem value="high">Alta</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Notification Content */}
           <Card>
@@ -318,181 +441,6 @@ export default function CrearCampaignInWebPage() {
             </CardContent>
           </Card>
 
-          {/* Platform Targeting */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Settings className="h-5 w-5" />
-                Configuración de Plataforma
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="space-y-3">
-                <Label>Navegadores Compatible</Label>
-                <div className="grid grid-cols-2 gap-3">
-                  {[
-                    { id: "chrome", label: "Chrome" },
-                    { id: "firefox", label: "Firefox" },
-                    { id: "safari", label: "Safari" },
-                    { id: "edge", label: "Edge" }
-                  ].map((browser) => (
-                    <div key={browser.id} className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        id={browser.id}
-                        checked={inWebData.platforms.includes(browser.id)}
-                        onChange={() => handlePlatformToggle(browser.id)}
-                        className="rounded border-gray-300"
-                      />
-                      <Label htmlFor={browser.id} className="text-sm">
-                        {browser.label}
-                      </Label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="deviceType">Tipo de Dispositivo</Label>
-                  <Select
-                    value={inWebData.deviceType}
-                    onValueChange={(value) => setInWebData(prev => ({ ...prev, deviceType: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar dispositivo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todos</SelectItem>
-                      <SelectItem value="desktop">Solo Desktop</SelectItem>
-                      <SelectItem value="mobile">Solo Móvil</SelectItem>
-                      <SelectItem value="tablet">Solo Tablet</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="browserLanguage">Idioma del Navegador</Label>
-                  <Select
-                    value={inWebData.browserLanguage}
-                    onValueChange={(value) => setInWebData(prev => ({ ...prev, browserLanguage: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar idioma" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todos</SelectItem>
-                      <SelectItem value="es">Español</SelectItem>
-                      <SelectItem value="en">Inglés</SelectItem>
-                      <SelectItem value="pt">Portugués</SelectItem>
-                      <SelectItem value="fr">Francés</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Behavior Settings */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Configuración de Comportamiento</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="space-y-3">
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="requireInteraction"
-                    checked={inWebData.requireInteraction}
-                    onCheckedChange={(checked) => setInWebData(prev => ({ ...prev, requireInteraction: checked }))}
-                  />
-                  <Label htmlFor="requireInteraction">Requiere interacción del usuario</Label>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="silent"
-                    checked={inWebData.silent}
-                    onCheckedChange={(checked) => setInWebData(prev => ({ ...prev, silent: checked }))}
-                  />
-                  <Label htmlFor="silent">Notificación silenciosa</Label>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="enableFrequencyCap"
-                    checked={inWebData.enableFrequencyCap}
-                    onCheckedChange={(checked) => setInWebData(prev => ({ ...prev, enableFrequencyCap: checked }))}
-                  />
-                  <Label htmlFor="enableFrequencyCap">Límite de frecuencia</Label>
-                </div>
-              </div>
-
-              {inWebData.enableFrequencyCap && (
-                <div className="grid grid-cols-2 gap-4 mt-4">
-                  <div className="space-y-2">
-                    <Label>Máximo por día: {inWebData.maxPerDay}</Label>
-                    <Slider
-                      value={[inWebData.maxPerDay]}
-                      onValueChange={(value) => setInWebData(prev => ({ ...prev, maxPerDay: value[0] }))}
-                      max={10}
-                      min={1}
-                      step={1}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Máximo por semana: {inWebData.maxPerWeek}</Label>
-                    <Slider
-                      value={[inWebData.maxPerWeek]}
-                      onValueChange={(value) => setInWebData(prev => ({ ...prev, maxPerWeek: value[0] }))}
-                      max={50}
-                      min={1}
-                      step={1}
-                    />
-                  </div>
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="ttl">TTL (segundos)</Label>
-                  <Select
-                    value={inWebData.ttl.toString()}
-                    onValueChange={(value) => setInWebData(prev => ({ ...prev, ttl: parseInt(value) }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="3600">1 hora</SelectItem>
-                      <SelectItem value="86400">24 horas</SelectItem>
-                      <SelectItem value="604800">7 días</SelectItem>
-                      <SelectItem value="2592000">30 días</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="urgency">Urgencia</Label>
-                  <Select
-                    value={inWebData.urgency}
-                    onValueChange={(value) => setInWebData(prev => ({ ...prev, urgency: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="very-low">Muy Baja</SelectItem>
-                      <SelectItem value="low">Baja</SelectItem>
-                      <SelectItem value="normal">Normal</SelectItem>
-                      <SelectItem value="high">Alta</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
           {/* Scheduling */}
           <Card>
             <CardHeader>
@@ -509,15 +457,6 @@ export default function CrearCampaignInWebPage() {
                   onCheckedChange={(checked) => setInWebData(prev => ({ ...prev, sendImmediately: checked }))}
                 />
                 <Label htmlFor="sendImmediately">Enviar inmediatamente</Label>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="quietHours"
-                  checked={inWebData.quietHours}
-                  onCheckedChange={(checked) => setInWebData(prev => ({ ...prev, quietHours: checked }))}
-                />
-                <Label htmlFor="quietHours">Respetar horario de silencio</Label>
               </div>
 
               <div className="flex items-center space-x-2">
@@ -562,6 +501,7 @@ export default function CrearCampaignInWebPage() {
                 actionButton2={inWebData.actionButton2}
                 url={inWebData.url}
                 companyName={inWebData.companyName}
+                displayStyle={inWebData.displayStyle}
               />
             </CardContent>
           </Card>
