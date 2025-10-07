@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Chrome, Apple, Globe, X, Bell } from "lucide-react";
+import { Monitor, Apple, Globe, X, Bell } from "lucide-react";
 
 interface InWebPreviewProps {
   title?: string;
@@ -194,11 +194,11 @@ export function InWebPreview({
 
   return (
     <div className="space-y-6">
-      <Tabs defaultValue="chrome" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="chrome" className="flex items-center gap-2">
-            <Chrome className="h-4 w-4" />
-            Chrome
+      <Tabs defaultValue="desktop" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="desktop" className="flex items-center gap-2">
+            <Monitor className="h-4 w-4" />
+            Desktop
           </TabsTrigger>
           <TabsTrigger value="mobile" className="flex items-center gap-2">
             <Globe className="h-4 w-4" />
@@ -206,11 +206,11 @@ export function InWebPreview({
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="chrome" className="space-y-4">
+        <TabsContent value="desktop" className="space-y-4">
           <div className="p-6 bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-950 dark:to-indigo-950 rounded-lg">
             <div className="mb-4">
               <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-1">
-                Chrome Desktop - {displayStyle === "popup" ? "Pop-up (Bloqueante)" : "Slider (Toast)"}
+                Desktop - {displayStyle === "popup" ? "Pop-up (Bloqueante)" : "Slider (Toast)"}
               </h3>
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 {displayStyle === "popup"
@@ -228,7 +228,7 @@ export function InWebPreview({
           <div className="p-6 bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-950 dark:to-emerald-950 rounded-lg">
             <div className="mb-4">
               <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-1">
-                Chrome Mobile - {displayStyle === "popup" ? "Pop-up (Bloqueante)" : "Slider (Toast)"}
+                Mobile - {displayStyle === "popup" ? "Pop-up (Bloqueante)" : "Slider (Toast)"}
               </h3>
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 {displayStyle === "popup"
