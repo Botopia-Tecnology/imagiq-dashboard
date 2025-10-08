@@ -23,70 +23,70 @@ export function InWebPreview({
     const hasContent = (contentType === "html" && htmlContent) || image;
 
     return (
-      <div className="relative w-full h-[400px] rounded-lg overflow-hidden bg-gray-100">
-        {/* Imagen de fondo con blur condicional para popup */}
-        <div className="absolute inset-0 flex items-center justify-center">
+      <div className="relative w-full h-[400px] rounded-lg flex items-center justify-center">
+        {/* Contenedor de la imagen con posición relativa para los elementos superpuestos */}
+        <div className="relative max-w-full max-h-full">
           <img
             src="/compu2.jpg"
             alt=""
-            className={`w-full h-full object-contain ${hasContent ? "blur-sm" : ""}`}
+            className="max-w-full max-h-[400px] object-contain rounded-lg"
           />
-        </div>
-        {/* Overlay oscuro solo si hay contenido */}
-        {hasContent && <div className="absolute inset-0 bg-black/30" />}
-        {/* Modal centrado solo si hay contenido */}
-        {hasContent && (
-          <div className="absolute inset-0 flex items-center justify-center z-10">
-            <div className="bg-white border border-gray-200 rounded-lg shadow-2xl p-4 max-w-sm">
-              {contentType === "html" && htmlContent ? (
-                <div
-                  className="mt-3 rounded-lg overflow-hidden"
-                  dangerouslySetInnerHTML={{ __html: htmlContent }}
-                />
-              ) : image ? (
-                <div className="mt-3 rounded-lg overflow-hidden">
-                  <img
-                    src={image}
-                    alt="Notification"
-                    className="w-full h-32 object-cover"
+          {/* Overlay oscuro solo si hay contenido */}
+          {hasContent && <div className="absolute inset-0 bg-black/30 rounded-lg" />}
+          {/* Modal centrado solo si hay contenido */}
+          {hasContent && (
+            <div className="absolute inset-0 flex items-center justify-center z-10">
+              <div className="bg-white border border-gray-200 rounded-lg shadow-2xl p-4 max-w-sm">
+                {contentType === "html" && htmlContent ? (
+                  <div
+                    className="mt-3 rounded-lg overflow-hidden"
+                    dangerouslySetInnerHTML={{ __html: htmlContent }}
                   />
-                </div>
-              ) : null}
+                ) : image ? (
+                  <div className="mt-3 rounded-lg overflow-hidden">
+                    <img
+                      src={image}
+                      alt="Notification"
+                      className="w-full h-32 object-cover"
+                    />
+                  </div>
+                ) : null}
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     );
   };
 
   // Chrome Desktop Notification - Slider (tipo toast)
   const ChromeNotificationSlider = () => (
-    <div className="relative w-full h-[400px] rounded-lg overflow-hidden bg-gray-100">
-      {/* Imagen de fondo sin blur para slider */}
-      <div className="absolute inset-0 flex items-center justify-center">
+    <div className="relative w-full h-[400px] rounded-lg flex items-center justify-center">
+      {/* Contenedor de la imagen con posición relativa para los elementos superpuestos */}
+      <div className="relative max-w-full max-h-full">
         <img
           src="/compu.jpg"
           alt=""
-          className="w-full h-full object-contain"
+          className="max-w-full max-h-[400px] object-contain rounded-lg"
         />
-      </div>
-      {/* Modal en la esquina superior derecha */}
-      <div className="absolute top-4 right-4 z-10">
-        <div className="bg-white border border-gray-200 rounded-lg shadow-2xl p-4 max-w-sm">
-          {contentType === "html" && htmlContent ? (
-            <div
-              className="mt-3 rounded-lg overflow-hidden"
-              dangerouslySetInnerHTML={{ __html: htmlContent }}
-            />
-          ) : image ? (
-            <div className="mt-3 rounded-lg overflow-hidden">
-              <img
-                src={image}
-                alt="Notification"
-                className="w-full h-32 object-cover"
+        {/* Modal en la esquina superior derecha */}
+        <div className="absolute top-4 right-4 z-10">
+          <div className="bg-white border border-gray-200 rounded-lg shadow-2xl p-4 max-w-sm">
+            {contentType === "html" && htmlContent ? (
+              <div
+                className="mt-3 rounded-lg overflow-hidden"
+                dangerouslySetInnerHTML={{ __html: htmlContent }}
               />
-            </div>
-          ) : null}
+            ) : image ? (
+              <div className="mt-3 rounded-lg overflow-hidden">
+                <img
+                  src={image}
+                  alt="Notification"
+                  className="w-full h-32 object-cover"
+                />
+              </div>
+            ) : null}
+          </div>
         </div>
       </div>
     </div>
@@ -102,72 +102,64 @@ export function InWebPreview({
     const hasContent = (contentType === "html" && htmlContent) || image;
 
     return (
-      <div className="relative w-full h-[600px] max-w-[375px] mx-auto rounded-lg">
-        {/* Contenedor para limitar la imagen base */}
-        <div className="absolute inset-0 flex items-center justify-center overflow-hidden rounded-lg">
+      <div className="relative w-full h-[600px] max-w-[375px] mx-auto rounded-lg flex items-center justify-center">
+        {/* Contenedor de la imagen con posición relativa para los elementos superpuestos */}
+        <div className="relative h-full w-auto">
           <img src="/cell.jpg" alt="" className="h-full w-auto object-contain rounded-xl" />
-        </div>
-        {/* Capa con blur limitada */}
-        {hasContent && (
-          <div className="absolute inset-0 flex items-center justify-center overflow-hidden rounded-lg">
-            <img src="/cell.jpg" alt="" className="h-full w-auto object-contain blur-sm rounded-xl" />
-          </div>
-        )}
-        {/* Overlay oscuro solo si hay contenido */}
-        {hasContent && (
-          <div className="absolute inset-0 flex items-center justify-center overflow-hidden rounded-lg">
-            <div className="h-full w-auto aspect-[9/19.5] bg-black/30 rounded-xl" />
-          </div>
-        )}
-        {/* Modal centrado solo si hay contenido */}
-        {hasContent && (
-          <div className="absolute inset-0 flex items-center justify-center z-10 px-[15%] py-4">
-            <div className="bg-white border border-gray-200 rounded-lg shadow-2xl p-4 w-full max-w-xs">
-              {contentType === "html" && htmlContent ? (
-                <div
-                  className="rounded overflow-hidden"
-                  dangerouslySetInnerHTML={{ __html: htmlContent }}
-                />
-              ) : image ? (
-                <div className="rounded overflow-hidden">
-                  <img
-                    src={image}
-                    alt="Notification"
-                    className="w-full h-32 object-cover"
+          {/* Overlay oscuro solo si hay contenido */}
+          {hasContent && (
+            <div className="absolute inset-0 bg-black/30 rounded-xl" />
+          )}
+          {/* Modal centrado solo si hay contenido */}
+          {hasContent && (
+            <div className="absolute inset-0 flex items-center justify-center z-10 px-[15%] py-4">
+              <div className="bg-white border border-gray-200 rounded-lg shadow-2xl p-4 w-full max-w-xs">
+                {contentType === "html" && htmlContent ? (
+                  <div
+                    className="rounded overflow-hidden"
+                    dangerouslySetInnerHTML={{ __html: htmlContent }}
                   />
-                </div>
-              ) : null}
+                ) : image ? (
+                  <div className="rounded overflow-hidden">
+                    <img
+                      src={image}
+                      alt="Notification"
+                      className="w-full h-32 object-cover"
+                    />
+                  </div>
+                ) : null}
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     );
   };
 
   // Mobile Chrome Notification - Slider
   const MobileNotificationSlider = () => (
-    <div className="relative w-full h-[600px] max-w-[375px] mx-auto rounded-lg">
-      {/* Contenedor para limitar la imagen */}
-      <div className="absolute inset-0 flex items-center justify-center overflow-hidden rounded-lg">
+    <div className="relative w-full h-[600px] max-w-[375px] mx-auto rounded-lg flex items-center justify-center">
+      {/* Contenedor de la imagen con posición relativa para los elementos superpuestos */}
+      <div className="relative h-full w-auto">
         <img src="/cell.jpg" alt="" className="h-full w-auto object-contain rounded-xl" />
-      </div>
-      {/* Modal en la parte superior, ajustado a los márgenes del celular */}
-      <div className="absolute top-[8%] left-[12%] right-[12%] z-10">
-        <div className="bg-white border border-gray-200 rounded-lg shadow-2xl p-3">
-          {contentType === "html" && htmlContent ? (
-            <div
-              className="rounded overflow-hidden"
-              dangerouslySetInnerHTML={{ __html: htmlContent }}
-            />
-          ) : image ? (
-            <div className="rounded overflow-hidden">
-              <img
-                src={image}
-                alt="Notification"
-                className="w-full h-32 object-cover"
+        {/* Modal en la parte superior, ajustado a los márgenes del celular */}
+        <div className="absolute top-[8%] left-[12%] right-[12%] z-10">
+          <div className="bg-white border border-gray-200 rounded-lg shadow-2xl p-3">
+            {contentType === "html" && htmlContent ? (
+              <div
+                className="rounded overflow-hidden"
+                dangerouslySetInnerHTML={{ __html: htmlContent }}
               />
-            </div>
-          ) : null}
+            ) : image ? (
+              <div className="rounded overflow-hidden">
+                <img
+                  src={image}
+                  alt="Notification"
+                  className="w-full h-32 object-cover"
+                />
+              </div>
+            ) : null}
+          </div>
         </div>
       </div>
     </div>
