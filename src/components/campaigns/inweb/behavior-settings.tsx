@@ -114,10 +114,10 @@ export function BehaviorSettings({ data, onChange }: BehaviorSettingsProps) {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="3600">10</SelectItem>
-                <SelectItem value="86400">60</SelectItem>
-                <SelectItem value="604800">120</SelectItem>
-                <SelectItem value="2592000">180</SelectItem>
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="60">60</SelectItem>
+                <SelectItem value="120">120</SelectItem>
+                <SelectItem value="180">180</SelectItem>
               </SelectContent>
             </Select>
           </div>

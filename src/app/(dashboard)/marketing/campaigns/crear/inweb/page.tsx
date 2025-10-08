@@ -43,15 +43,6 @@ export default function CrearCampaignInWebPage() {
     image: string;
     url: string;
     displayStyle: "popup" | "slider";
-    requireInteraction: boolean;
-    silent: boolean;
-    badge: string;
-    tag: string;
-    renotify: boolean;
-    platforms: string[];
-    geoLocation: string;
-    deviceType: string;
-    browserLanguage: string;
     selectedCities: string[];
     purchaseOperator: string;
     purchaseCount: number;
@@ -59,10 +50,6 @@ export default function CrearCampaignInWebPage() {
     maxAge: number;
     sendImmediately: boolean;
     scheduledDate: Date | null;
-    timeZone: string;
-    quietHours: boolean;
-    quietStart: string;
-    quietEnd: string;
     enableFrequencyCap: boolean;
     maxPerDay: number;
     maxPerWeek: number;
@@ -71,7 +58,6 @@ export default function CrearCampaignInWebPage() {
     ttl: number;
     urgency: string;
     enableFallback: boolean;
-    fallbackMessage: string;
     contentType: "image" | "html";
     htmlContent: string;
   }>({
@@ -88,17 +74,6 @@ export default function CrearCampaignInWebPage() {
 
     // Behavior Settings
     displayStyle: "popup", // "popup" (bloqueante) o "slider" (tipo toast)
-    requireInteraction: false,
-    silent: false,
-    badge: "",
-    tag: "",
-    renotify: false,
-
-    // Targeting
-    platforms: ["chrome", "firefox", "safari", "edge"],
-    geoLocation: "",
-    deviceType: "all",
-    browserLanguage: "all",
 
     // Audience Segmentation
     selectedCities: [] as string[],
@@ -110,10 +85,6 @@ export default function CrearCampaignInWebPage() {
     // Timing
     sendImmediately: true,
     scheduledDate: null as Date | null,
-    timeZone: "user-local",
-    quietHours: false,
-    quietStart: "22:00",
-    quietEnd: "08:00",
 
     // Frequency Capping
     enableFrequencyCap: false,
@@ -125,10 +96,9 @@ export default function CrearCampaignInWebPage() {
     abTestPercentage: 50,
 
     // Advanced
-    ttl: 86400, // 24 hours in seconds
+    ttl: 10, // 24 hours in seconds
     urgency: "normal",
     enableFallback: true,
-    fallbackMessage: "",
 
     // Content Type
     contentType: "image",

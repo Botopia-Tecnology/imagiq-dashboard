@@ -27,7 +27,7 @@ export function InWebPreview({
         {/* Imagen de fondo con blur condicional para popup */}
         <div className="absolute inset-0 flex items-center justify-center">
           <img
-            src="/compu.jpg"
+            src="/compu2.jpg"
             alt=""
             className={`w-full h-full object-contain ${hasContent ? "blur-sm" : ""}`}
           />
@@ -105,18 +105,18 @@ export function InWebPreview({
       <div className="relative w-full h-[600px] max-w-[375px] mx-auto rounded-lg">
         {/* Contenedor para limitar la imagen base */}
         <div className="absolute inset-0 flex items-center justify-center overflow-hidden rounded-lg">
-          <img src="/cell.jpg" alt="" className="h-full w-auto object-contain rounded-[2.5rem]" />
+          <img src="/cell.jpg" alt="" className="h-full w-auto object-contain rounded-xl" />
         </div>
         {/* Capa con blur limitada */}
         {hasContent && (
           <div className="absolute inset-0 flex items-center justify-center overflow-hidden rounded-lg">
-            <img src="/cell.jpg" alt="" className="h-full w-auto object-contain blur-sm scale-105 rounded-[2.5rem]" />
+            <img src="/cell.jpg" alt="" className="h-full w-auto object-contain blur-sm rounded-xl" />
           </div>
         )}
         {/* Overlay oscuro solo si hay contenido */}
         {hasContent && (
           <div className="absolute inset-0 flex items-center justify-center overflow-hidden rounded-lg">
-            <div className="h-full w-auto aspect-[9/19.5] bg-black/30 rounded-[2.5rem]" />
+            <div className="h-full w-auto aspect-[9/19.5] bg-black/30 rounded-xl" />
           </div>
         )}
         {/* Modal centrado solo si hay contenido */}
@@ -149,7 +149,7 @@ export function InWebPreview({
     <div className="relative w-full h-[600px] max-w-[375px] mx-auto rounded-lg">
       {/* Contenedor para limitar la imagen */}
       <div className="absolute inset-0 flex items-center justify-center overflow-hidden rounded-lg">
-        <img src="/cell.jpg" alt="" className="h-full w-auto object-contain rounded-[2.5rem]" />
+        <img src="/cell.jpg" alt="" className="h-full w-auto object-contain rounded-xl" />
       </div>
       {/* Modal en la parte superior, ajustado a los márgenes del celular */}
       <div className="absolute top-[8%] left-[12%] right-[12%] z-10">
