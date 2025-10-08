@@ -19,49 +19,75 @@ export function InWebPreview({
   htmlContent = "",
 }: InWebPreviewProps) {
   // Chrome Desktop Notification - Pop-up (bloqueante)
-  const ChromeNotificationPopup = () => (
-    <div className="relative">
-      {/* Overlay oscuro para simular el efecto bloqueante */}
-      <div className="absolute inset-0 bg-black/50 rounded-lg" />
-      <div className="relative bg-white border border-gray-200 rounded-lg shadow-2xl p-4 max-w-sm z-10">
-        {contentType === "html" && htmlContent ? (
-          <div
-            className="mt-3 rounded-lg overflow-hidden"
-            dangerouslySetInnerHTML={{ __html: htmlContent }}
+  const ChromeNotificationPopup = () => {
+    const hasContent = (contentType === "html" && htmlContent) || image;
+
+    return (
+      <div className="relative w-full h-[400px] rounded-lg overflow-hidden bg-gray-100">
+        {/* Imagen de fondo con blur condicional para popup */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <img
+            src="/compu.jpg"
+            alt=""
+            className={`w-full h-full object-contain ${hasContent ? "blur-sm" : ""}`}
           />
-        ) : image ? (
-          <div className="mt-3 rounded-lg overflow-hidden">
-            <img
-              src={image}
-              alt="Notification"
-              className="w-full h-32 object-cover"
-            />
+        </div>
+        {/* Overlay oscuro solo si hay contenido */}
+        {hasContent && <div className="absolute inset-0 bg-black/30" />}
+        {/* Modal centrado solo si hay contenido */}
+        {hasContent && (
+          <div className="absolute inset-0 flex items-center justify-center z-10">
+            <div className="bg-white border border-gray-200 rounded-lg shadow-2xl p-4 max-w-sm">
+              {contentType === "html" && htmlContent ? (
+                <div
+                  className="mt-3 rounded-lg overflow-hidden"
+                  dangerouslySetInnerHTML={{ __html: htmlContent }}
+                />
+              ) : image ? (
+                <div className="mt-3 rounded-lg overflow-hidden">
+                  <img
+                    src={image}
+                    alt="Notification"
+                    className="w-full h-32 object-cover"
+                  />
+                </div>
+              ) : null}
+            </div>
           </div>
-        ) : null}
+        )}
       </div>
-    </div>
-  );
+    );
+  };
 
   // Chrome Desktop Notification - Slider (tipo toast)
   const ChromeNotificationSlider = () => (
-    <div className="relative">
-      {/* Overlay oscuro para simular el efecto bloqueante */}
-      <div className="absolute inset-0 bg-black/50 rounded-lg" />
-      <div className="relative bg-white border border-gray-200 rounded-lg shadow-2xl p-4 max-w-sm z-10">
-        {contentType === "html" && htmlContent ? (
-          <div
-            className="mt-3 rounded-lg overflow-hidden"
-            dangerouslySetInnerHTML={{ __html: htmlContent }}
-          />
-        ) : image ? (
-          <div className="mt-3 rounded-lg overflow-hidden">
-            <img
-              src={image}
-              alt="Notification"
-              className="w-full h-32 object-cover"
+    <div className="relative w-full h-[400px] rounded-lg overflow-hidden bg-gray-100">
+      {/* Imagen de fondo sin blur para slider */}
+      <div className="absolute inset-0 flex items-center justify-center">
+        <img
+          src="/compu.jpg"
+          alt=""
+          className="w-full h-full object-contain"
+        />
+      </div>
+      {/* Modal en la esquina superior derecha */}
+      <div className="absolute top-4 right-4 z-10">
+        <div className="bg-white border border-gray-200 rounded-lg shadow-2xl p-4 max-w-sm">
+          {contentType === "html" && htmlContent ? (
+            <div
+              className="mt-3 rounded-lg overflow-hidden"
+              dangerouslySetInnerHTML={{ __html: htmlContent }}
             />
-          </div>
-        ) : null}
+          ) : image ? (
+            <div className="mt-3 rounded-lg overflow-hidden">
+              <img
+                src={image}
+                alt="Notification"
+                className="w-full h-32 object-cover"
+              />
+            </div>
+          ) : null}
+        </div>
       </div>
     </div>
   );
@@ -72,61 +98,77 @@ export function InWebPreview({
       : ChromeNotificationSlider;
 
   // Mobile Chrome Notification - Pop-up
-  const MobileNotificationPopup = () => (
-    <div className="relative">
-      {/* Overlay oscuro para simular el efecto bloqueante */}
-      <div className="absolute inset-0 bg-black/50 rounded-lg" />
-      <div className="relative bg-gray-900 text-white p-4 max-w-xs rounded-lg shadow-2xl z-10">
-        <div className="flex items-start gap-3">
-          <div className="flex-shrink-0 ml-2">
-            <Bell className="h-4 w-4 text-gray-400" />
-          </div>
-        </div>
+  const MobileNotificationPopup = () => {
+    const hasContent = (contentType === "html" && htmlContent) || image;
 
-        {contentType === "html" && htmlContent ? (
-          <div
-            className="mt-3 rounded overflow-hidden"
-            dangerouslySetInnerHTML={{ __html: htmlContent }}
-          />
-        ) : image ? (
-          <div className="mt-3 rounded overflow-hidden">
-            <img
-              src={image}
-              alt="Notification"
-              className="w-full h-24 object-cover"
-            />
+    return (
+      <div className="relative w-full h-[600px] max-w-[375px] mx-auto rounded-lg">
+        {/* Contenedor para limitar la imagen base */}
+        <div className="absolute inset-0 flex items-center justify-center overflow-hidden rounded-lg">
+          <img src="/cell.jpg" alt="" className="h-full w-auto object-contain rounded-[2.5rem]" />
+        </div>
+        {/* Capa con blur limitada */}
+        {hasContent && (
+          <div className="absolute inset-0 flex items-center justify-center overflow-hidden rounded-lg">
+            <img src="/cell.jpg" alt="" className="h-full w-auto object-contain blur-sm scale-105 rounded-[2.5rem]" />
           </div>
-        ) : null}
+        )}
+        {/* Overlay oscuro solo si hay contenido */}
+        {hasContent && (
+          <div className="absolute inset-0 flex items-center justify-center overflow-hidden rounded-lg">
+            <div className="h-full w-auto aspect-[9/19.5] bg-black/30 rounded-[2.5rem]" />
+          </div>
+        )}
+        {/* Modal centrado solo si hay contenido */}
+        {hasContent && (
+          <div className="absolute inset-0 flex items-center justify-center z-10 px-[15%] py-4">
+            <div className="bg-white border border-gray-200 rounded-lg shadow-2xl p-4 w-full max-w-xs">
+              {contentType === "html" && htmlContent ? (
+                <div
+                  className="rounded overflow-hidden"
+                  dangerouslySetInnerHTML={{ __html: htmlContent }}
+                />
+              ) : image ? (
+                <div className="rounded overflow-hidden">
+                  <img
+                    src={image}
+                    alt="Notification"
+                    className="w-full h-32 object-cover"
+                  />
+                </div>
+              ) : null}
+            </div>
+          </div>
+        )}
       </div>
-    </div>
-  );
+    );
+  };
 
   // Mobile Chrome Notification - Slider
   const MobileNotificationSlider = () => (
-     <div className="relative">
-      {/* Overlay oscuro para simular el efecto bloqueante */}
-      <div className="absolute inset-0 bg-black/50 rounded-lg" />
-      <div className="relative bg-gray-900 text-white p-4 max-w-xs rounded-lg shadow-2xl z-10">
-        <div className="flex items-start gap-3">
-          <div className="flex-shrink-0 ml-2">
-            <Bell className="h-4 w-4 text-gray-400" />
-          </div>
-        </div>
-
-        {contentType === "html" && htmlContent ? (
-          <div
-            className="mt-3 rounded overflow-hidden"
-            dangerouslySetInnerHTML={{ __html: htmlContent }}
-          />
-        ) : image ? (
-          <div className="mt-3 rounded overflow-hidden">
-            <img
-              src={image}
-              alt="Notification"
-              className="w-full h-24 object-cover"
+    <div className="relative w-full h-[600px] max-w-[375px] mx-auto rounded-lg">
+      {/* Contenedor para limitar la imagen */}
+      <div className="absolute inset-0 flex items-center justify-center overflow-hidden rounded-lg">
+        <img src="/cell.jpg" alt="" className="h-full w-auto object-contain rounded-[2.5rem]" />
+      </div>
+      {/* Modal en la parte superior, ajustado a los márgenes del celular */}
+      <div className="absolute top-[8%] left-[12%] right-[12%] z-10">
+        <div className="bg-white border border-gray-200 rounded-lg shadow-2xl p-3">
+          {contentType === "html" && htmlContent ? (
+            <div
+              className="rounded overflow-hidden"
+              dangerouslySetInnerHTML={{ __html: htmlContent }}
             />
-          </div>
-        ) : null}
+          ) : image ? (
+            <div className="rounded overflow-hidden">
+              <img
+                src={image}
+                alt="Notification"
+                className="w-full h-32 object-cover"
+              />
+            </div>
+          ) : null}
+        </div>
       </div>
     </div>
   );
