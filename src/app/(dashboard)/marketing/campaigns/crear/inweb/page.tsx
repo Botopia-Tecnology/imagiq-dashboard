@@ -216,6 +216,7 @@ export default function CrearCampaignInWebPage() {
               sendImmediately: inWebData.sendImmediately,
               scheduledDate: inWebData.scheduledDate,
               enableABTest: inWebData.enableABTest,
+              abTestPercentage: inWebData.abTestPercentage,
             }}
             onChange={handleSchedulingSettingsChange}
           />

@@ -10,6 +10,7 @@ export interface SchedulingSettingsData {
   sendImmediately: boolean;
   scheduledDate: Date | null;
   enableABTest: boolean;
+  abTestPercentage: number;
 }
 
 interface SchedulingSettingsProps {
@@ -83,6 +84,49 @@ export function SchedulingSettings({ data, onChange }: SchedulingSettingsProps) 
           />
           <Label htmlFor="enableABTest">Habilitar prueba A/B</Label>
         </div>
+
+        {data.enableABTest && (
+          <div className="space-y-3 pt-2 border-t">
+            <div className="space-y-2">
+              <Label htmlFor="abTestPercentage">
+                Porcentaje de prueba (%)
+              </Label>
+              <Input
+                id="abTestPercentage"
+                type="number"
+                min="1"
+                max="99"
+                value={data.abTestPercentage === 0 ? "" : data.abTestPercentage}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (value === "") {
+                    onChange({ ...data, abTestPercentage: 0 });
+                  } else {
+                    const numValue = parseInt(value);
+                    if (!isNaN(numValue)) {
+                      onChange({
+                        ...data,
+                        abTestPercentage: Math.min(99, Math.max(0, numValue)),
+                      });
+                    }
+                  }
+                }}
+                onBlur={() => {
+                  if (data.abTestPercentage < 1) {
+                    onChange({ ...data, abTestPercentage: 1 });
+                  } else if (data.abTestPercentage > 99) {
+                    onChange({ ...data, abTestPercentage: 99 });
+                  }
+                }}
+                placeholder="Ej: 50"
+              />
+              <p className="text-sm text-muted-foreground">
+                El {data.abTestPercentage}% recibirá la versión A y el{" "}
+                {100 - data.abTestPercentage}% recibirá la versión B
+              </p>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
