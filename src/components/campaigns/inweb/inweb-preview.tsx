@@ -36,7 +36,11 @@ export function InWebPreview({
           {/* Modal centrado solo si hay contenido */}
           {hasContent && (
             <div className="absolute inset-0 flex items-center justify-center z-10">
-              <div className="bg-white border border-gray-200 rounded-lg shadow-2xl p-4 max-w-sm">
+              <div className="relative bg-white border border-gray-200 rounded-lg shadow-2xl p-4 max-w-sm">
+                {/* Botón de cerrar fuera del modal */}
+                <button className="absolute -top-8 right-0 rounded-full p-1.5 hover:opacity-80 transition-opacity">
+                  <X className="h-4 w-4 text-gray-800" />
+                </button>
                 {contentType === "html" && htmlContent ? (
                   <div
                     className="mt-3 rounded-lg overflow-hidden"
@@ -71,7 +75,11 @@ export function InWebPreview({
         />
         {/* Modal en la esquina superior derecha */}
         <div className="absolute top-4 right-4 z-10">
-          <div className="bg-white border border-gray-200 rounded-lg shadow-2xl p-4 max-w-sm">
+          <div className="relative bg-white border border-gray-200 rounded-lg shadow-2xl p-4 max-w-sm">
+            {/* Botón de cerrar fuera del modal */}
+            <button className="absolute -top-6 right-0 rounded-full p-1.5 hover:opacity-80 transition-opacity">
+              <X className="h-4 w-4 text-gray-800" />
+            </button>
             {contentType === "html" && htmlContent ? (
               <div
                 className="mt-3 rounded-lg overflow-hidden"
@@ -113,7 +121,11 @@ export function InWebPreview({
           {/* Modal centrado solo si hay contenido */}
           {hasContent && (
             <div className="absolute inset-0 flex items-center justify-center z-10 px-[15%] py-4">
-              <div className="bg-white border border-gray-200 rounded-lg shadow-2xl p-4 w-full max-w-xs">
+              <div className="relative bg-white border border-gray-200 rounded-lg shadow-2xl p-4 w-full max-w-xs">
+                {/* Botón de cerrar fuera del modal */}
+                <button className="absolute -top-5 right-0 rounded-full p-1 hover:opacity-80 transition-opacity">
+                  <X className="h-3.5 w-3.5 text-gray-800" />
+                </button>
                 {contentType === "html" && htmlContent ? (
                   <div
                     className="rounded overflow-hidden"
@@ -144,7 +156,11 @@ export function InWebPreview({
         <img src="/cell.jpg" alt="" className="h-full w-auto object-contain rounded-xl" />
         {/* Modal en la parte superior, ajustado a los márgenes del celular */}
         <div className="absolute top-[8%] left-[12%] right-[12%] z-10">
-          <div className="bg-white border border-gray-200 rounded-lg shadow-2xl p-3">
+          <div className="relative bg-white border border-gray-200 rounded-lg shadow-2xl p-3">
+            {/* Botón de cerrar fuera del modal */}
+            <button className="absolute -top-4 right-0 rounded-full p-1 hover:opacity-80 transition-opacity">
+              <X className="h-3.5 w-3.5 text-gray-800" />
+            </button>
             {contentType === "html" && htmlContent ? (
               <div
                 className="rounded overflow-hidden"
