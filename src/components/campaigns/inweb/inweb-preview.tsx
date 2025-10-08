@@ -43,7 +43,7 @@ export function InWebPreview({
                 </button>
                 {contentType === "html" && htmlContent ? (
                   <div
-                    className="mt-3 rounded-lg overflow-hidden"
+                    className="mt-3 rounded-lg overflow-auto max-h-32"
                     dangerouslySetInnerHTML={{ __html: htmlContent }}
                   />
                 ) : image ? (
@@ -82,7 +82,7 @@ export function InWebPreview({
             </button>
             {contentType === "html" && htmlContent ? (
               <div
-                className="mt-3 rounded-lg overflow-hidden"
+                className="mt-3 rounded-lg overflow-auto max-h-32"
                 dangerouslySetInnerHTML={{ __html: htmlContent }}
               />
             ) : image ? (
@@ -128,7 +128,7 @@ export function InWebPreview({
                 </button>
                 {contentType === "html" && htmlContent ? (
                   <div
-                    className="rounded overflow-hidden"
+                    className="rounded overflow-auto max-h-32"
                     dangerouslySetInnerHTML={{ __html: htmlContent }}
                   />
                 ) : image ? (
@@ -163,7 +163,7 @@ export function InWebPreview({
             </button>
             {contentType === "html" && htmlContent ? (
               <div
-                className="rounded overflow-hidden"
+                className="rounded overflow-auto max-h-32"
                 dangerouslySetInnerHTML={{ __html: htmlContent }}
               />
             ) : image ? (
