@@ -51,7 +51,7 @@ export function InWebPreview({
                     <img
                       src={image}
                       alt="Notification"
-                      className="w-full h-32 object-cover"
+                      className="w-full h-56 object-contain"
                     />
                   </div>
                 ) : null}
@@ -136,7 +136,7 @@ export function InWebPreview({
                     <img
                       src={image}
                       alt="Notification"
-                      className="w-full h-32 object-cover"
+                      className="w-full h-56 object-contain"
                     />
                   </div>
                 ) : null}
