@@ -39,9 +39,9 @@ export const mapBackendCategoryToFrontend = (backendCategory: BackendCategory): 
     order: 1, // Mock order por ahora
     isActive: backendCategory.activo,
     productsCount: 0, // Mock productsCount por ahora
-    subcategories: backendCategory.subcategorias.map(subcategory =>
+    subcategories: backendCategory.subcategorias?.map(subcategory =>
       mapBackendSubcategoryToFrontend(subcategory, backendCategory.uuid)
-    ),
+    ) || [],
     createdAt: new Date(backendCategory.createdAt),
     updatedAt: new Date(backendCategory.updatedAt),
   };

@@ -61,7 +61,9 @@ export default function CategoriasPage() {
     error, 
     toggleCategoryActive: handleToggleActive, 
     deleteCategory: handleDeleteCategory,
-    updatingCategory
+    updatingCategory,
+    createCategory,
+    creatingCategory
   } = useCategories()
 
   // Hook para manejar categorías disponibles del backend
@@ -73,7 +75,58 @@ export default function CategoriasPage() {
 
   // Las categorías disponibles ahora vienen del hook useAvailableCategories del backend
 
-  // Los datos ahora vienen del hook useCategories del backend
+  // Filtrar categorías disponibles para excluir las que ya están en categorias_visibles
+  const filteredAvailableCategories = availableCategories.filter(availableCat => 
+    !websiteCategories.some(visibleCat => visibleCat.name === availableCat)
+  )
+
+  // Estado del formulario del modal
+  const [selectedCategoryName, setSelectedCategoryName] = useState<string>("")
+  const [description, setDescription] = useState<string>("")
+  const [isActive, setIsActive] = useState<boolean>(true)
+
+  // Función para manejar el envío del formulario
+  const handleSubmitCategory = async () => {
+    if (!selectedCategoryName) {
+      alert("Por favor selecciona una categoría")
+      return
+    }
+
+    const categoryData = {
+      nombre: selectedCategoryName,
+      descripcion: description,
+      imagen: "https://example.com/mock-image.jpg", // Mock image por ahora
+      activo: isActive
+    }
+
+    const success = await createCategory(categoryData)
+    
+    if (success) {
+      // Limpiar formulario y cerrar modal
+      setSelectedCategoryName("")
+      setDescription("")
+      setIsActive(true)
+      setIsAddDialogOpen(false)
+    }
+  }
+
+  // Función para resetear el formulario al cerrar el modal
+  const handleCloseModal = () => {
+    setSelectedCategoryName("")
+    setDescription("")
+    setIsActive(true)
+    setIsAddDialogOpen(false)
+  }
+
+  // Función para manejar el cambio de estado del modal
+  const handleModalOpenChange = (open: boolean) => {
+    if (!open) {
+      // Solo limpiar cuando se cierra, no cuando se abre
+      handleCloseModal()
+    } else {
+      setIsAddDialogOpen(true)
+    }
+  }
 
   // Mostrar estado de carga
   if (loading) {
@@ -155,9 +208,9 @@ export default function CategoriasPage() {
             </p>
           </div>
         </div>
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <Dialog open={isAddDialogOpen} onOpenChange={handleModalOpenChange}>
           <DialogTrigger asChild>
-            <Button>
+            <Button className="cursor-pointer">
               <Plus className="mr-2 h-4 w-4" />
               Agregar Categoría
             </Button>
@@ -172,7 +225,11 @@ export default function CategoriasPage() {
             <div className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label htmlFor="category-select">Categoría de Productos</Label>
-                <Select disabled={loadingAvailable}>
+                <Select 
+                  disabled={loadingAvailable || creatingCategory}
+                  value={selectedCategoryName}
+                  onValueChange={setSelectedCategoryName}
+                >
                   <SelectTrigger id="category-select">
                     <SelectValue placeholder={
                       loadingAvailable 
@@ -183,7 +240,7 @@ export default function CategoriasPage() {
                     } />
                   </SelectTrigger>
                   <SelectContent>
-                    {availableCategories.map((cat) => (
+                    {filteredAvailableCategories.map((cat) => (
                       <SelectItem key={cat} value={cat}>
                         {cat}
                       </SelectItem>
@@ -195,7 +252,9 @@ export default function CategoriasPage() {
                     ? "Cargando categorías del backend..." 
                     : errorAvailable 
                       ? "Error al cargar categorías disponibles" 
-                      : "Las categorías provienen de tu catálogo de productos"
+                      : filteredAvailableCategories.length === 0
+                        ? "Todas las categorías ya han sido agregadas"
+                        : `Mostrando ${filteredAvailableCategories.length} categorías disponibles`
                   }
                 </p>
               </div>
@@ -205,6 +264,9 @@ export default function CategoriasPage() {
                 <Input
                   id="description"
                   placeholder="Descripción de la categoría para SEO"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  disabled={creatingCategory}
                 />
               </div>
 
@@ -228,15 +290,27 @@ export default function CategoriasPage() {
                     La categoría será visible en el sitio web
                   </p>
                 </div>
-                <Switch id="active" defaultChecked />
+                <Switch 
+                  id="active" 
+                  checked={isActive}
+                  onCheckedChange={setIsActive}
+                  disabled={creatingCategory}
+                />
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+              <Button variant="outline" onClick={handleCloseModal} disabled={creatingCategory}>
                 Cancelar
               </Button>
-              <Button onClick={() => setIsAddDialogOpen(false)}>
-                Agregar Categoría
+              <Button onClick={handleSubmitCategory} disabled={creatingCategory || !selectedCategoryName || filteredAvailableCategories.length === 0}>
+                {creatingCategory ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Creando...
+                  </>
+                ) : (
+                  "Agregar Categoría"
+                )}
               </Button>
             </DialogFooter>
           </DialogContent>

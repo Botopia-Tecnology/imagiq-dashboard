@@ -271,3 +271,17 @@ export interface BackendSubcategory {
   createdAt: string;
   updatedAt: string;
 }
+
+// Types for creating categories
+export interface CreateCategoryRequest {
+  nombre: string;
+  descripcion: string;
+  imagen: string;
+  activo: boolean;
+}
+
+export interface CreateCategoryResponse {
+  success: boolean;
+  message?: string;
+  data?: BackendCategory;
+}

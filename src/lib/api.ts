@@ -8,7 +8,7 @@
  * - TypeScript interfaces para requests/responses
  */
 
-import { BackendCategory } from "@/types";
+import { BackendCategory, CreateCategoryRequest, CreateCategoryResponse } from "@/types";
 
 // API Client configuration
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
@@ -245,6 +245,8 @@ export interface ProductMediaUpdateResponse {
 export const categoryEndpoints = {
   getVisible: () => apiClient.get<BackendCategory[]>("/api/categorias/visibles"),
   getDistinct: () => apiClient.get<string[]>("/api/categorias/distinct"),
+  create: (data: CreateCategoryRequest) => 
+    apiClient.post<BackendCategory>("/api/categorias/visibles", data),
   updateActiveStatus: (uuid: string, activo: boolean) => 
     apiClient.patch<{ success: boolean; message?: string }>(`/api/categorias/visibles/${uuid}/activo`, { activo }),
 };

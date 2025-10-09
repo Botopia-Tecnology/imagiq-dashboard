@@ -10,7 +10,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { categoryEndpoints } from "@/lib/api";
 import { mapBackendCategoriesToFrontend } from "@/lib/categoryMapper";
-import { WebsiteCategory } from "@/types";
+import { WebsiteCategory, CreateCategoryRequest } from "@/types";
 
 interface UseCategoriesReturn {
   categories: WebsiteCategory[];
@@ -20,6 +20,8 @@ interface UseCategoriesReturn {
   toggleCategoryActive: (categoryId: string) => Promise<void>;
   deleteCategory: (categoryId: string) => void;
   updatingCategory: string | null; // Para mostrar loading en categoría específica
+  createCategory: (data: CreateCategoryRequest) => Promise<boolean>;
+  creatingCategory: boolean; // Para mostrar loading al crear categoría
 }
 
 export const useCategories = (): UseCategoriesReturn => {
@@ -27,6 +29,7 @@ export const useCategories = (): UseCategoriesReturn => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [updatingCategory, setUpdatingCategory] = useState<string | null>(null);
+  const [creatingCategory, setCreatingCategory] = useState(false);
 
   // Función para obtener categorías del backend
   const fetchCategories = useCallback(async () => {
@@ -90,6 +93,32 @@ export const useCategories = (): UseCategoriesReturn => {
     setCategories(prev => prev.filter(cat => cat.id !== categoryId));
   }, []);
 
+  // Función para crear una nueva categoría
+  const createCategory = useCallback(async (data: CreateCategoryRequest): Promise<boolean> => {
+    setCreatingCategory(true);
+    setError(null);
+
+    try {
+      const response = await categoryEndpoints.create(data);
+
+      if (response.success && response.data) {
+        // Agregar la nueva categoría al estado local
+        const newCategory = mapBackendCategoriesToFrontend([response.data])[0];
+        setCategories(prev => [...prev, newCategory]);
+        return true;
+      } else {
+        setError(response.message || "Error al crear la categoría");
+        return false;
+      }
+    } catch (err) {
+      console.error("Error creating category:", err);
+      setError("Error de conexión al crear la categoría");
+      return false;
+    } finally {
+      setCreatingCategory(false);
+    }
+  }, []);
+
   // Cargar categorías al montar el componente
   useEffect(() => {
     fetchCategories();
@@ -103,5 +132,7 @@ export const useCategories = (): UseCategoriesReturn => {
     toggleCategoryActive,
     deleteCategory,
     updatingCategory,
+    createCategory,
+    creatingCategory,
   };
 };
