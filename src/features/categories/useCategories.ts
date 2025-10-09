@@ -18,8 +18,9 @@ interface UseCategoriesReturn {
   error: string | null;
   refreshCategories: () => Promise<void>;
   toggleCategoryActive: (categoryId: string) => Promise<void>;
-  deleteCategory: (categoryId: string) => void;
+  deleteCategory: (categoryId: string) => Promise<boolean>;
   updatingCategory: string | null; // Para mostrar loading en categoría específica
+  deletingCategory: boolean; // Para mostrar loading al eliminar categoría
   createCategory: (data: CreateCategoryRequest) => Promise<boolean>;
   creatingCategory: boolean; // Para mostrar loading al crear categoría
   updateCategory: (categoryId: string, data: UpdateCategoryRequest) => Promise<boolean>;
@@ -31,6 +32,7 @@ export const useCategories = (): UseCategoriesReturn => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [updatingCategory, setUpdatingCategory] = useState<string | null>(null);
+  const [deletingCategory, setDeletingCategory] = useState(false);
   const [creatingCategory, setCreatingCategory] = useState(false);
   const [updatingCategoryData, setUpdatingCategoryData] = useState(false);
 
@@ -92,8 +94,29 @@ export const useCategories = (): UseCategoriesReturn => {
   }, [categories]);
 
   // Función para eliminar una categoría
-  const deleteCategory = useCallback((categoryId: string) => {
-    setCategories(prev => prev.filter(cat => cat.id !== categoryId));
+  const deleteCategory = useCallback(async (categoryId: string): Promise<boolean> => {
+    setDeletingCategory(true);
+
+    try {
+      console.log("Deleting category with ID:", categoryId);
+      const response = await categoryEndpoints.delete(categoryId);
+      console.log("Delete response:", response);
+
+      if (response.success) {
+        // Eliminar la categoría del estado local solo si la petición fue exitosa
+        setCategories(prev => prev.filter(cat => cat.id !== categoryId));
+        return true;
+      } else {
+        console.error("Delete failed:", response.message);
+        // No establecer error global, retornar false y el componente manejará el error
+        return false;
+      }
+    } catch (err) {
+      console.error("Error deleting category:", err);
+      return false;
+    } finally {
+      setDeletingCategory(false);
+    }
   }, []);
 
   // Función para crear una nueva categoría
@@ -165,6 +188,7 @@ export const useCategories = (): UseCategoriesReturn => {
     toggleCategoryActive,
     deleteCategory,
     updatingCategory,
+    deletingCategory,
     createCategory,
     creatingCategory,
     updateCategory,
