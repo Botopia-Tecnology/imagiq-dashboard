@@ -38,19 +38,29 @@ import {
   Edit,
   Trash2,
   Image as ImageIcon,
-  FolderTree,
   Package,
   GripVertical,
   Eye,
   EyeOff,
 } from "lucide-react"
 import { WebsiteCategory } from "@/types"
+import { useCategories } from "@/features/categories/useCategories"
 
 export default function CategoriasPage() {
   const router = useRouter()
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
+  // Mantener estas variables para futuras funcionalidades
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState<WebsiteCategory | null>(null)
+  
+  // Hook para manejar categorías del backend
+  const { 
+    categories: websiteCategories, 
+    loading, 
+    error, 
+    toggleCategoryActive: handleToggleActive, 
+    deleteCategory: handleDeleteCategory 
+  } = useCategories()
 
   // Categorías de productos disponibles en la base de datos
   const availableCategories = [
@@ -70,68 +80,68 @@ export default function CategoriasPage() {
     "Salud",
   ]
 
-  // Mock data - categorías actuales del sitio web
-  const [websiteCategories, setWebsiteCategories] = useState<WebsiteCategory[]>([
-    {
-      id: "1",
-      name: "Electrónicos",
-      slug: "electronicos",
-      description: "Productos electrónicos y tecnología",
-      image: "/categories/electronics.jpg",
-      order: 1,
-      isActive: true,
-      productsCount: 45,
-      subcategories: [
-        {
-          id: "1-1",
-          categoryId: "1",
-          name: "Smartphones",
-          slug: "smartphones",
-          order: 1,
-          isActive: true,
-          productsCount: 12,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-        {
-          id: "1-2",
-          categoryId: "1",
-          name: "Laptops",
-          slug: "laptops",
-          order: 2,
-          isActive: true,
-          productsCount: 8,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-      ],
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-    {
-      id: "2",
-      name: "Ropa",
-      slug: "ropa",
-      description: "Ropa y accesorios de moda",
-      order: 2,
-      isActive: true,
-      productsCount: 128,
-      subcategories: [],
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-  ])
+  // Los datos ahora vienen del hook useCategories del backend
 
-  const handleToggleActive = (categoryId: string) => {
-    setWebsiteCategories(prev =>
-      prev.map(cat =>
-        cat.id === categoryId ? { ...cat, isActive: !cat.isActive } : cat
-      )
+  // Mostrar estado de carga
+  if (loading) {
+    return (
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="sm" onClick={() => router.push("/pagina-web")}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Volver
+            </Button>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+                Categorías del Sitio Web
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                Cargando categorías...
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center justify-center py-8">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Cargando categorías...</p>
+          </div>
+        </div>
+      </div>
     )
   }
 
-  const handleDeleteCategory = (categoryId: string) => {
-    setWebsiteCategories(prev => prev.filter(cat => cat.id !== categoryId))
+  // Mostrar error si hay alguno
+  if (error) {
+    return (
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="sm" onClick={() => router.push("/pagina-web")}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Volver
+            </Button>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+                Categorías del Sitio Web
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                Error al cargar categorías
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center justify-center py-8">
+          <div className="text-center">
+            <p className="text-destructive mb-4">{error}</p>
+            <Button onClick={() => window.location.reload()}>
+              Reintentar
+            </Button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -324,7 +334,7 @@ export default function CategoriasPage() {
                   </TableCell>
                   <TableCell>
                     <Badge variant="outline">
-                      {category.subcategories.length} subcategorías
+                      {category.subcategories.length} {category.subcategories.length === 1 ? 'subcategoría' : 'subcategorías'}
                     </Badge>
                   </TableCell>
                   <TableCell>

@@ -8,6 +8,8 @@
  * - TypeScript interfaces para requests/responses
  */
 
+import { BackendCategory } from "@/types";
+
 // API Client configuration
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
@@ -231,3 +233,8 @@ export interface ProductMediaUpdateResponse {
   message: string;
   data?: unknown;
 }
+
+// Categories API endpoints
+export const categoryEndpoints = {
+  getVisible: () => apiClient.get<BackendCategory[]>("/api/categorias/visibles"),
+};
