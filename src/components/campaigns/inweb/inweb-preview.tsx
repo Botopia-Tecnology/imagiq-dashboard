@@ -2,22 +2,24 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Monitor, Apple, Globe, X, Bell } from "lucide-react";
+import { memo } from "react";
 
 interface InWebPreviewProps {
   image?: string;
-  url?: string;
+  previewUrl?: string;
   displayStyle?: "popup" | "slider";
   contentType?: "image" | "html";
   htmlContent?: string;
 }
 
-export function InWebPreview({
+function InWebPreviewComponent({
   image,
-  url = "https://tuempresa.com",
+  previewUrl = "",
   displayStyle = "popup",
   contentType = "image",
   htmlContent = "",
 }: InWebPreviewProps) {
+  const iframeUrl = previewUrl || "https://imagiq-frontend.vercel.app/productos/dispositivos-moviles?seccion=smartphones";
   // Chrome Desktop Notification - Pop-up (bloqueante)
   const ChromeNotificationPopup = () => {
     const hasContent = (contentType === "html" && htmlContent) || image;
@@ -27,7 +29,7 @@ export function InWebPreview({
         {/* Contenedor del iframe con posición relativa para los elementos superpuestos */}
         <div className="relative w-full h-full">
           <iframe
-            src="https://imagiq-frontend.vercel.app/productos/dispositivos-moviles?seccion=smartphones"
+            src={iframeUrl}
             className="w-full h-full rounded-lg border-0"
             title="Desktop Preview"
           />
@@ -69,7 +71,7 @@ export function InWebPreview({
       {/* Contenedor del iframe con posición relativa para los elementos superpuestos */}
       <div className="relative w-full h-full">
         <iframe
-          src="https://imagiq-frontend.vercel.app/productos/dispositivos-moviles?seccion=smartphones"
+          src={iframeUrl}
           className="w-full h-full rounded-lg border-0"
           title="Desktop Preview"
         />
@@ -114,7 +116,7 @@ export function InWebPreview({
         {/* Contenedor del iframe con posición relativa para los elementos superpuestos */}
         <div className="relative w-full h-full">
           <iframe
-            src="https://imagiq-frontend.vercel.app/productos/dispositivos-moviles?seccion=smartphones"
+            src={iframeUrl}
             className="w-full h-full rounded-xl border-0"
             title="Mobile Preview"
           />
@@ -158,7 +160,7 @@ export function InWebPreview({
       {/* Contenedor del iframe con posición relativa para los elementos superpuestos */}
       <div className="relative w-full h-full">
         <iframe
-          src="https://imagiq-frontend.vercel.app/productos/dispositivos-moviles?seccion=smartphones"
+          src={iframeUrl}
           className="w-full h-full rounded-xl border-0"
           title="Mobile Preview"
         />
@@ -253,3 +255,5 @@ export function InWebPreview({
     </div>
   );
 }
+
+export const InWebPreview = memo(InWebPreviewComponent);

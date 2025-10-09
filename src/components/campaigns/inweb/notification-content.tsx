@@ -11,6 +11,7 @@ export interface NotificationContentData {
   contentType: "image" | "html";
   image: string;
   url: string;
+  previewUrl: string;
   htmlContent: string;
 }
 
@@ -88,6 +89,27 @@ export function NotificationContent({ data, onChange }: NotificationContentProps
                   })
                 }
               />
+              <p className="text-xs text-muted-foreground">
+                URL a la que se redirige al hacer clic en la notificación
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="previewUrl">URL del Preview (Iframe)</Label>
+              <Input
+                id="previewUrl"
+                placeholder="https://imagiq-frontend.vercel.app/productos"
+                value={data.previewUrl}
+                onChange={(e) =>
+                  onChange({
+                    ...data,
+                    previewUrl: e.target.value,
+                  })
+                }
+              />
+              <p className="text-xs text-muted-foreground">
+                URL que se mostrará en el fondo del preview
+              </p>
             </div>
           </>
         ) : (

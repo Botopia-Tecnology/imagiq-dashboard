@@ -42,6 +42,7 @@ export default function CrearCampaignInWebPage() {
 
     image: string;
     url: string;
+    previewUrl: string;
     displayStyle: "popup" | "slider";
     selectedCities: string[];
     purchaseOperator: string;
@@ -69,6 +70,7 @@ export default function CrearCampaignInWebPage() {
     // Notification Content
     image: "",
     url: "",
+    previewUrl: "",
 
 
 
@@ -202,6 +204,7 @@ export default function CrearCampaignInWebPage() {
               contentType: inWebData.contentType,
               image: inWebData.image,
               url: inWebData.url,
+              previewUrl: inWebData.previewUrl,
               htmlContent: inWebData.htmlContent,
             }}
             onChange={handleNotificationContentChange}
@@ -242,6 +245,7 @@ export default function CrearCampaignInWebPage() {
             <CardContent>
               <InWebPreview
                 image={inWebData.image}
+                previewUrl={inWebData.previewUrl}
                 displayStyle={inWebData.displayStyle}
                 contentType={inWebData.contentType}
                 htmlContent={inWebData.htmlContent}
