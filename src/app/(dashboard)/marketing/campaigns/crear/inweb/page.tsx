@@ -152,16 +152,13 @@ export default function CrearCampaignInWebPage() {
           Volver
         </Button>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">
+          <h1 className="text-2xl font-bold tracking-tight">
             Crear Campaña InWeb
           </h1>
-          <p className="text-muted-foreground">
-            Configura tu campaña de notificaciones web push
-          </p>
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-[300px_1fr]">
         {/* Form */}
         <div className="space-y-3">
           {/* Campaign Info */}
