@@ -75,24 +75,20 @@ function InWebPreviewComponent({
           className="w-full h-full rounded-lg border-0"
           title="Desktop Preview"
         />
-        {/* Modal en la esquina superior derecha */}
-        <div className="absolute top-4 right-4 z-10">
+        {/* Modal centrado en la parte superior */}
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10">
           <div className="relative bg-white border border-gray-200 rounded-lg shadow-2xl p-4 max-w-sm">
-            {/* Botón de cerrar fuera del modal */}
-            <button className="absolute -top-6 right-0 rounded-full p-1.5 hover:opacity-80 transition-opacity">
-              <X className="h-4 w-4 text-gray-800" />
-            </button>
             {contentType === "html" && htmlContent ? (
               <div
-                className="mt-3 rounded-lg overflow-auto max-h-32"
+                className="rounded-lg overflow-auto max-h-32"
                 dangerouslySetInnerHTML={{ __html: htmlContent }}
               />
             ) : image ? (
-              <div className="mt-3 rounded-lg overflow-hidden">
+              <div className="rounded-lg overflow-hidden">
                 <img
                   src={image}
                   alt="Notification"
-                  className="w-full h-32 object-cover"
+                  className="w-full h-auto object-contain max-h-40"
                 />
               </div>
             ) : null}
@@ -167,10 +163,6 @@ function InWebPreviewComponent({
         {/* Modal en la parte superior, ajustado a los márgenes del celular */}
         <div className="absolute top-[8%] left-[12%] right-[12%] z-10">
           <div className="relative bg-white border border-gray-200 rounded-lg shadow-2xl p-3">
-            {/* Botón de cerrar fuera del modal */}
-            <button className="absolute -top-4 right-0 rounded-full p-1 hover:opacity-80 transition-opacity">
-              <X className="h-3.5 w-3.5 text-gray-800" />
-            </button>
             {contentType === "html" && htmlContent ? (
               <div
                 className="rounded overflow-auto max-h-32"
@@ -181,7 +173,7 @@ function InWebPreviewComponent({
                 <img
                   src={image}
                   alt="Notification"
-                  className="w-full h-32 object-cover"
+                  className="w-full h-auto object-contain"
                 />
               </div>
             ) : null}
