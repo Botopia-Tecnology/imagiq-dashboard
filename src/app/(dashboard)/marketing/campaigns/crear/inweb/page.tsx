@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   ArrowLeft,
   Save,
   Send,
   Eye,
+  Monitor,
+  Globe,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { InWebPreview } from "@/components/campaigns/inweb/inweb-preview";
@@ -34,6 +36,7 @@ import {
 
 export default function CrearCampaignInWebPage() {
   const router = useRouter();
+  const [previewMode, setPreviewMode] = useState<"desktop" | "mobile">("desktop");
 
   const [inWebData, setInWebData] = useState<{
     campaignName: string;
@@ -148,17 +151,40 @@ export default function CrearCampaignInWebPage() {
 
   return (
     <div className="space-y-3">
-      {/* Sticky Header con botón Volver - debajo del header del layout */}
+      {/* Sticky Header con botón Volver y Vista Previa - debajo del header del layout */}
       <div className="sticky top-16 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 pb-3 -mx-4 px-4">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="sm" onClick={handleGoBack}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Volver
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">
-              Crear Campaña InWeb
-            </h1>
+        <div className="flex items-center justify-between gap-4">
+          {/* Lado izquierdo: Volver y Título */}
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="sm" onClick={handleGoBack}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Volver
+            </Button>
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight">
+                Crear Campaña InWeb
+              </h1>
+            </div>
+          </div>
+
+          {/* Lado derecho: Vista Previa con tabs */}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <Eye className="h-5 w-5" />
+              <span className="font-semibold">Vista Previa</span>
+            </div>
+            <Tabs value={previewMode} onValueChange={(value) => setPreviewMode(value as "desktop" | "mobile")}>
+              <TabsList className="grid grid-cols-2">
+                <TabsTrigger value="desktop" className="flex items-center gap-2">
+                  <Monitor className="h-4 w-4" />
+                  Desktop
+                </TabsTrigger>
+                <TabsTrigger value="mobile" className="flex items-center gap-2">
+                  <Globe className="h-4 w-4" />
+                  Móvil
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
           </div>
         </div>
       </div>
@@ -239,23 +265,16 @@ export default function CrearCampaignInWebPage() {
 
         {/* Preview */}
         <div className="space-y-3">
-          <Card className="sticky top-[110px]">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Eye className="h-5 w-5" />
-                Vista Previa
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <InWebPreview
-                image={inWebData.image}
-                previewUrl={inWebData.previewUrl}
-                displayStyle={inWebData.displayStyle}
-                contentType={inWebData.contentType}
-                htmlContent={inWebData.htmlContent}
-              />
-            </CardContent>
-          </Card>
+          <div className="sticky top-[110px]">
+            <InWebPreview
+              image={inWebData.image}
+              previewUrl={inWebData.previewUrl}
+              displayStyle={inWebData.displayStyle}
+              contentType={inWebData.contentType}
+              htmlContent={inWebData.htmlContent}
+              mode={previewMode}
+            />
+          </div>
         </div>
       </div>
     </div>

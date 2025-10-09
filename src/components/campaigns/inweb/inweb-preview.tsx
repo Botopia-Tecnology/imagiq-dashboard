@@ -1,7 +1,4 @@
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Monitor, Apple, Globe, X, Bell } from "lucide-react";
+import { X } from "lucide-react";
 import { memo } from "react";
 
 interface InWebPreviewProps {
@@ -10,6 +7,7 @@ interface InWebPreviewProps {
   displayStyle?: "popup" | "slider";
   contentType?: "image" | "html";
   htmlContent?: string;
+  mode?: "desktop" | "mobile";
 }
 
 function InWebPreviewComponent({
@@ -18,6 +16,7 @@ function InWebPreviewComponent({
   displayStyle = "popup",
   contentType = "image",
   htmlContent = "",
+  mode = "desktop",
 }: InWebPreviewProps) {
   const iframeUrl = previewUrl || "https://imagiq-frontend.vercel.app/productos/dispositivos-moviles?seccion=smartphones";
   // Chrome Desktop Notification - Pop-up (bloqueante)
@@ -192,62 +191,48 @@ function InWebPreviewComponent({
       ? MobileNotificationPopup
       : MobileNotificationSlider;
 
+  // Renderizar solo el modo seleccionado
+  if (mode === "desktop") {
+    return (
+      <div className="p-6 bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-950 dark:to-indigo-950 rounded-lg">
+        <div className="mb-4">
+          <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-1">
+            Desktop -{" "}
+            {displayStyle === "popup"
+              ? "Pop-up (Bloqueante)"
+              : "Slider (Toast)"}
+          </h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            {displayStyle === "popup"
+              ? "Notificación bloqueante"
+              : "Notificación no intrusiva que aparece en la esquina"}
+          </p>
+        </div>
+        <div className="flex justify-center">
+          <ChromeNotification />
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6">
-      <Tabs defaultValue="desktop" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="desktop" className="flex items-center gap-2">
-            <Monitor className="h-4 w-4" />
-            Desktop
-          </TabsTrigger>
-          <TabsTrigger value="mobile" className="flex items-center gap-2">
-            <Globe className="h-4 w-4" />
-            Móvil
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="desktop" className="space-y-4">
-          <div className="p-6 bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-950 dark:to-indigo-950 rounded-lg">
-            <div className="mb-4">
-              <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-1">
-                Desktop -{" "}
-                {displayStyle === "popup"
-                  ? "Pop-up (Bloqueante)"
-                  : "Slider (Toast)"}
-              </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                {displayStyle === "popup"
-                  ? "Notificación bloqueante"
-                  : "Notificación no intrusiva que aparece en la esquina"}
-              </p>
-            </div>
-            <div className="flex justify-center">
-              <ChromeNotification />
-            </div>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="mobile" className="space-y-4">
-          <div className="p-6 bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-950 dark:to-emerald-950 rounded-lg">
-            <div className="mb-4">
-              <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-1">
-                Mobile -{" "}
-                {displayStyle === "popup"
-                  ? "Pop-up (Bloqueante)"
-                  : "Slider (Toast)"}
-              </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                {displayStyle === "popup"
-                  ? "Notificación completa en dispositivos móviles"
-                  : "Notificación compacta desde la parte superior"}
-              </p>
-            </div>
-            <div className="flex justify-center">
-              <MobileNotification />
-            </div>
-          </div>
-        </TabsContent>
-      </Tabs>
+    <div className="p-6 bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-950 dark:to-emerald-950 rounded-lg">
+      <div className="mb-4">
+        <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-1">
+          Mobile -{" "}
+          {displayStyle === "popup"
+            ? "Pop-up (Bloqueante)"
+            : "Slider (Toast)"}
+        </h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          {displayStyle === "popup"
+            ? "Notificación completa en dispositivos móviles"
+            : "Notificación compacta desde la parte superior"}
+        </p>
+      </div>
+      <div className="flex justify-center">
+        <MobileNotification />
+      </div>
     </div>
   );
 }
