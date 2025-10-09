@@ -259,6 +259,7 @@ export interface BackendCategory {
   createdAt: string;
   updatedAt: string;
   subcategorias: BackendSubcategory[];
+  totalProducts: number;
 }
 
 export interface BackendSubcategory {

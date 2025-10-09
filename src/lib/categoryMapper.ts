@@ -38,7 +38,7 @@ export const mapBackendCategoryToFrontend = (backendCategory: BackendCategory): 
     image: backendCategory.imagen, // Usar imagen del backend
     order: 1, // Mock order por ahora
     isActive: backendCategory.activo,
-    productsCount: 0, // Mock productsCount por ahora
+    productsCount: backendCategory.totalProducts,
     subcategories: backendCategory.subcategorias?.map(subcategory =>
       mapBackendSubcategoryToFrontend(subcategory, backendCategory.uuid)
     ) || [],
