@@ -244,6 +244,7 @@ export interface ProductMediaUpdateResponse {
 // Categories API endpoints
 export const categoryEndpoints = {
   getVisible: () => apiClient.get<BackendCategory[]>("/api/categorias/visibles"),
+  getDistinct: () => apiClient.get<string[]>("/api/categorias/distinct"),
   updateActiveStatus: (uuid: string, activo: boolean) => 
     apiClient.patch<{ success: boolean; message?: string }>(`/api/categorias/visibles/${uuid}/activo`, { activo }),
 };

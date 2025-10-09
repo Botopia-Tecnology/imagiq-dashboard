@@ -45,6 +45,7 @@ import {
 } from "lucide-react"
 import { WebsiteCategory } from "@/types"
 import { useCategories } from "@/features/categories/useCategories"
+import { useAvailableCategories } from "@/features/categories/useAvailableCategories"
 
 export default function CategoriasPage() {
   const router = useRouter()
@@ -63,23 +64,14 @@ export default function CategoriasPage() {
     updatingCategory
   } = useCategories()
 
-  // Categorías de productos disponibles en la base de datos
-  const availableCategories = [
-    "Electrónicos",
-    "Ropa",
-    "Hogar",
-    "Belleza",
-    "Deportes",
-    "Juguetes",
-    "Libros",
-    "Alimentos",
-    "Muebles",
-    "Tecnología",
-    "Jardín",
-    "Mascotas",
-    "Automóviles",
-    "Salud",
-  ]
+  // Hook para manejar categorías disponibles del backend
+  const { 
+    availableCategories, 
+    loading: loadingAvailable, 
+    error: errorAvailable 
+  } = useAvailableCategories()
+
+  // Las categorías disponibles ahora vienen del hook useAvailableCategories del backend
 
   // Los datos ahora vienen del hook useCategories del backend
 
@@ -180,20 +172,31 @@ export default function CategoriasPage() {
             <div className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label htmlFor="category-select">Categoría de Productos</Label>
-                <Select>
+                <Select disabled={loadingAvailable}>
                   <SelectTrigger id="category-select">
-                    <SelectValue placeholder="Selecciona una categoría" />
+                    <SelectValue placeholder={
+                      loadingAvailable 
+                        ? "Cargando categorías..." 
+                        : errorAvailable 
+                          ? "Error al cargar categorías" 
+                          : "Selecciona una categoría"
+                    } />
                   </SelectTrigger>
                   <SelectContent>
                     {availableCategories.map((cat) => (
-                      <SelectItem key={cat} value={cat.toLowerCase()}>
+                      <SelectItem key={cat} value={cat}>
                         {cat}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground">
-                  Las categorías provienen de tu catálogo de productos
+                  {loadingAvailable 
+                    ? "Cargando categorías del backend..." 
+                    : errorAvailable 
+                      ? "Error al cargar categorías disponibles" 
+                      : "Las categorías provienen de tu catálogo de productos"
+                  }
                 </p>
               </div>
 
