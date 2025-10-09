@@ -24,12 +24,12 @@ export function InWebPreview({
 
     return (
       <div className="relative w-full h-[400px] rounded-lg flex items-center justify-center">
-        {/* Contenedor de la imagen con posición relativa para los elementos superpuestos */}
-        <div className="relative max-w-full max-h-full">
-          <img
-            src="/compu2.jpg"
-            alt=""
-            className="max-w-full max-h-[400px] object-contain rounded-lg"
+        {/* Contenedor del iframe con posición relativa para los elementos superpuestos */}
+        <div className="relative w-full h-full">
+          <iframe
+            src="https://imagiq-frontend.vercel.app/productos/dispositivos-moviles?seccion=smartphones"
+            className="w-full h-full rounded-lg border-0"
+            title="Desktop Preview"
           />
           {/* Overlay oscuro solo si hay contenido */}
           {hasContent && <div className="absolute inset-0 bg-black/30 rounded-lg" />}
@@ -66,12 +66,12 @@ export function InWebPreview({
   // Chrome Desktop Notification - Slider (tipo toast)
   const ChromeNotificationSlider = () => (
     <div className="relative w-full h-[400px] rounded-lg flex items-center justify-center">
-      {/* Contenedor de la imagen con posición relativa para los elementos superpuestos */}
-      <div className="relative max-w-full max-h-full">
-        <img
-          src="/compu.jpg"
-          alt=""
-          className="max-w-full max-h-[400px] object-contain rounded-lg"
+      {/* Contenedor del iframe con posición relativa para los elementos superpuestos */}
+      <div className="relative w-full h-full">
+        <iframe
+          src="https://imagiq-frontend.vercel.app/productos/dispositivos-moviles?seccion=smartphones"
+          className="w-full h-full rounded-lg border-0"
+          title="Desktop Preview"
         />
         {/* Modal en la esquina superior derecha */}
         <div className="absolute top-4 right-4 z-10">
@@ -111,9 +111,13 @@ export function InWebPreview({
 
     return (
       <div className="relative w-full h-[600px] max-w-[375px] mx-auto rounded-lg flex items-center justify-center">
-        {/* Contenedor de la imagen con posición relativa para los elementos superpuestos */}
-        <div className="relative h-full w-auto">
-          <img src="/cell.jpg" alt="" className="h-full w-auto object-contain rounded-xl" />
+        {/* Contenedor del iframe con posición relativa para los elementos superpuestos */}
+        <div className="relative w-full h-full">
+          <iframe
+            src="https://imagiq-frontend.vercel.app/productos/dispositivos-moviles?seccion=smartphones"
+            className="w-full h-full rounded-xl border-0"
+            title="Mobile Preview"
+          />
           {/* Overlay oscuro solo si hay contenido */}
           {hasContent && (
             <div className="absolute inset-0 bg-black/30 rounded-xl" />
@@ -151,9 +155,13 @@ export function InWebPreview({
   // Mobile Chrome Notification - Slider
   const MobileNotificationSlider = () => (
     <div className="relative w-full h-[600px] max-w-[375px] mx-auto rounded-lg flex items-center justify-center">
-      {/* Contenedor de la imagen con posición relativa para los elementos superpuestos */}
-      <div className="relative h-full w-auto">
-        <img src="/cell.jpg" alt="" className="h-full w-auto object-contain rounded-xl" />
+      {/* Contenedor del iframe con posición relativa para los elementos superpuestos */}
+      <div className="relative w-full h-full">
+        <iframe
+          src="https://imagiq-frontend.vercel.app/productos/dispositivos-moviles?seccion=smartphones"
+          className="w-full h-full rounded-xl border-0"
+          title="Mobile Preview"
+        />
         {/* Modal en la parte superior, ajustado a los márgenes del celular */}
         <div className="absolute top-[8%] left-[12%] right-[12%] z-10">
           <div className="relative bg-white border border-gray-200 rounded-lg shadow-2xl p-3">
