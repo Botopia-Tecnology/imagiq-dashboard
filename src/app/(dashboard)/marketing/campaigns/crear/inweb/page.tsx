@@ -148,15 +148,18 @@ export default function CrearCampaignInWebPage() {
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="sm" onClick={handleGoBack}>
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Volver
-        </Button>
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">
-            Crear Campaña InWeb
-          </h1>
+      {/* Sticky Header con botón Volver - debajo del header del layout */}
+      <div className="sticky top-16 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 pb-3 -mx-4 px-4">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="sm" onClick={handleGoBack}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Volver
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">
+              Crear Campaña InWeb
+            </h1>
+          </div>
         </div>
       </div>
 
@@ -221,6 +224,7 @@ export default function CrearCampaignInWebPage() {
             onChange={handleSchedulingSettingsChange}
           />
 
+          {/* Action Buttons */}
           <div className="flex gap-3">
             <Button variant="outline" onClick={handleSave} className="flex-1">
               <Save className="mr-2 h-4 w-4" />
@@ -228,14 +232,14 @@ export default function CrearCampaignInWebPage() {
             </Button>
             <Button onClick={handleSend} className="flex-1">
               <Send className="mr-2 h-4 w-4" />
-              Enviar Push
+              Crear
             </Button>
           </div>
         </div>
 
         {/* Preview */}
         <div className="space-y-3">
-          <Card className="sticky top-4">
+          <Card className="sticky top-[110px]">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Eye className="h-5 w-5" />
