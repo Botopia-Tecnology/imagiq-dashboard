@@ -24,12 +24,12 @@ function InWebPreviewComponent({
     const hasContent = (contentType === "html" && htmlContent) || image;
 
     return (
-      <div className="relative w-full h-[400px] rounded-lg flex items-center justify-center">
+      <div className="relative w-full h-[400px] rounded-lg flex items-center justify-center border border-gray-200 shadow-lg overflow-hidden">
         {/* Contenedor del iframe con posición relativa para los elementos superpuestos */}
         <div className="relative w-full h-full">
           <iframe
             src={iframeUrl}
-            className="w-full h-full rounded-lg border-0"
+            className="w-full h-full border-0"
             title="Desktop Preview"
           />
           {/* Overlay oscuro solo si hay contenido */}
@@ -67,12 +67,12 @@ function InWebPreviewComponent({
 
   // Chrome Desktop Notification - Slider (tipo toast)
   const ChromeNotificationSlider = () => (
-    <div className="relative w-full h-[400px] rounded-lg flex items-center justify-center">
+    <div className="relative w-full h-[400px] rounded-lg flex items-center justify-center border border-gray-200 shadow-lg overflow-hidden">
       {/* Contenedor del iframe con posición relativa para los elementos superpuestos */}
       <div className="relative w-full h-full">
         <iframe
           src={iframeUrl}
-          className="w-full h-full rounded-lg border-0"
+          className="w-full h-full border-0"
           title="Desktop Preview"
         />
         {/* Modal centrado en la parte superior */}
@@ -109,12 +109,12 @@ function InWebPreviewComponent({
     const hasContent = (contentType === "html" && htmlContent) || image;
 
     return (
-      <div className="relative w-full h-[600px] max-w-[375px] mx-auto rounded-lg flex items-center justify-center">
+      <div className="relative w-full h-[600px] max-w-[375px] mx-auto rounded-xl flex items-center justify-center border border-gray-200 shadow-lg overflow-hidden">
         {/* Contenedor del iframe con posición relativa para los elementos superpuestos */}
         <div className="relative w-full h-full">
           <iframe
             src={iframeUrl}
-            className="w-full h-full rounded-xl border-0"
+            className="w-full h-full border-0"
             title="Mobile Preview"
           />
           {/* Overlay oscuro solo si hay contenido */}
@@ -154,12 +154,12 @@ function InWebPreviewComponent({
 
   // Mobile Chrome Notification - Slider
   const MobileNotificationSlider = () => (
-    <div className="relative w-full h-[600px] max-w-[375px] mx-auto rounded-lg flex items-center justify-center">
+    <div className="relative w-full h-[600px] max-w-[375px] mx-auto rounded-xl flex items-center justify-center border border-gray-200 shadow-lg overflow-hidden">
       {/* Contenedor del iframe con posición relativa para los elementos superpuestos */}
       <div className="relative w-full h-full">
         <iframe
           src={iframeUrl}
-          className="w-full h-full rounded-xl border-0"
+          className="w-full h-full border-0"
           title="Mobile Preview"
         />
         {/* Modal en la parte superior, ajustado a los márgenes del celular */}
@@ -193,48 +193,10 @@ function InWebPreviewComponent({
 
   // Renderizar solo el modo seleccionado
   if (mode === "desktop") {
-    return (
-      <div className="p-6 bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-950 dark:to-indigo-950 rounded-lg">
-        <div className="mb-4">
-          <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-1">
-            Desktop -{" "}
-            {displayStyle === "popup"
-              ? "Pop-up (Bloqueante)"
-              : "Slider (Toast)"}
-          </h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            {displayStyle === "popup"
-              ? "Notificación bloqueante"
-              : "Notificación no intrusiva que aparece en la esquina"}
-          </p>
-        </div>
-        <div className="flex justify-center">
-          <ChromeNotification />
-        </div>
-      </div>
-    );
+    return <ChromeNotification />;
   }
 
-  return (
-    <div className="p-6 bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-950 dark:to-emerald-950 rounded-lg">
-      <div className="mb-4">
-        <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-1">
-          Mobile -{" "}
-          {displayStyle === "popup"
-            ? "Pop-up (Bloqueante)"
-            : "Slider (Toast)"}
-        </h3>
-        <p className="text-sm text-gray-600 dark:text-gray-400">
-          {displayStyle === "popup"
-            ? "Notificación completa en dispositivos móviles"
-            : "Notificación compacta desde la parte superior"}
-        </p>
-      </div>
-      <div className="flex justify-center">
-        <MobileNotification />
-      </div>
-    </div>
-  );
+  return <MobileNotification />;
 }
 
 export const InWebPreview = memo(InWebPreviewComponent);
