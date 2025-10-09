@@ -17,14 +17,16 @@ interface UseCategoriesReturn {
   loading: boolean;
   error: string | null;
   refreshCategories: () => Promise<void>;
-  toggleCategoryActive: (categoryId: string) => void;
+  toggleCategoryActive: (categoryId: string) => Promise<void>;
   deleteCategory: (categoryId: string) => void;
+  updatingCategory: string | null; // Para mostrar loading en categoría específica
 }
 
 export const useCategories = (): UseCategoriesReturn => {
   const [categories, setCategories] = useState<WebsiteCategory[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [updatingCategory, setUpdatingCategory] = useState<string | null>(null);
 
   // Función para obtener categorías del backend
   const fetchCategories = useCallback(async () => {
@@ -54,13 +56,34 @@ export const useCategories = (): UseCategoriesReturn => {
   }, [fetchCategories]);
 
   // Función para cambiar el estado activo de una categoría
-  const toggleCategoryActive = useCallback((categoryId: string) => {
-    setCategories(prev =>
-      prev.map(cat =>
-        cat.id === categoryId ? { ...cat, isActive: !cat.isActive } : cat
-      )
-    );
-  }, []);
+  const toggleCategoryActive = useCallback(async (categoryId: string) => {
+    const category = categories.find(cat => cat.id === categoryId);
+    if (!category) return;
+
+    setUpdatingCategory(categoryId);
+    setError(null);
+
+    try {
+      const newActiveStatus = !category.isActive;
+      const response = await categoryEndpoints.updateActiveStatus(categoryId, newActiveStatus);
+
+      if (response.success) {
+        // Actualizar el estado local solo si la petición fue exitosa
+        setCategories(prev =>
+          prev.map(cat =>
+            cat.id === categoryId ? { ...cat, isActive: newActiveStatus } : cat
+          )
+        );
+      } else {
+        setError(response.message || "Error al actualizar el estado de la categoría");
+      }
+    } catch (err) {
+      console.error("Error updating category status:", err);
+      setError("Error de conexión al actualizar la categoría");
+    } finally {
+      setUpdatingCategory(null);
+    }
+  }, [categories]);
 
   // Función para eliminar una categoría
   const deleteCategory = useCallback((categoryId: string) => {
@@ -79,5 +102,6 @@ export const useCategories = (): UseCategoriesReturn => {
     refreshCategories,
     toggleCategoryActive,
     deleteCategory,
+    updatingCategory,
   };
 };

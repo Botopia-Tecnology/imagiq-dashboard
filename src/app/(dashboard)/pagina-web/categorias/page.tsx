@@ -59,7 +59,8 @@ export default function CategoriasPage() {
     loading, 
     error, 
     toggleCategoryActive: handleToggleActive, 
-    deleteCategory: handleDeleteCategory 
+    deleteCategory: handleDeleteCategory,
+    updatingCategory
   } = useCategories()
 
   // Categorías de productos disponibles en la base de datos
@@ -360,11 +361,16 @@ export default function CategoriasPage() {
                       <Switch
                         checked={category.isActive}
                         onCheckedChange={() => handleToggleActive(category.id)}
+                        disabled={updatingCategory === category.id}
                       />
-                      {category.isActive ? (
-                        <Eye className="h-4 w-4 text-green-600" />
+                      {updatingCategory === category.id ? (
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
                       ) : (
-                        <EyeOff className="h-4 w-4 text-muted-foreground" />
+                        category.isActive ? (
+                          <Eye className="h-4 w-4 text-green-600" />
+                        ) : (
+                          <EyeOff className="h-4 w-4 text-muted-foreground" />
+                        )
                       )}
                     </div>
                   </TableCell>

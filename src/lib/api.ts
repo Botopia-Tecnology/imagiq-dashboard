@@ -88,6 +88,13 @@ export class ApiClient {
     return this.request<T>(endpoint, { method: "DELETE" });
   }
 
+  async patch<T>(endpoint: string, data?: unknown): Promise<ApiResponse<T>> {
+    return this.request<T>(endpoint, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    });
+  }
+
   async putFormData<T>(endpoint: string, formData: FormData): Promise<ApiResponse<T>> {
     const url = `${this.baseURL}${endpoint}`;
     const config: RequestInit = {
@@ -237,4 +244,6 @@ export interface ProductMediaUpdateResponse {
 // Categories API endpoints
 export const categoryEndpoints = {
   getVisible: () => apiClient.get<BackendCategory[]>("/api/categorias/visibles"),
+  updateActiveStatus: (uuid: string, activo: boolean) => 
+    apiClient.patch<{ success: boolean; message?: string }>(`/api/categorias/visibles/${uuid}/activo`, { activo }),
 };
