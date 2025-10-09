@@ -10,7 +10,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { categoryEndpoints } from "@/lib/api";
 import { mapBackendCategoriesToFrontend } from "@/lib/categoryMapper";
-import { WebsiteCategory, CreateCategoryRequest } from "@/types";
+import { WebsiteCategory, CreateCategoryRequest, UpdateCategoryRequest } from "@/types";
 
 interface UseCategoriesReturn {
   categories: WebsiteCategory[];
@@ -22,6 +22,8 @@ interface UseCategoriesReturn {
   updatingCategory: string | null; // Para mostrar loading en categoría específica
   createCategory: (data: CreateCategoryRequest) => Promise<boolean>;
   creatingCategory: boolean; // Para mostrar loading al crear categoría
+  updateCategory: (categoryId: string, data: UpdateCategoryRequest) => Promise<boolean>;
+  updatingCategoryData: boolean; // Para mostrar loading al actualizar categoría
 }
 
 export const useCategories = (): UseCategoriesReturn => {
@@ -30,6 +32,7 @@ export const useCategories = (): UseCategoriesReturn => {
   const [error, setError] = useState<string | null>(null);
   const [updatingCategory, setUpdatingCategory] = useState<string | null>(null);
   const [creatingCategory, setCreatingCategory] = useState(false);
+  const [updatingCategoryData, setUpdatingCategoryData] = useState(false);
 
   // Función para obtener categorías del backend
   const fetchCategories = useCallback(async () => {
@@ -119,6 +122,36 @@ export const useCategories = (): UseCategoriesReturn => {
     }
   }, []);
 
+  // Función para actualizar una categoría
+  const updateCategory = useCallback(async (categoryId: string, data: UpdateCategoryRequest): Promise<boolean> => {
+    setUpdatingCategoryData(true);
+    setError(null);
+
+    try {
+      const response = await categoryEndpoints.update(categoryId, data);
+
+      if (response.success && response.data) {
+        // Actualizar la categoría en el estado local
+        const updatedCategory = mapBackendCategoriesToFrontend([response.data])[0];
+        setCategories(prev =>
+          prev.map(cat =>
+            cat.id === categoryId ? updatedCategory : cat
+          )
+        );
+        return true;
+      } else {
+        setError(response.message || "Error al actualizar la categoría");
+        return false;
+      }
+    } catch (err) {
+      console.error("Error updating category:", err);
+      setError("Error de conexión al actualizar la categoría");
+      return false;
+    } finally {
+      setUpdatingCategoryData(false);
+    }
+  }, []);
+
   // Cargar categorías al montar el componente
   useEffect(() => {
     fetchCategories();
@@ -134,5 +167,7 @@ export const useCategories = (): UseCategoriesReturn => {
     updatingCategory,
     createCategory,
     creatingCategory,
+    updateCategory,
+    updatingCategoryData,
   };
 };

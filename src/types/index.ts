@@ -281,6 +281,12 @@ export interface CreateCategoryRequest {
   activo: boolean;
 }
 
+export interface UpdateCategoryRequest {
+  nombre: string;
+  descripcion: string;
+  imagen: string;
+}
+
 export interface CreateCategoryResponse {
   success: boolean;
   message?: string;

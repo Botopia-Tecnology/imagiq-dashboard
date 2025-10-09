@@ -1,4 +1,4 @@
-"use client"
+  "use client"
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
@@ -63,7 +63,9 @@ export default function CategoriasPage() {
     deleteCategory: handleDeleteCategory,
     updatingCategory,
     createCategory,
-    creatingCategory
+    creatingCategory,
+    updateCategory,
+    updatingCategoryData
   } = useCategories()
 
   // Hook para manejar categorías disponibles del backend
@@ -80,10 +82,22 @@ export default function CategoriasPage() {
     !websiteCategories.some(visibleCat => visibleCat.name === availableCat)
   )
 
-  // Estado del formulario del modal
+  // Filtrar categorías disponibles para edición (excluye las ya usadas excepto la actual)
+  const filteredAvailableCategoriesForEdit = availableCategories.filter(availableCat => 
+    !websiteCategories.some(visibleCat => 
+      visibleCat.name === availableCat && visibleCat.id !== selectedCategory?.id
+    )
+  )
+
+  // Estado del formulario del modal de agregar
   const [selectedCategoryName, setSelectedCategoryName] = useState<string>("")
   const [description, setDescription] = useState<string>("")
   const [isActive, setIsActive] = useState<boolean>(true)
+
+  // Estado del formulario del modal de editar
+  const [editCategoryName, setEditCategoryName] = useState<string>("")
+  const [editDescription, setEditDescription] = useState<string>("")
+  const [editImage, setEditImage] = useState<string>("")
 
   // Función para manejar el envío del formulario
   const handleSubmitCategory = async () => {
@@ -110,12 +124,46 @@ export default function CategoriasPage() {
     }
   }
 
+  // Función para manejar la edición de categoría
+  const handleEditCategory = async () => {
+    if (!selectedCategory || !editCategoryName) {
+      alert("Por favor completa todos los campos requeridos")
+      return
+    }
+
+    const categoryData = {
+      nombre: editCategoryName,
+      descripcion: editDescription,
+      imagen: editImage || "https://example.com/mock-image.jpg", // Mock image por ahora
+    }
+
+    const success = await updateCategory(selectedCategory.id, categoryData)
+    
+    if (success) {
+      // Limpiar formulario y cerrar modal
+      setEditCategoryName("")
+      setEditDescription("")
+      setEditImage("")
+      setSelectedCategory(null)
+      setIsEditDialogOpen(false)
+    }
+  }
+
   // Función para resetear el formulario al cerrar el modal
   const handleCloseModal = () => {
     setSelectedCategoryName("")
     setDescription("")
     setIsActive(true)
     setIsAddDialogOpen(false)
+  }
+
+  // Función para resetear el formulario de edición al cerrar el modal
+  const handleCloseEditModal = () => {
+    setEditCategoryName("")
+    setEditDescription("")
+    setEditImage("")
+    setSelectedCategory(null)
+    setIsEditDialogOpen(false)
   }
 
   // Función para manejar el cambio de estado del modal
@@ -126,6 +174,25 @@ export default function CategoriasPage() {
     } else {
       setIsAddDialogOpen(true)
     }
+  }
+
+  // Función para manejar el cambio de estado del modal de edición
+  const handleEditModalOpenChange = (open: boolean) => {
+    if (!open) {
+      // Solo limpiar cuando se cierra, no cuando se abre
+      handleCloseEditModal()
+    } else {
+      setIsEditDialogOpen(true)
+    }
+  }
+
+  // Función para abrir el modal de edición con los datos de la categoría
+  const handleOpenEditModal = (category: WebsiteCategory) => {
+    setSelectedCategory(category)
+    setEditCategoryName(category.name)
+    setEditDescription(category.description || "")
+    setEditImage(category.image || "")
+    setIsEditDialogOpen(true)
   }
 
   // Mostrar estado de carga
@@ -315,6 +382,99 @@ export default function CategoriasPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Modal de Edición */}
+        <Dialog open={isEditDialogOpen} onOpenChange={handleEditModalOpenChange}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Editar Categoría</DialogTitle>
+              <DialogDescription>
+                Modifica los datos de la categoría seleccionada
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-category-select">Categoría de Productos</Label>
+                <Select 
+                  disabled={loadingAvailable || updatingCategoryData}
+                  value={editCategoryName}
+                  onValueChange={setEditCategoryName}
+                >
+                  <SelectTrigger id="edit-category-select">
+                    <SelectValue placeholder={
+                      loadingAvailable 
+                        ? "Cargando categorías..." 
+                        : errorAvailable 
+                          ? "Error al cargar categorías" 
+                          : "Selecciona una categoría"
+                    } />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {filteredAvailableCategoriesForEdit.map((cat) => (
+                      <SelectItem key={cat} value={cat}>
+                        {cat}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  {loadingAvailable 
+                    ? "Cargando categorías del backend..." 
+                    : errorAvailable 
+                      ? "Error al cargar categorías disponibles" 
+                      : filteredAvailableCategoriesForEdit.length === 0
+                        ? "Todas las categorías ya han sido agregadas"
+                        : `Mostrando ${filteredAvailableCategoriesForEdit.length} categorías disponibles`
+                  }
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-description">Descripción (opcional)</Label>
+                <Input
+                  id="edit-description"
+                  placeholder="Descripción de la categoría para SEO"
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                  disabled={updatingCategoryData}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-image">Imagen de la Categoría</Label>
+                <div className="flex gap-2">
+                  <Input 
+                    id="edit-image" 
+                    type="file" 
+                    accept="image/*" 
+                    disabled={updatingCategoryData}
+                  />
+                  <Button type="button" variant="outline" size="icon" disabled={updatingCategoryData}>
+                    <ImageIcon className="h-4 w-4" />
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Tamaño recomendado: 600x400px
+                </p>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={handleCloseEditModal} disabled={updatingCategoryData}>
+                Cancelar
+              </Button>
+              <Button onClick={handleEditCategory} disabled={updatingCategoryData || !editCategoryName || filteredAvailableCategoriesForEdit.length === 0}>
+                {updatingCategoryData ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Actualizando...
+                  </>
+                ) : (
+                  "Actualizar Categoría"
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Stats */}
@@ -456,10 +616,8 @@ export default function CategoriasPage() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => {
-                          setSelectedCategory(category)
-                          setIsEditDialogOpen(true)
-                        }}
+                        className="cursor-pointer"
+                        onClick={() => handleOpenEditModal(category)}
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
