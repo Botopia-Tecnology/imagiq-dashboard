@@ -38,15 +38,16 @@ function InWebPreviewComponent({
           {/* Modal centrado solo si hay contenido */}
           {hasContent && (
             <div className="absolute inset-0 flex items-center justify-center z-10 p-8">
-              <div className="relative bg-white border border-gray-200 rounded-lg shadow-2xl p-4 max-w-md max-h-[calc(100%-4rem)] flex flex-col">
+              <div className="relative bg-white border border-gray-200 rounded-lg shadow-2xl p-4 max-w-md max-h-[calc(100%-4rem)]">
                 {/* Botón de cerrar fuera del modal */}
                 <button className="absolute -top-8 right-0 rounded-full p-1.5 hover:opacity-80 transition-opacity">
                   <X className="h-4 w-4 text-gray-800" />
                 </button>
                 {contentType === "html" && htmlContent ? (
                   <div
-                    className="rounded-lg overflow-auto"
+                    className="rounded-lg [&>*]:max-w-full [&_img]:max-w-full [&_img]:h-auto"
                     dangerouslySetInnerHTML={{ __html: htmlContent }}
+                    style={{ maxHeight: 'calc(400px - 8rem)', overflow: 'hidden' }}
                   />
                 ) : image ? (
                   <div className="rounded-lg overflow-hidden flex items-center justify-center">
@@ -76,12 +77,13 @@ function InWebPreviewComponent({
           title="Desktop Preview"
         />
         {/* Modal centrado en la parte superior */}
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10">
-          <div className="relative bg-white border border-gray-200 rounded-lg shadow-2xl p-4 max-w-sm">
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 max-w-sm max-h-[calc(100%-2rem)]">
+          <div className="relative bg-white border border-gray-200 rounded-lg shadow-2xl p-4">
             {contentType === "html" && htmlContent ? (
               <div
-                className="rounded-lg overflow-auto max-h-32"
+                className="rounded-lg [&>*]:max-w-full [&_img]:max-w-full [&_img]:h-auto"
                 dangerouslySetInnerHTML={{ __html: htmlContent }}
+                style={{ maxHeight: 'calc(400px - 4rem)', overflow: 'hidden' }}
               />
             ) : image ? (
               <div className="rounded-lg overflow-hidden">
@@ -123,15 +125,16 @@ function InWebPreviewComponent({
           {/* Modal centrado solo si hay contenido */}
           {hasContent && (
             <div className="absolute inset-0 flex items-center justify-center z-10 p-8">
-              <div className="relative bg-white border border-gray-200 rounded-lg shadow-2xl p-4 max-w-[280px] max-h-[calc(100%-4rem)] flex flex-col">
+              <div className="relative bg-white border border-gray-200 rounded-lg shadow-2xl p-4 max-w-[280px] max-h-[calc(100%-4rem)]">
                 {/* Botón de cerrar fuera del modal */}
                 <button className="absolute -top-5 right-0 rounded-full p-1 hover:opacity-80 transition-opacity">
                   <X className="h-3.5 w-3.5 text-gray-800" />
                 </button>
                 {contentType === "html" && htmlContent ? (
                   <div
-                    className="rounded overflow-auto"
+                    className="rounded [&>*]:max-w-full [&_img]:max-w-full [&_img]:h-auto"
                     dangerouslySetInnerHTML={{ __html: htmlContent }}
+                    style={{ maxHeight: 'calc(600px - 8rem)', overflow: 'hidden' }}
                   />
                 ) : image ? (
                   <div className="rounded overflow-hidden flex items-center justify-center">
@@ -161,12 +164,13 @@ function InWebPreviewComponent({
           title="Mobile Preview"
         />
         {/* Modal en la parte superior, ajustado a los márgenes del celular */}
-        <div className="absolute top-[8%] left-[12%] right-[12%] z-10">
+        <div className="absolute top-[8%] left-[12%] right-[12%] z-10 max-h-[calc(100%-10%)]">
           <div className="relative bg-white border border-gray-200 rounded-lg shadow-2xl p-3">
             {contentType === "html" && htmlContent ? (
               <div
-                className="rounded overflow-auto max-h-32"
+                className="rounded [&>*]:max-w-full [&_img]:max-w-full [&_img]:h-auto"
                 dangerouslySetInnerHTML={{ __html: htmlContent }}
+                style={{ maxHeight: 'calc(600px - 12%)', overflow: 'hidden' }}
               />
             ) : image ? (
               <div className="rounded overflow-hidden">
