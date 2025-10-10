@@ -31,14 +31,18 @@ export const useAvailableSubcategories = (categoryName: string): UseAvailableSub
     try {
       const response = await subcategoryEndpoints.getDistinct(categoryName);
 
-      if (response.success && response.data) {
-        setAvailableSubcategories(response.data);
+      if (response.success) {
+        // Si la respuesta es exitosa, usar los datos (puede ser un array vacío)
+        setAvailableSubcategories(response.data || []);
       } else {
+        // Solo marcar error si la petición falla, no si simplemente no hay datos
         setError(response.message || "Error al cargar subcategorías disponibles");
+        setAvailableSubcategories([]);
       }
     } catch (err) {
       console.error("Error fetching available subcategories:", err);
       setError("Error de conexión al cargar subcategorías disponibles");
+      setAvailableSubcategories([]);
     } finally {
       setLoading(false);
     }

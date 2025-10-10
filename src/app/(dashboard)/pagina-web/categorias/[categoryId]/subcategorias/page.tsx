@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
-import Link from "next/link"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -35,14 +34,6 @@ import {
 import { Switch } from "@/components/ui/switch"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb"
-import {
   Plus,
   Edit,
   Trash2,
@@ -51,7 +42,6 @@ import {
   GripVertical,
   Eye,
   EyeOff,
-  ChevronRight,
 } from "lucide-react"
 import { WebsiteSubcategory, WebsiteCategory } from "@/types"
 import { useSubcategories } from "@/features/categories/useSubcategories"
@@ -242,26 +232,6 @@ export default function SubcategoriasPage() {
   if (loading) {
     return (
       <div className="space-y-3">
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link href="/pagina-web">Página Web</Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link href="/pagina-web/categorias">Categorías</Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>Subcategorías</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
             Subcategorías de {category?.name || "..."}
@@ -284,26 +254,6 @@ export default function SubcategoriasPage() {
   if (error) {
     return (
       <div className="space-y-3">
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link href="/pagina-web">Página Web</Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link href="/pagina-web/categorias">Categorías</Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>Subcategorías</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
             Subcategorías de {category?.name || "..."}
@@ -326,27 +276,6 @@ export default function SubcategoriasPage() {
 
   return (
     <div className="space-y-3">
-      {/* Breadcrumbs */}
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link href="/pagina-web">Página Web</Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link href="/pagina-web/categorias">Categorías</Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbPage>Subcategorías de {category?.name}</BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
-
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -402,7 +331,9 @@ export default function SubcategoriasPage() {
                     : errorAvailable
                       ? "Error al cargar subcategorías disponibles"
                       : filteredAvailableSubcategories.length === 0
-                        ? "Todas las subcategorías ya han sido agregadas"
+                        ? availableSubcategories.length === 0
+                          ? "No hay subcategorías disponibles en esta categoría"
+                          : "Todas las subcategorías ya han sido agregadas"
                         : `Mostrando ${filteredAvailableSubcategories.length} subcategorías disponibles`
                   }
                 </p>
@@ -505,7 +436,9 @@ export default function SubcategoriasPage() {
                     : errorAvailable
                       ? "Error al cargar subcategorías disponibles"
                       : filteredAvailableSubcategoriesForEdit.length === 0
-                        ? "Todas las subcategorías ya han sido agregadas"
+                        ? availableSubcategories.length === 0
+                          ? "No hay subcategorías disponibles en esta categoría"
+                          : "Todas las subcategorías ya han sido agregadas"
                         : `Mostrando ${filteredAvailableSubcategoriesForEdit.length} subcategorías disponibles`
                   }
                 </p>
