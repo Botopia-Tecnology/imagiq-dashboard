@@ -8,6 +8,8 @@
  * - TypeScript interfaces para requests/responses
  */
 
+import { BackendCategory, CreateCategoryRequest, UpdateCategoryRequest } from "@/types";
+
 // API Client configuration
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
@@ -45,20 +47,32 @@ export class ApiClient {
 
     try {
       const response = await fetch(url, config);
-      const data = await response?.json();
+
+      // Intentar parsear JSON
+      let data;
+      try {
+        data = await response?.json();
+      } catch (jsonError) {
+        // Si no es JSON válido, retornar error
+        return {
+          data: {} as T,
+          success: false,
+          message: `Error al procesar la respuesta del servidor (Status: ${response.status})`,
+        };
+      }
 
       return {
         data: data as T,
         success: response.ok,
-        message: data.message,
-        errors: data.errors,
+        message: typeof data?.message === 'string' ? data.message : undefined,
+        errors: data?.errors,
       };
     } catch (error) {
       console.error("API request failed:", error);
       return {
         data: {} as T,
         success: false,
-        message: "Request failed",
+        message: error instanceof Error ? error.message : "Request failed",
       };
     }
   }
@@ -86,6 +100,13 @@ export class ApiClient {
     return this.request<T>(endpoint, { method: "DELETE" });
   }
 
+  async patch<T>(endpoint: string, data?: unknown): Promise<ApiResponse<T>> {
+    return this.request<T>(endpoint, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    });
+  }
+
   async putFormData<T>(endpoint: string, formData: FormData): Promise<ApiResponse<T>> {
     const url = `${this.baseURL}${endpoint}`;
     const config: RequestInit = {
@@ -98,20 +119,32 @@ export class ApiClient {
 
     try {
       const response = await fetch(url, config);
-      const data = await response?.json();
+
+      // Intentar parsear JSON
+      let data;
+      try {
+        data = await response?.json();
+      } catch (jsonError) {
+        // Si no es JSON válido, retornar error
+        return {
+          data: {} as T,
+          success: false,
+          message: `Error al procesar la respuesta del servidor (Status: ${response.status})`,
+        };
+      }
 
       return {
         data: data as T,
         success: response.ok,
-        message: data.message,
-        errors: data.errors,
+        message: typeof data?.message === 'string' ? data.message : undefined,
+        errors: data?.errors,
       };
     } catch (error) {
       console.error("API request failed:", error);
       return {
         data: {} as T,
         success: false,
-        message: "Request failed",
+        message: error instanceof Error ? error.message : "Request failed",
       };
     }
   }
@@ -231,3 +264,17 @@ export interface ProductMediaUpdateResponse {
   message: string;
   data?: unknown;
 }
+
+// Categories API endpoints
+export const categoryEndpoints = {
+  getVisible: () => apiClient.get<BackendCategory[]>("/api/categorias/visibles"),
+  getDistinct: () => apiClient.get<string[]>("/api/categorias/distinct"),
+  create: (data: CreateCategoryRequest) =>
+    apiClient.post<BackendCategory>("/api/categorias/visibles", data),
+  update: (uuid: string, data: UpdateCategoryRequest) =>
+    apiClient.patch<BackendCategory>(`/api/categorias/visibles/${uuid}`, data),
+  updateActiveStatus: (uuid: string, activo: boolean) =>
+    apiClient.patch<{ success: boolean; message?: string }>(`/api/categorias/visibles/${uuid}/activo`, { activo }),
+  delete: (uuid: string) =>
+    apiClient.delete<{ success: boolean; message?: string }>(`/api/categorias/visibles/${uuid}`),
+};
