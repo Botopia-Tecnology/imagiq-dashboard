@@ -271,6 +271,7 @@ export interface BackendSubcategory {
   categoriasVisiblesId: string;
   createdAt: string;
   updatedAt: string;
+  totalProducts?: number;
 }
 
 // Types for creating categories

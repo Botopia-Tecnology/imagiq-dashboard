@@ -20,7 +20,7 @@ export const mapBackendSubcategoryToFrontend = (
     image: backendSubcategory.imagen, // Usar imagen del backend
     order: 1, // Mock order por ahora
     isActive: backendSubcategory.activo,
-    productsCount: 0, // Mock productsCount por ahora
+    productsCount: backendSubcategory.totalProducts || 0, // Usar totalProducts del backend
     createdAt: new Date(backendSubcategory.createdAt),
     updatedAt: new Date(backendSubcategory.updatedAt),
   };
