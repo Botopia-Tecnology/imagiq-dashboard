@@ -53,3 +53,15 @@ export const mapBackendCategoryToFrontend = (backendCategory: BackendCategory): 
 export const mapBackendCategoriesToFrontend = (backendCategories: BackendCategory[]): WebsiteCategory[] => {
   return backendCategories.map(mapBackendCategoryToFrontend);
 };
+
+/**
+ * Convierte un array de subcategorías del backend al formato del frontend
+ */
+export const mapBackendSubcategoriesToFrontend = (
+  backendSubcategories: BackendSubcategory[],
+  categoryId: string
+): WebsiteSubcategory[] => {
+  return backendSubcategories.map(subcategory =>
+    mapBackendSubcategoryToFrontend(subcategory, categoryId)
+  );
+};

@@ -292,3 +292,17 @@ export interface CreateCategoryResponse {
   message?: string;
   data?: BackendCategory;
 }
+
+// Types for creating subcategories
+export interface CreateSubcategoryRequest {
+  nombre: string;
+  descripcion: string;
+  imagen: string;
+  activo: boolean;
+}
+
+export interface UpdateSubcategoryRequest {
+  nombre: string;
+  descripcion: string;
+  imagen: string;
+}
