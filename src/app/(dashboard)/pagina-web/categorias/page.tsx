@@ -32,6 +32,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Switch } from "@/components/ui/switch"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import {
   ArrowLeft,
   Plus,
@@ -42,6 +43,7 @@ import {
   GripVertical,
   Eye,
   EyeOff,
+  Settings,
 } from "lucide-react"
 import { WebsiteCategory } from "@/types"
 import { useCategories } from "@/features/categories/useCategories"
@@ -660,9 +662,27 @@ export default function CategoriasPage() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline">
-                      {category.subcategories.length} {category.subcategories.length === 1 ? 'subcategoría' : 'subcategorías'}
-                    </Badge>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="cursor-pointer hover:bg-primary/10 hover:border-primary/20 transition-colors"
+                            onClick={() => {
+                              // TODO: Navegar a la página de configuración de subcategorías
+                              console.log(`Navegar a configuración de subcategorías para: ${category.name}`)
+                            }}
+                          >
+                            <Settings className="h-3 w-3 mr-1" />
+                            {category.subcategories.length} {category.subcategories.length === 1 ? 'subcategoría' : 'subcategorías'}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Configurar subcategorías de {category.name}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1">
