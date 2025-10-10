@@ -1,0 +1,197 @@
+/**
+ * Hook para manejo de categorías del sitio web
+ * - Obtener categorías visibles del backend
+ * - Manejo de estado de carga y errores
+ * - Funciones para actualizar categorías
+ */
+
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
+import { categoryEndpoints } from "@/lib/api";
+import { mapBackendCategoriesToFrontend } from "@/lib/categoryMapper";
+import { WebsiteCategory, CreateCategoryRequest, UpdateCategoryRequest } from "@/types";
+
+interface UseCategoriesReturn {
+  categories: WebsiteCategory[];
+  loading: boolean;
+  error: string | null;
+  refreshCategories: () => Promise<void>;
+  toggleCategoryActive: (categoryId: string) => Promise<void>;
+  deleteCategory: (categoryId: string) => Promise<boolean>;
+  updatingCategory: string | null; // Para mostrar loading en categoría específica
+  deletingCategory: boolean; // Para mostrar loading al eliminar categoría
+  createCategory: (data: CreateCategoryRequest) => Promise<boolean>;
+  creatingCategory: boolean; // Para mostrar loading al crear categoría
+  updateCategory: (categoryId: string, data: UpdateCategoryRequest) => Promise<boolean>;
+  updatingCategoryData: boolean; // Para mostrar loading al actualizar categoría
+}
+
+export const useCategories = (): UseCategoriesReturn => {
+  const [categories, setCategories] = useState<WebsiteCategory[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [updatingCategory, setUpdatingCategory] = useState<string | null>(null);
+  const [deletingCategory, setDeletingCategory] = useState(false);
+  const [creatingCategory, setCreatingCategory] = useState(false);
+  const [updatingCategoryData, setUpdatingCategoryData] = useState(false);
+
+  // Función para obtener categorías del backend
+  const fetchCategories = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await categoryEndpoints.getVisible();
+
+      if (response.success && response.data) {
+        const mappedCategories = mapBackendCategoriesToFrontend(response.data);
+        setCategories(mappedCategories);
+      } else {
+        setError(response.message || "Error al cargar categorías");
+      }
+    } catch (err) {
+      console.error("Error fetching categories:", err);
+      setError("Error de conexión al cargar categorías");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Función para refrescar categorías
+  const refreshCategories = useCallback(async () => {
+    await fetchCategories();
+  }, [fetchCategories]);
+
+  // Función para cambiar el estado activo de una categoría
+  const toggleCategoryActive = useCallback(async (categoryId: string) => {
+    const category = categories.find(cat => cat.id === categoryId);
+    if (!category) return;
+
+    setUpdatingCategory(categoryId);
+    setError(null);
+
+    try {
+      const newActiveStatus = !category.isActive;
+      const response = await categoryEndpoints.updateActiveStatus(categoryId, newActiveStatus);
+
+      if (response.success) {
+        // Actualizar el estado local solo si la petición fue exitosa
+        setCategories(prev =>
+          prev.map(cat =>
+            cat.id === categoryId ? { ...cat, isActive: newActiveStatus } : cat
+          )
+        );
+      } else {
+        setError(response.message || "Error al actualizar el estado de la categoría");
+      }
+    } catch (err) {
+      console.error("Error updating category status:", err);
+      setError("Error de conexión al actualizar la categoría");
+    } finally {
+      setUpdatingCategory(null);
+    }
+  }, [categories]);
+
+  // Función para eliminar una categoría
+  const deleteCategory = useCallback(async (categoryId: string): Promise<boolean> => {
+    setDeletingCategory(true);
+
+    try {
+      console.log("Deleting category with ID:", categoryId);
+      const response = await categoryEndpoints.delete(categoryId);
+      console.log("Delete response:", response);
+
+      if (response.success) {
+        // Eliminar la categoría del estado local solo si la petición fue exitosa
+        setCategories(prev => prev.filter(cat => cat.id !== categoryId));
+        return true;
+      } else {
+        console.error("Delete failed:", response.message);
+        // No establecer error global, retornar false y el componente manejará el error
+        return false;
+      }
+    } catch (err) {
+      console.error("Error deleting category:", err);
+      return false;
+    } finally {
+      setDeletingCategory(false);
+    }
+  }, []);
+
+  // Función para crear una nueva categoría
+  const createCategory = useCallback(async (data: CreateCategoryRequest): Promise<boolean> => {
+    setCreatingCategory(true);
+    setError(null);
+
+    try {
+      const response = await categoryEndpoints.create(data);
+
+      if (response.success && response.data) {
+        // Agregar la nueva categoría al estado local
+        const newCategory = mapBackendCategoriesToFrontend([response.data])[0];
+        setCategories(prev => [...prev, newCategory]);
+        return true;
+      } else {
+        setError(response.message || "Error al crear la categoría");
+        return false;
+      }
+    } catch (err) {
+      console.error("Error creating category:", err);
+      setError("Error de conexión al crear la categoría");
+      return false;
+    } finally {
+      setCreatingCategory(false);
+    }
+  }, []);
+
+  // Función para actualizar una categoría
+  const updateCategory = useCallback(async (categoryId: string, data: UpdateCategoryRequest): Promise<boolean> => {
+    setUpdatingCategoryData(true);
+    setError(null);
+
+    try {
+      const response = await categoryEndpoints.update(categoryId, data);
+
+      if (response.success && response.data) {
+        // Actualizar la categoría en el estado local
+        const updatedCategory = mapBackendCategoriesToFrontend([response.data])[0];
+        setCategories(prev =>
+          prev.map(cat =>
+            cat.id === categoryId ? updatedCategory : cat
+          )
+        );
+        return true;
+      } else {
+        setError(response.message || "Error al actualizar la categoría");
+        return false;
+      }
+    } catch (err) {
+      console.error("Error updating category:", err);
+      setError("Error de conexión al actualizar la categoría");
+      return false;
+    } finally {
+      setUpdatingCategoryData(false);
+    }
+  }, []);
+
+  // Cargar categorías al montar el componente
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
+
+  return {
+    categories,
+    loading,
+    error,
+    refreshCategories,
+    toggleCategoryActive,
+    deleteCategory,
+    updatingCategory,
+    deletingCategory,
+    createCategory,
+    creatingCategory,
+    updateCategory,
+    updatingCategoryData,
+  };
+};

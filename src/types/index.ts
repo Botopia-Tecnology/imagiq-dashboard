@@ -217,7 +217,7 @@ export interface ShippingAddress {
   country: string;
 }
 
-export interface Customer {
+export interface CustomerSimple {
   id: string;
   name: string;
   email: string;
@@ -247,4 +247,48 @@ export interface DashboardMetrics {
   conversionRate: number;
   salesGrowth: number;
   ordersGrowth: number;
+}
+
+// Backend API Types for Categories
+export interface BackendCategory {
+  uuid: string;
+  nombre: string;
+  descripcion: string;
+  imagen: string;
+  activo: boolean;
+  createdAt: string;
+  updatedAt: string;
+  subcategorias: BackendSubcategory[];
+  totalProducts: number;
+}
+
+export interface BackendSubcategory {
+  uuid: string;
+  nombre: string;
+  descripcion: string;
+  imagen: string;
+  activo: boolean;
+  categoriasVisiblesId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Types for creating categories
+export interface CreateCategoryRequest {
+  nombre: string;
+  descripcion: string;
+  imagen: string;
+  activo: boolean;
+}
+
+export interface UpdateCategoryRequest {
+  nombre: string;
+  descripcion: string;
+  imagen: string;
+}
+
+export interface CreateCategoryResponse {
+  success: boolean;
+  message?: string;
+  data?: BackendCategory;
 }
