@@ -133,8 +133,8 @@ export const useSubcategories = (categoryId: string): UseSubcategoriesReturn => 
       const response = await subcategoryEndpoints.create(subcategoryData);
 
       if (response.success && response.data) {
-        const newSubcategory = mapBackendSubcategoriesToFrontend([response.data], categoryId)[0];
-        setSubcategories(prev => [...prev, newSubcategory]);
+        // Refrescar todas las subcategorías para obtener datos actualizados del backend
+        await fetchSubcategories();
         return true;
       } else {
         setError(response.message || "Error al crear la subcategoría");
@@ -147,7 +147,7 @@ export const useSubcategories = (categoryId: string): UseSubcategoriesReturn => 
     } finally {
       setCreatingSubcategory(false);
     }
-  }, [categoryId]);
+  }, [categoryId, fetchSubcategories]);
 
   // Función para actualizar una subcategoría
   const updateSubcategory = useCallback(async (subcategoryId: string, data: UpdateSubcategoryRequest): Promise<boolean> => {
