@@ -127,13 +127,9 @@ const CampaignNode = memo(({ data, selected }: NodeProps<CampaignNodeData>) => {
           className="w-3 h-3 !bg-gray-400 border-2 border-white dark:border-gray-800"
         />
 
- <Handle
-          type="target"
-          position={Position.Right}
-          className="w-3 h-3 !bg-gray-400 border-2 border-white dark:border-gray-800"
-        />
         {config.campaignType ? (
           <div className="p-3 w-full flex flex-col items-center justify-center gap-1.5">
+            <BrandIcon brand={config.campaignType} size={28} />
             <span className="text-sm font-medium text-center capitalize">
               {config.campaignType}
             </span>
@@ -144,7 +140,7 @@ const CampaignNode = memo(({ data, selected }: NodeProps<CampaignNodeData>) => {
             )}
           </div>
         ) : (
-          <div className="p-3 w-full flex flex-col items-center justify-center gap-1.5">
+          <div className="p-3 w-full flex items-center justify-center">
             <span className="text-sm font-medium text-center text-gray-500">
               Campaña
             </span>
