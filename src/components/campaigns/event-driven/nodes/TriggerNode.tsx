@@ -1,10 +1,11 @@
 'use client';
 
-import React, { memo, useState } from 'react';
+import React, { memo, useState, useEffect } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ShoppingCart, Eye, Heart, FileText, User, DollarSign, Clock } from 'lucide-react';
@@ -30,6 +31,16 @@ interface TriggerNodeData {
 const TriggerNode = memo(({ data, selected }: NodeProps<TriggerNodeData>) => {
   const [isConfigOpen, setIsConfigOpen] = useState(false);
   const [config, setConfig] = useState<TriggerNodeData['config']>(data.config || {});
+  const [categoriesInput, setCategoriesInput] = useState('');
+  const [pageUrlsInput, setPageUrlsInput] = useState('');
+
+  // Inicializar los inputs cuando se abre el diálogo o cambia el config
+  useEffect(() => {
+    if (isConfigOpen) {
+      setCategoriesInput(config.categories?.join(', ') || '');
+      setPageUrlsInput(config.pageUrls?.join(', ') || '');
+    }
+  }, [isConfigOpen, config.categories, config.pageUrls]);
 
   const getTriggerColor = (triggerType?: EventTriggerType) => {
     if (!triggerType) {
@@ -112,13 +123,27 @@ const TriggerNode = memo(({ data, selected }: NodeProps<TriggerNodeData>) => {
           ? `Espera ${currentConfig.timeThreshold} min${currentConfig.minCartValue ? `, min $${currentConfig.minCartValue}` : ''}`
           : 'Sin configurar';
       case 'product_view':
-        return currentConfig.viewDuration
-          ? `Vista ${currentConfig.viewDuration}s${currentConfig.categories?.length ? `, ${currentConfig.categories.length} cat.` : ''}`
-          : 'Sin configurar';
+        if (currentConfig.viewDuration || currentConfig.categories?.length) {
+          const parts = [];
+          if (currentConfig.viewDuration) parts.push(`${currentConfig.viewDuration}s`);
+          if (currentConfig.categories?.length) {
+            parts.push(currentConfig.categories.join(', '));
+          }
+          return parts.join(' • ');
+        }
+        return 'Sin configurar';
       case 'page_view':
-        return currentConfig.pageUrls?.length
-          ? `${currentConfig.pageUrls.length} página(s)`
-          : 'Sin configurar';
+        if (currentConfig.pageUrls?.length || currentConfig.timeOnPage) {
+          const parts = [];
+          if (currentConfig.pageUrls?.length) {
+            parts.push(currentConfig.pageUrls.join(', '));
+          }
+          if (currentConfig.timeOnPage) {
+            parts.push(`${currentConfig.timeOnPage}s`);
+          }
+          return parts.join(' • ');
+        }
+        return 'Sin configurar';
       case 'purchase_event':
         if (currentConfig.minOrderValue || currentConfig.maxOrderValue) {
           const parts = [];
@@ -204,11 +229,15 @@ const TriggerNode = memo(({ data, selected }: NodeProps<TriggerNodeData>) => {
             </div>
             <div className="space-y-3">
               <Label htmlFor="categories">Categorías específicas (separadas por coma)</Label>
-              <Input
+              <Textarea
                 id="categories"
-                placeholder="smartphones, laptops"
-                value={config.categories?.join(', ') || ''}
+                placeholder="smartphones, laptops, tablets"
+                value={categoriesInput}
+                rows={2}
                 onChange={(e) => {
+                  setCategoriesInput(e.target.value);
+                }}
+                onBlur={(e) => {
                   const newConfig = {
                     ...config,
                     categories: e.target.value.split(',').map(c => c.trim()).filter(Boolean)
@@ -226,11 +255,15 @@ const TriggerNode = memo(({ data, selected }: NodeProps<TriggerNodeData>) => {
           <div className="space-y-6">
             <div className="space-y-3">
               <Label htmlFor="pageUrls">URLs de páginas (separadas por coma)</Label>
-              <Input
+              <Textarea
                 id="pageUrls"
-                placeholder="/productos, /ofertas"
-                value={config.pageUrls?.join(', ') || ''}
+                placeholder="/productos, /ofertas, /promociones"
+                value={pageUrlsInput}
+                rows={2}
                 onChange={(e) => {
+                  setPageUrlsInput(e.target.value);
+                }}
+                onBlur={(e) => {
                   const newConfig = {
                     ...config,
                     pageUrls: e.target.value.split(',').map(u => u.trim()).filter(Boolean)
