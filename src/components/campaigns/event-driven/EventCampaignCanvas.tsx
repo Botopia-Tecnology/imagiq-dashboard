@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useRef, useState } from "react";
 import ReactFlow, {
   ReactFlowProvider,
   addEdge,
@@ -13,14 +13,18 @@ import ReactFlow, {
   Node,
   ReactFlowInstance,
   MiniMap,
-} from 'reactflow';
-import 'reactflow/dist/style.css';
+} from "reactflow";
+import "reactflow/dist/style.css";
 
-import { FlowNode, FlowEdge, EventDrivenCampaign } from '@/types/event-driven-campaigns';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
+import {
+  FlowNode,
+  FlowEdge,
+  EventDrivenCampaign,
+} from "@/types/event-driven-campaigns";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import {
   Play,
   Pause,
@@ -43,37 +47,40 @@ import {
   User,
   Target,
   DollarSign,
-
   Globe,
   Smartphone,
   Monitor,
   ActivitySquare,
   Link,
   RotateCcw as Refresh,
-  Settings
-} from 'lucide-react';
+  Settings,
+} from "lucide-react";
 
 // Import custom node components
-import TriggerNode from './nodes/TriggerNode';
-import ConditionNode from './nodes/ConditionNode';
-import CampaignNode from './nodes/CampaignNode';
-import DelayNode from './nodes/DelayNode';
-import { IfNode } from './nodes/IfNode';
-import { WaitNode } from './nodes/WaitNode';
-import { BrandIcon } from '@/components/icons/BrandIcon';
+import TriggerNode from "./nodes/TriggerNode";
+import ConditionNode from "./nodes/ConditionNode";
+import CampaignNode from "./nodes/CampaignNode";
+import DelayNode from "./nodes/DelayNode";
+import { IfNode } from "./nodes/IfNode";
+import { WaitNode } from "./nodes/WaitNode";
+import { BrandIcon } from "@/components/icons/BrandIcon";
 
 // Icon component helper to render both BrandIcon and Lucide icons
-const NodeIcon = ({ icon, size = 16, className = "" }: {
-  icon: { type: 'brand' | 'lucide', name: string } | string,
-  size?: number,
-  className?: string
+const NodeIcon = ({
+  icon,
+  size = 16,
+  className = "",
+}: {
+  icon: { type: "brand" | "lucide"; name: string } | string;
+  size?: number;
+  className?: string;
 }) => {
-  if (typeof icon === 'string') {
+  if (typeof icon === "string") {
     // Legacy support for emoji icons
     return <span className={`text-lg ${className}`}>{icon}</span>;
   }
 
-  if (icon.type === 'brand') {
+  if (icon.type === "brand") {
     return <BrandIcon brand={icon.name} size={size} className={className} />;
   }
 
@@ -97,7 +104,7 @@ const NodeIcon = ({ icon, size = 16, className = "" }: {
     ActivitySquare,
     Link,
     Refresh,
-    Settings
+    Settings,
   };
 
   const IconComponent = iconMap[icon.name];
@@ -112,7 +119,7 @@ const NodeIcon = ({ icon, size = 16, className = "" }: {
 const nodeTypes = {
   trigger: TriggerNode,
   condition: ConditionNode,
-  action: CampaignNode,
+  campaign: CampaignNode,
   delay: DelayNode,
   if: IfNode,
   wait: WaitNode,
@@ -121,77 +128,125 @@ const nodeTypes = {
 // Sidebar node templates
 const nodeTemplates = [
   {
-    type: 'trigger',
-    category: 'Trigger',
+    type: "trigger",
+    category: "Trigger",
     items: [
-      { id: 'abandoned_cart', label: 'Trigger', icon: { type: 'lucide', name: 'Zap' }, color: 'bg-red-50 dark:bg-red-950/50 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800' },//Carrito Abandonado
-      // { id: 'product_view', label: 'Ver Producto', icon: { type: 'lucide', name: 'Eye' }, color: 'bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800' },
-      // { id: 'add_to_favorites', label: 'Agregar Favoritos', icon: { type: 'lucide', name: 'Heart' }, color: 'bg-pink-50 dark:bg-pink-950/50 text-pink-700 dark:text-pink-300 border-pink-200 dark:border-pink-800' },
-      // { id: 'page_view', label: 'Ver Página', icon: { type: 'lucide', name: 'FileText' }, color: 'bg-green-50 dark:bg-green-950/50 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800' },
-      // { id: 'user_registration', label: 'Registro', icon: { type: 'lucide', name: 'User' }, color: 'bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800' },
-    ]
+      {
+        id: "trigger",
+        label: "Trigger",
+        icon: { type: "lucide", name: "Zap" },
+        color:
+          "bg-red-50 dark:bg-red-950/50 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800",
+      }, //Carrito Abandonado
+    ],
   },
   {
-    type: 'condition',
-    category: 'Condiciones',
+    type: "condition",
+    category: "Condiciones",
     items: [
       // { id: 'user_segment', label: 'Segmento Usuario', icon: { type: 'lucide', name: 'Target' }, color: 'bg-yellow-50 dark:bg-yellow-950/50 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800' },
-      { id: 'cart_value', label: 'Condiciones', icon: { type: 'lucide', name: 'Network' }, color: 'bg-green-50 dark:bg-green-950/50 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800' }, //Valor Carrito
-    //   { id: 'geographic_location', label: 'Ubicación', icon: { type: 'lucide', name: 'Globe' }, color: 'bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800' },
-    //   { id: 'device_type', label: 'Tipo Dispositivo', icon: { type: 'lucide', name: 'Smartphone' }, color: 'bg-gray-50 dark:bg-gray-950/50 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-800' },
-     ]
+      {
+        id: "cart_value",
+        label: "Condiciones",
+        icon: { type: "lucide", name: "Network" },
+        color:
+          "bg-green-50 dark:bg-green-950/50 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800",
+      }, //Valor Carrito
+      //   { id: 'geographic_location', label: 'Ubicación', icon: { type: 'lucide', name: 'Globe' }, color: 'bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800' },
+      //   { id: 'device_type', label: 'Tipo Dispositivo', icon: { type: 'lucide', name: 'Smartphone' }, color: 'bg-gray-50 dark:bg-gray-950/50 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-800' },
+    ],
   },
   {
-    type: 'action',
-    category: 'Acciones',
+    type: "campaign",
+    category: "Campaña",
     items: [
-      { id: 'email', label: 'Campaña', icon: { type: 'lucide', name: 'Megaphone' }, color: 'bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800' }, //Email
-      // { id: 'sms', label: 'SMS', icon: { type: 'lucide', name: 'MessageSquare' }, color: 'bg-green-50 dark:bg-green-950/50 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800' },
-      // { id: 'whatsapp', label: 'WhatsApp', icon: { type: 'brand', name: 'whatsapp' }, color: 'bg-green-50 dark:bg-green-950/50 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800' },
-      // { id: 'inweb', label: 'In-Web', icon: { type: 'lucide', name: 'Monitor' }, color: 'bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800' },
-    ]
+      {
+        id: "campaign",
+        label: "Campaña",
+        icon: { type: "lucide", name: "Megaphone" },
+        color:
+          "bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800",
+      },
+    ],
   },
   {
-    type: 'delay',
-    category: 'Esperas',
+    type: "delay",
+    category: "Esperas",
     items: [
-      { id: 'time_delay', label: 'Esperar', icon: { type: 'lucide', name: 'Timer' }, color: 'bg-orange-50 dark:bg-orange-950/50 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-800' },
-    ]
+      {
+        id: "time_delay",
+        label: "Esperar",
+        icon: { type: "lucide", name: "Timer" },
+        color:
+          "bg-orange-50 dark:bg-orange-950/50 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-800",
+      },
+    ],
   },
   {
-    type: 'if',
-    category: 'Lógica',
+    type: "if",
+    category: "Lógica",
     items: [
-      { id: 'conditional', label: 'IF Condicional', icon: { type: 'lucide', name: 'GitBranch' }, color: 'bg-orange-50 dark:bg-orange-950/50 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-800' },
-    ]
+      {
+        id: "conditional",
+        label: "IF Condicional",
+        icon: { type: "lucide", name: "GitBranch" },
+        color:
+          "bg-orange-50 dark:bg-orange-950/50 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-800",
+      },
+    ],
   },
   {
-    type: 'wait',
-    category: 'Esperas Avanzadas',
+    type: "wait",
+    category: "Esperas Avanzadas",
     items: [
-      { id: 'wait_time', label: 'Esperar Tiempo', icon: { type: 'lucide', name: 'Timer' }, color: 'bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800' },
-      { id: 'wait_event', label: 'Esperar Evento', icon: { type: 'lucide', name: 'ActivitySquare' }, color: 'bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800' },
-      { id: 'wait_condition', label: 'Esperar Condición', icon: { type: 'lucide', name: 'Refresh' }, color: 'bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800' },
-      { id: 'wait_webhook', label: 'Esperar Webhook', icon: { type: 'lucide', name: 'Link' }, color: 'bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800' },
-    ]
-  }
+      {
+        id: "wait_time",
+        label: "Esperar Tiempo",
+        icon: { type: "lucide", name: "Timer" },
+        color:
+          "bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800",
+      },
+      {
+        id: "wait_event",
+        label: "Esperar Evento",
+        icon: { type: "lucide", name: "ActivitySquare" },
+        color:
+          "bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800",
+      },
+      {
+        id: "wait_condition",
+        label: "Esperar Condición",
+        icon: { type: "lucide", name: "Refresh" },
+        color:
+          "bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800",
+      },
+      {
+        id: "wait_webhook",
+        label: "Esperar Webhook",
+        icon: { type: "lucide", name: "Link" },
+        color:
+          "bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800",
+      },
+    ],
+  },
 ];
 
 interface EventCampaignCanvasProps {
   campaign?: EventDrivenCampaign;
   onSave?: (campaign: EventDrivenCampaign) => void;
   onPreview?: (campaign: EventDrivenCampaign) => void;
-  onStatusChange?: (campaignId: string, status: 'active' | 'paused') => void;
+  onStatusChange?: (campaignId: string, status: "active" | "paused") => void;
 }
 
 export function EventCampaignCanvas({
   campaign,
   onSave,
   onPreview,
-  onStatusChange
+  onStatusChange,
 }: EventCampaignCanvasProps) {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
-  const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null);
+  const [reactFlowInstance, setReactFlowInstance] =
+    useState<ReactFlowInstance | null>(null);
   const [nodes, setNodes, onNodesChange] = useNodesState(campaign?.nodes || []);
   const [edges, setEdges, onEdgesChange] = useEdgesState(campaign?.edges || []);
   const [selectedNodeType, setSelectedNodeType] = useState<string | null>(null);
@@ -205,7 +260,7 @@ export function EventCampaignCanvas({
   // Handle drag over for drop functionality
   const onDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault();
-    event.dataTransfer.dropEffect = 'move';
+    event.dataTransfer.dropEffect = "move";
   }, []);
 
   // Handle drop of new nodes onto canvas
@@ -213,10 +268,12 @@ export function EventCampaignCanvas({
     (event: React.DragEvent) => {
       event.preventDefault();
 
-      const type = event.dataTransfer.getData('application/reactflow');
-      const subtype = event.dataTransfer.getData('application/reactflow-subtype');
+      const type = event.dataTransfer.getData("application/reactflow");
+      const subtype = event.dataTransfer.getData(
+        "application/reactflow-subtype"
+      );
 
-      if (typeof type === 'undefined' || !type || !reactFlowInstance) {
+      if (typeof type === "undefined" || !type || !reactFlowInstance) {
         return;
       }
 
@@ -232,28 +289,28 @@ export function EventCampaignCanvas({
 
       // Set specific data based on node type
       switch (type) {
-        case 'trigger':
+        case "trigger":
           nodeData.triggerType = subtype;
           break;
-        case 'condition':
+        case "condition":
           nodeData.conditions = [];
-          nodeData.operator = 'AND';
+          nodeData.operator = "AND";
           break;
-        case 'action':
+        case "campaign":
           nodeData.channel = subtype;
           nodeData.config = {};
           break;
-        case 'delay':
+        case "delay":
           nodeData.delayAmount = 1;
-          nodeData.delayUnit = 'hours';
+          nodeData.delayUnit = "hours";
           break;
-        case 'if':
+        case "if":
           nodeData.conditions = [];
-          nodeData.operator = 'AND';
+          nodeData.operator = "AND";
           nodeData.trueOutputs = [];
           nodeData.falseOutputs = [];
           break;
-        case 'wait':
+        case "wait":
           nodeData.waitType = subtype;
           nodeData.config = {};
           break;
@@ -272,24 +329,28 @@ export function EventCampaignCanvas({
   );
 
   // Handle node drag start
-  const onDragStart = (event: React.DragEvent, nodeType: string, subtype: string) => {
-    event.dataTransfer.setData('application/reactflow', nodeType);
-    event.dataTransfer.setData('application/reactflow-subtype', subtype);
-    event.dataTransfer.effectAllowed = 'move';
+  const onDragStart = (
+    event: React.DragEvent,
+    nodeType: string,
+    subtype: string
+  ) => {
+    event.dataTransfer.setData("application/reactflow", nodeType);
+    event.dataTransfer.setData("application/reactflow-subtype", subtype);
+    event.dataTransfer.effectAllowed = "move";
   };
 
   // Get node label based on type and subtype
   const getNodeLabel = (type: string, subtype: string) => {
-    const template = nodeTemplates.find(t => t.type === type);
-    const item = template?.items.find(i => i.id === subtype);
+    const template = nodeTemplates.find((t) => t.type === type);
+    const item = template?.items.find((i) => i.id === subtype);
     return item?.label || subtype;
   };
 
   // Get node icon based on type and subtype
   const getNodeIcon = (type: string, subtype: string) => {
-    const template = nodeTemplates.find(t => t.type === type);
-    const item = template?.items.find(i => i.id === subtype);
-    return item?.icon || { type: 'lucide', name: 'Settings' };
+    const template = nodeTemplates.find((t) => t.type === type);
+    const item = template?.items.find((i) => i.id === subtype);
+    return item?.icon || { type: "lucide", name: "Settings" };
   };
 
   // Save campaign
@@ -298,13 +359,13 @@ export function EventCampaignCanvas({
 
     const updatedCampaign: EventDrivenCampaign = {
       id: campaign?.id || `campaign-${Date.now()}`,
-      name: campaign?.name || 'Nueva Campaña',
-      status: campaign?.status || 'draft',
+      name: campaign?.name || "Nueva Campaña",
+      status: campaign?.status || "draft",
       nodes: nodes as FlowNode[],
       edges: edges as FlowEdge[],
       createdAt: campaign?.createdAt || new Date(),
       updatedAt: new Date(),
-      createdBy: campaign?.createdBy || 'current-user',
+      createdBy: campaign?.createdBy || "current-user",
     };
 
     onSave(updatedCampaign);
@@ -314,7 +375,7 @@ export function EventCampaignCanvas({
   const handleStatusToggle = () => {
     if (!campaign || !onStatusChange) return;
 
-    const newStatus = campaign.status === 'active' ? 'paused' : 'active';
+    const newStatus = campaign.status === "active" ? "paused" : "active";
     onStatusChange(campaign.id, newStatus);
   };
 
@@ -390,13 +451,21 @@ export function EventCampaignCanvas({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <h1 className="text-xl font-bold">
-                  {campaign?.name || 'Nueva Campaña Basada en Eventos'}
+                  {campaign?.name || "Nueva Campaña Basada en Eventos"}
                 </h1>
                 {campaign?.status && (
-                  <Badge variant={campaign.status === 'active' ? 'default' : 'secondary'}>
-                    {campaign.status === 'active' ? 'Activa' :
-                     campaign.status === 'paused' ? 'Pausada' :
-                     campaign.status === 'draft' ? 'Borrador' : 'Completada'}
+                  <Badge
+                    variant={
+                      campaign.status === "active" ? "default" : "secondary"
+                    }
+                  >
+                    {campaign.status === "active"
+                      ? "Activa"
+                      : campaign.status === "paused"
+                      ? "Pausada"
+                      : campaign.status === "draft"
+                      ? "Borrador"
+                      : "Completada"}
                   </Badge>
                 )}
               </div>
@@ -416,11 +485,13 @@ export function EventCampaignCanvas({
                 </Button>
                 {campaign && (
                   <Button
-                    variant={campaign.status === 'active' ? 'destructive' : 'default'}
+                    variant={
+                      campaign.status === "active" ? "destructive" : "default"
+                    }
                     size="sm"
                     onClick={handleStatusToggle}
                   >
-                    {campaign.status === 'active' ? (
+                    {campaign.status === "active" ? (
                       <>
                         <Pause className="h-4 w-4 mr-2" />
                         Pausar
@@ -464,7 +535,9 @@ export function EventCampaignCanvas({
 }
 
 // Wrap component with ReactFlowProvider
-export default function EventCampaignCanvasProvider(props: EventCampaignCanvasProps) {
+export default function EventCampaignCanvasProvider(
+  props: EventCampaignCanvasProps
+) {
   return (
     <ReactFlowProvider>
       <EventCampaignCanvas {...props} />

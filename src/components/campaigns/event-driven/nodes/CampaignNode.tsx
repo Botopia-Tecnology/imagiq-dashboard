@@ -44,7 +44,7 @@ const CampaignNode = memo(({ data, selected }: NodeProps<CampaignNodeData>) => {
       case 'email':
         return 'bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300';
       case 'sms':
-        return 'bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800 text-green-700 dark:text-green-300';
+        return 'bg-red-50 dark:bg-red-950 border-red-200 dark:border-red-800 text-red-700 dark:text-red-300';
       case 'whatsapp':
         return 'bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800 text-green-700 dark:text-green-300';
       case 'inweb':
@@ -122,7 +122,7 @@ const CampaignNode = memo(({ data, selected }: NodeProps<CampaignNodeData>) => {
         style={{ width: '160px', minHeight: '100px' }}
       >
         <Handle
-          type="target"
+          type="source"
           position={Position.Left}
           className="w-3 h-3 !bg-gray-400 border-2 border-white dark:border-gray-800"
         />
