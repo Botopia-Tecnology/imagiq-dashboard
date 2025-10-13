@@ -122,7 +122,7 @@ const CampaignNode = memo(({ data, selected }: NodeProps<CampaignNodeData>) => {
         style={{ width: '160px', minHeight: '100px' }}
       >
         <Handle
-          type="source"
+          type="target"
           position={Position.Left}
           className="w-3 h-3 !bg-gray-400 border-2 border-white dark:border-gray-800"
         />
