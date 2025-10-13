@@ -2,7 +2,6 @@
 
 import React, { memo, useState } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
-import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -158,14 +157,6 @@ const ActionNode = memo(({ data, selected }: NodeProps<ActionNodeData>) => {
           </DialogHeader>
           <div className="py-4">
             {renderConfigForm()}
-          </div>
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setIsConfigOpen(false)}>
-              Cancelar
-            </Button>
-            <Button onClick={() => setIsConfigOpen(false)}>
-              Guardar
-            </Button>
           </div>
         </DialogContent>
       </Dialog>
