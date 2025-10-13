@@ -14,7 +14,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog"
 import {
   Select,
@@ -34,7 +33,6 @@ import {
 import { Switch } from "@/components/ui/switch"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import {
-  Plus,
   Edit,
   Trash2,
   Image as ImageIcon,
@@ -43,6 +41,7 @@ import {
   Eye,
   EyeOff,
   Settings,
+  RefreshCw,
 } from "lucide-react"
 import { WebsiteCategory } from "@/types"
 import { useCategories } from "@/features/categories/useCategories"
@@ -50,7 +49,6 @@ import { useAvailableCategories } from "@/features/categories/useAvailableCatego
 
 export default function CategoriasPage() {
   const router = useRouter()
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   // Mantener estas variables para futuras funcionalidades
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
@@ -67,67 +65,30 @@ export default function CategoriasPage() {
     deleteCategory: handleDeleteCategory,
     updatingCategory,
     deletingCategory,
-    createCategory,
-    creatingCategory,
     updateCategory,
-    updatingCategoryData
+    updatingCategoryData,
+    syncCategories,
+    syncingCategories
   } = useCategories()
 
   // Hook para manejar categorías disponibles del backend
-  const { 
-    availableCategories, 
-    loading: loadingAvailable, 
-    error: errorAvailable 
+  const {
+    availableCategories,
+    loading: loadingAvailable,
+    error: errorAvailable
   } = useAvailableCategories()
 
-  // Las categorías disponibles ahora vienen del hook useAvailableCategories del backend
-
-  // Filtrar categorías disponibles para excluir las que ya están en categorias_visibles
-  const filteredAvailableCategories = availableCategories.filter(availableCat => 
-    !websiteCategories.some(visibleCat => visibleCat.name === availableCat)
-  )
-
   // Filtrar categorías disponibles para edición (excluye las ya usadas excepto la actual)
-  const filteredAvailableCategoriesForEdit = availableCategories.filter(availableCat => 
-    !websiteCategories.some(visibleCat => 
+  const filteredAvailableCategoriesForEdit = availableCategories.filter(availableCat =>
+    !websiteCategories.some(visibleCat =>
       visibleCat.name === availableCat && visibleCat.id !== selectedCategory?.id
     )
   )
-
-  // Estado del formulario del modal de agregar
-  const [selectedCategoryName, setSelectedCategoryName] = useState<string>("")
-  const [description, setDescription] = useState<string>("")
-  const [isActive, setIsActive] = useState<boolean>(true)
 
   // Estado del formulario del modal de editar
   const [editCategoryName, setEditCategoryName] = useState<string>("")
   const [editDescription, setEditDescription] = useState<string>("")
   const [editImage, setEditImage] = useState<string>("")
-
-  // Función para manejar el envío del formulario
-  const handleSubmitCategory = async () => {
-    if (!selectedCategoryName) {
-      alert("Por favor selecciona una categoría")
-      return
-    }
-
-    const categoryData = {
-      nombre: selectedCategoryName,
-      descripcion: description,
-      imagen: "https://example.com/mock-image.jpg", // Mock image por ahora
-      activo: isActive
-    }
-
-    const success = await createCategory(categoryData)
-    
-    if (success) {
-      // Limpiar formulario y cerrar modal
-      setSelectedCategoryName("")
-      setDescription("")
-      setIsActive(true)
-      setIsAddDialogOpen(false)
-    }
-  }
 
   // Función para manejar la edición de categoría
   const handleEditCategory = async () => {
@@ -143,7 +104,7 @@ export default function CategoriasPage() {
     }
 
     const success = await updateCategory(selectedCategory.id, categoryData)
-    
+
     if (success) {
       // Limpiar formulario y cerrar modal
       setEditCategoryName("")
@@ -154,14 +115,6 @@ export default function CategoriasPage() {
     }
   }
 
-  // Función para resetear el formulario al cerrar el modal
-  const handleCloseModal = () => {
-    setSelectedCategoryName("")
-    setDescription("")
-    setIsActive(true)
-    setIsAddDialogOpen(false)
-  }
-
   // Función para resetear el formulario de edición al cerrar el modal
   const handleCloseEditModal = () => {
     setEditCategoryName("")
@@ -169,16 +122,6 @@ export default function CategoriasPage() {
     setEditImage("")
     setSelectedCategory(null)
     setIsEditDialogOpen(false)
-  }
-
-  // Función para manejar el cambio de estado del modal
-  const handleModalOpenChange = (open: boolean) => {
-    if (!open) {
-      // Solo limpiar cuando se cierra, no cuando se abre
-      handleCloseModal()
-    } else {
-      setIsAddDialogOpen(true)
-    }
   }
 
   // Función para manejar el cambio de estado del modal de edición
@@ -286,113 +229,14 @@ export default function CategoriasPage() {
             Gestiona las categorías y subcategorías visibles en tu tienda
           </p>
         </div>
-        <Dialog open={isAddDialogOpen} onOpenChange={handleModalOpenChange}>
-          <DialogTrigger asChild>
-            <Button className="cursor-pointer">
-              <Plus className="mr-2 h-4 w-4" />
-              Agregar Categoría
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Agregar Nueva Categoría</DialogTitle>
-              <DialogDescription>
-                Selecciona una categoría de productos y configura su visualización en el sitio web
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="category-select">Categoría de Productos</Label>
-                <Select 
-                  disabled={loadingAvailable || creatingCategory}
-                  value={selectedCategoryName}
-                  onValueChange={setSelectedCategoryName}
-                >
-                  <SelectTrigger id="category-select">
-                    <SelectValue placeholder={
-                      loadingAvailable 
-                        ? "Cargando categorías..." 
-                        : errorAvailable 
-                          ? "Error al cargar categorías" 
-                          : "Selecciona una categoría"
-                    } />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {filteredAvailableCategories.map((cat) => (
-                      <SelectItem key={cat} value={cat}>
-                        {cat}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">
-                  {loadingAvailable 
-                    ? "Cargando categorías del backend..." 
-                    : errorAvailable 
-                      ? "Error al cargar categorías disponibles" 
-                      : filteredAvailableCategories.length === 0
-                        ? "Todas las categorías ya han sido agregadas"
-                        : `Mostrando ${filteredAvailableCategories.length} categorías disponibles`
-                  }
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="description">Descripción (opcional)</Label>
-                <Input
-                  id="description"
-                  placeholder="Descripción de la categoría para SEO"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  disabled={creatingCategory}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="image">Imagen de la Categoría</Label>
-                <div className="flex gap-2">
-                  <Input id="image" type="file" accept="image/*" />
-                  <Button type="button" variant="outline" size="icon">
-                    <ImageIcon className="h-4 w-4" />
-                  </Button>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Tamaño recomendado: 600x400px
-                </p>
-              </div>
-
-              <div className="flex items-center justify-between rounded-lg border p-3">
-                <div className="space-y-0.5">
-                  <Label htmlFor="active">Categoría Activa</Label>
-                  <p className="text-xs text-muted-foreground">
-                    La categoría será visible en el sitio web
-                  </p>
-                </div>
-                <Switch 
-                  id="active" 
-                  checked={isActive}
-                  onCheckedChange={setIsActive}
-                  disabled={creatingCategory}
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={handleCloseModal} disabled={creatingCategory}>
-                Cancelar
-              </Button>
-              <Button onClick={handleSubmitCategory} disabled={creatingCategory || !selectedCategoryName || filteredAvailableCategories.length === 0}>
-                {creatingCategory ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Creando...
-                  </>
-                ) : (
-                  "Agregar Categoría"
-                )}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <Button
+          className="cursor-pointer"
+          onClick={syncCategories}
+          disabled={syncingCategories}
+        >
+          <RefreshCw className={`mr-2 h-4 w-4 ${syncingCategories ? 'animate-spin' : ''}`} />
+          {syncingCategories ? 'Sincronizando...' : 'Sincronizar'}
+        </Button>
 
         {/* Modal de Edición */}
         <Dialog open={isEditDialogOpen} onOpenChange={handleEditModalOpenChange}>

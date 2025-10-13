@@ -277,6 +277,8 @@ export const categoryEndpoints = {
     apiClient.patch<{ success: boolean; message?: string }>(`/api/categorias/visibles/${uuid}/activo`, { activo }),
   delete: (uuid: string) =>
     apiClient.delete<{ success: boolean; message?: string }>(`/api/categorias/visibles/${uuid}`),
+  sync: () =>
+    apiClient.post<{ success: boolean; message?: string }>("/api/categorias/sync"),
 };
 
 // Subcategories API endpoints
