@@ -29,7 +29,9 @@ import {
   Trash2,
   Plus,
   Zap,
+  Megaphone,
   Filter,
+  Network,
   Clock,
   MessageSquare,
   GitBranch,
@@ -41,6 +43,7 @@ import {
   User,
   Target,
   DollarSign,
+
   Globe,
   Smartphone,
   Monitor,
@@ -84,7 +87,10 @@ const NodeIcon = ({ icon, size = 16, className = "" }: {
     Target,
     DollarSign,
     Globe,
+    Zap,
+    Megaphone,
     Smartphone,
+    Network,
     Monitor,
     Timer,
     GitBranch,
@@ -116,33 +122,33 @@ const nodeTypes = {
 const nodeTemplates = [
   {
     type: 'trigger',
-    category: 'Triggers',
+    category: 'Trigger',
     items: [
-      { id: 'abandoned_cart', label: 'Carrito Abandonado', icon: { type: 'lucide', name: 'ShoppingCart' }, color: 'bg-red-50 dark:bg-red-950/50 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800' },
-      { id: 'product_view', label: 'Ver Producto', icon: { type: 'lucide', name: 'Eye' }, color: 'bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800' },
-      { id: 'add_to_favorites', label: 'Agregar Favoritos', icon: { type: 'lucide', name: 'Heart' }, color: 'bg-pink-50 dark:bg-pink-950/50 text-pink-700 dark:text-pink-300 border-pink-200 dark:border-pink-800' },
-      { id: 'page_view', label: 'Ver Página', icon: { type: 'lucide', name: 'FileText' }, color: 'bg-green-50 dark:bg-green-950/50 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800' },
-      { id: 'user_registration', label: 'Registro', icon: { type: 'lucide', name: 'User' }, color: 'bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800' },
+      { id: 'abandoned_cart', label: 'Trigger', icon: { type: 'lucide', name: 'Zap' }, color: 'bg-red-50 dark:bg-red-950/50 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800' },//Carrito Abandonado
+      // { id: 'product_view', label: 'Ver Producto', icon: { type: 'lucide', name: 'Eye' }, color: 'bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800' },
+      // { id: 'add_to_favorites', label: 'Agregar Favoritos', icon: { type: 'lucide', name: 'Heart' }, color: 'bg-pink-50 dark:bg-pink-950/50 text-pink-700 dark:text-pink-300 border-pink-200 dark:border-pink-800' },
+      // { id: 'page_view', label: 'Ver Página', icon: { type: 'lucide', name: 'FileText' }, color: 'bg-green-50 dark:bg-green-950/50 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800' },
+      // { id: 'user_registration', label: 'Registro', icon: { type: 'lucide', name: 'User' }, color: 'bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800' },
     ]
   },
   {
     type: 'condition',
     category: 'Condiciones',
     items: [
-      { id: 'user_segment', label: 'Segmento Usuario', icon: { type: 'lucide', name: 'Target' }, color: 'bg-yellow-50 dark:bg-yellow-950/50 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800' },
-      { id: 'cart_value', label: 'Valor Carrito', icon: { type: 'lucide', name: 'DollarSign' }, color: 'bg-green-50 dark:bg-green-950/50 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800' },
-      { id: 'geographic_location', label: 'Ubicación', icon: { type: 'lucide', name: 'Globe' }, color: 'bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800' },
-      { id: 'device_type', label: 'Tipo Dispositivo', icon: { type: 'lucide', name: 'Smartphone' }, color: 'bg-gray-50 dark:bg-gray-950/50 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-800' },
-    ]
+      // { id: 'user_segment', label: 'Segmento Usuario', icon: { type: 'lucide', name: 'Target' }, color: 'bg-yellow-50 dark:bg-yellow-950/50 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800' },
+      { id: 'cart_value', label: 'Condiciones', icon: { type: 'lucide', name: 'Network' }, color: 'bg-green-50 dark:bg-green-950/50 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800' }, //Valor Carrito
+    //   { id: 'geographic_location', label: 'Ubicación', icon: { type: 'lucide', name: 'Globe' }, color: 'bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800' },
+    //   { id: 'device_type', label: 'Tipo Dispositivo', icon: { type: 'lucide', name: 'Smartphone' }, color: 'bg-gray-50 dark:bg-gray-950/50 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-800' },
+     ]
   },
   {
     type: 'action',
     category: 'Acciones',
     items: [
-      { id: 'email', label: 'Email', icon: { type: 'brand', name: 'gmail' }, color: 'bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800' },
-      { id: 'sms', label: 'SMS', icon: { type: 'lucide', name: 'MessageSquare' }, color: 'bg-green-50 dark:bg-green-950/50 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800' },
-      { id: 'whatsapp', label: 'WhatsApp', icon: { type: 'brand', name: 'whatsapp' }, color: 'bg-green-50 dark:bg-green-950/50 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800' },
-      { id: 'inweb', label: 'In-Web', icon: { type: 'lucide', name: 'Monitor' }, color: 'bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800' },
+      { id: 'email', label: 'Campaña', icon: { type: 'lucide', name: 'Megaphone' }, color: 'bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800' }, //Email
+      // { id: 'sms', label: 'SMS', icon: { type: 'lucide', name: 'MessageSquare' }, color: 'bg-green-50 dark:bg-green-950/50 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800' },
+      // { id: 'whatsapp', label: 'WhatsApp', icon: { type: 'brand', name: 'whatsapp' }, color: 'bg-green-50 dark:bg-green-950/50 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800' },
+      // { id: 'inweb', label: 'In-Web', icon: { type: 'lucide', name: 'Monitor' }, color: 'bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800' },
     ]
   },
   {
@@ -345,16 +351,16 @@ export function EventCampaignCanvas({
       <Card className="w-80 h-full rounded-none border-r">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Zap className="h-5 w-5" />
+            {/* <Zap className="h-5 w-5" /> */}
             Elementos de Campaña
           </CardTitle>
         </CardHeader>
         <CardContent className="p-4 space-y-6 overflow-y-auto">
           {nodeTemplates.map((template) => (
             <div key={template.type}>
-              <h3 className="font-semibold mb-3 text-sm uppercase tracking-wide text-muted-foreground">
+              {/* <h3 className="font-semibold mb-3 text-sm uppercase tracking-wide text-muted-foreground">
                 {template.category}
-              </h3>
+              </h3> */}
               <div className="space-y-2">
                 {template.items.map((item) => (
                   <div
@@ -370,7 +376,7 @@ export function EventCampaignCanvas({
                   </div>
                 ))}
               </div>
-              <Separator className="my-4" />
+              {/* <Separator className="my-4" /> */}
             </div>
           ))}
         </CardContent>
