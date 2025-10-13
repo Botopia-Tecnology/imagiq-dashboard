@@ -14,15 +14,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import {
   Table,
   TableBody,
@@ -34,9 +26,7 @@ import {
 import { Switch } from "@/components/ui/switch"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import {
-  Plus,
   Edit,
-  Trash2,
   Image as ImageIcon,
   Package,
   GripVertical,
@@ -45,7 +35,6 @@ import {
 } from "lucide-react"
 import { WebsiteSubcategory, WebsiteCategory } from "@/types"
 import { useSubcategories } from "@/features/categories/useSubcategories"
-import { useAvailableSubcategories } from "@/features/categories/useAvailableSubcategories"
 import { useCategories } from "@/features/categories/useCategories"
 
 export default function SubcategoriasPage() {
@@ -53,12 +42,8 @@ export default function SubcategoriasPage() {
   const params = useParams()
   const categoryId = params.categoryId as string
 
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [selectedSubcategory, setSelectedSubcategory] = useState<WebsiteSubcategory | null>(null)
-  const [subcategoryToDelete, setSubcategoryToDelete] = useState<WebsiteSubcategory | null>(null)
-  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   // Hook para obtener la información de la categoría padre
   const { categories } = useCategories()
@@ -70,77 +55,27 @@ export default function SubcategoriasPage() {
     loading,
     error,
     toggleSubcategoryActive: handleToggleActive,
-    deleteSubcategory: handleDeleteSubcategory,
     updatingSubcategory,
-    deletingSubcategory,
-    createSubcategory,
-    creatingSubcategory,
     updateSubcategory,
     updatingSubcategoryData
   } = useSubcategories(categoryId)
 
-  // Hook para manejar subcategorías disponibles del backend
-  const {
-    availableSubcategories,
-    loading: loadingAvailable,
-    error: errorAvailable
-  } = useAvailableSubcategories(category?.name || "")
-
-  // Filtrar subcategorías disponibles para excluir las que ya están en subcategorias_visibles
-  const filteredAvailableSubcategories = availableSubcategories.filter(availableSub =>
-    !subcategories.some(visibleSub => visibleSub.name === availableSub)
-  )
-
-  // Filtrar subcategorías disponibles para edición
-  const filteredAvailableSubcategoriesForEdit = availableSubcategories.filter(availableSub =>
-    !subcategories.some(visibleSub =>
-      visibleSub.name === availableSub && visibleSub.id !== selectedSubcategory?.id
-    )
-  )
-
-  // Estado del formulario del modal de agregar
-  const [selectedSubcategoryName, setSelectedSubcategoryName] = useState<string>("")
-  const [description, setDescription] = useState<string>("")
-  const [isActive, setIsActive] = useState<boolean>(true)
-
   // Estado del formulario del modal de editar
   const [editSubcategoryName, setEditSubcategoryName] = useState<string>("")
+  const [editNombreVisible, setEditNombreVisible] = useState<string>("")
   const [editDescription, setEditDescription] = useState<string>("")
   const [editImage, setEditImage] = useState<string>("")
 
-  // Función para manejar el envío del formulario
-  const handleSubmitSubcategory = async () => {
-    if (!selectedSubcategoryName) {
-      alert("Por favor selecciona una subcategoría")
-      return
-    }
-
-    const subcategoryData = {
-      nombre: selectedSubcategoryName,
-      descripcion: description,
-      imagen: "https://example.com/mock-image.jpg",
-      activo: isActive
-    }
-
-    const success = await createSubcategory(subcategoryData)
-
-    if (success) {
-      setSelectedSubcategoryName("")
-      setDescription("")
-      setIsActive(true)
-      setIsAddDialogOpen(false)
-    }
-  }
-
   // Función para manejar la edición de subcategoría
   const handleEditSubcategory = async () => {
-    if (!selectedSubcategory || !editSubcategoryName) {
+    if (!selectedSubcategory || !editSubcategoryName || !editNombreVisible) {
       alert("Por favor completa todos los campos requeridos")
       return
     }
 
     const subcategoryData = {
       nombre: editSubcategoryName,
+      nombreVisible: editNombreVisible,
       descripcion: editDescription,
       imagen: editImage || "https://example.com/mock-image.jpg",
     }
@@ -149,6 +84,7 @@ export default function SubcategoriasPage() {
 
     if (success) {
       setEditSubcategoryName("")
+      setEditNombreVisible("")
       setEditDescription("")
       setEditImage("")
       setSelectedSubcategory(null)
@@ -156,30 +92,14 @@ export default function SubcategoriasPage() {
     }
   }
 
-  // Función para resetear el formulario al cerrar el modal
-  const handleCloseModal = () => {
-    setSelectedSubcategoryName("")
-    setDescription("")
-    setIsActive(true)
-    setIsAddDialogOpen(false)
-  }
-
   // Función para resetear el formulario de edición al cerrar el modal
   const handleCloseEditModal = () => {
     setEditSubcategoryName("")
+    setEditNombreVisible("")
     setEditDescription("")
     setEditImage("")
     setSelectedSubcategory(null)
     setIsEditDialogOpen(false)
-  }
-
-  // Función para manejar el cambio de estado del modal
-  const handleModalOpenChange = (open: boolean) => {
-    if (!open) {
-      handleCloseModal()
-    } else {
-      setIsAddDialogOpen(true)
-    }
   }
 
   // Función para manejar el cambio de estado del modal de edición
@@ -195,37 +115,10 @@ export default function SubcategoriasPage() {
   const handleOpenEditModal = (subcategory: WebsiteSubcategory) => {
     setSelectedSubcategory(subcategory)
     setEditSubcategoryName(subcategory.name)
+    setEditNombreVisible(subcategory.nombreVisible || "")
     setEditDescription(subcategory.description || "")
     setEditImage(subcategory.image || "")
     setIsEditDialogOpen(true)
-  }
-
-  // Función para abrir el modal de confirmación de eliminación
-  const handleOpenDeleteModal = (subcategory: WebsiteSubcategory) => {
-    setSubcategoryToDelete(subcategory)
-    setDeleteError(null)
-    setIsDeleteDialogOpen(true)
-  }
-
-  // Función para cerrar el modal de confirmación de eliminación
-  const handleCloseDeleteModal = () => {
-    setSubcategoryToDelete(null)
-    setDeleteError(null)
-    setIsDeleteDialogOpen(false)
-  }
-
-  // Función para confirmar la eliminación de la subcategoría
-  const handleConfirmDelete = async () => {
-    if (!subcategoryToDelete) return
-
-    setDeleteError(null)
-    const success = await handleDeleteSubcategory(subcategoryToDelete.id)
-
-    if (success) {
-      handleCloseDeleteModal()
-    } else {
-      setDeleteError("No se pudo eliminar la subcategoría. Por favor, revisa la consola para más detalles.")
-    }
   }
 
   // Mostrar estado de carga
@@ -298,40 +191,30 @@ export default function SubcategoriasPage() {
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label htmlFor="edit-subcategory-select">Subcategoría de Productos</Label>
-                <Select
-                  disabled={loadingAvailable || updatingSubcategoryData}
+                <Label htmlFor="edit-subcategory-name">Subcategoría de Productos</Label>
+                <Input
+                  id="edit-subcategory-name"
                   value={editSubcategoryName}
-                  onValueChange={setEditSubcategoryName}
-                >
-                  <SelectTrigger id="edit-subcategory-select">
-                    <SelectValue placeholder={
-                      loadingAvailable
-                        ? "Cargando subcategorías..."
-                        : errorAvailable
-                          ? "Error al cargar subcategorías"
-                          : "Selecciona una subcategoría"
-                    } />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {filteredAvailableSubcategoriesForEdit.map((sub) => (
-                      <SelectItem key={sub} value={sub}>
-                        {sub}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  disabled={true}
+                  className="bg-muted"
+                />
                 <p className="text-xs text-muted-foreground">
-                  {loadingAvailable
-                    ? "Cargando subcategorías del backend..."
-                    : errorAvailable
-                      ? "Error al cargar subcategorías disponibles"
-                      : filteredAvailableSubcategoriesForEdit.length === 0
-                        ? availableSubcategories.length === 0
-                          ? "No hay subcategorías disponibles en esta categoría"
-                          : "Todas las subcategorías ya han sido agregadas"
-                        : `Mostrando ${filteredAvailableSubcategoriesForEdit.length} subcategorías disponibles`
-                  }
+                  El nombre de la subcategoría no es editable
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-nombre-visible">Nombre Visible</Label>
+                <Input
+                  id="edit-nombre-visible"
+                  placeholder="Nombre que se mostrará en el sitio web"
+                  value={editNombreVisible}
+                  onChange={(e) => setEditNombreVisible(e.target.value)}
+                  disabled={updatingSubcategoryData}
+                  required
+                />
+                <p className="text-xs text-muted-foreground">
+                  Nombre personalizado para mostrar en el sitio web
                 </p>
               </div>
 
@@ -368,7 +251,7 @@ export default function SubcategoriasPage() {
               <Button variant="outline" onClick={handleCloseEditModal} disabled={updatingSubcategoryData}>
                 Cancelar
               </Button>
-              <Button onClick={handleEditSubcategory} disabled={updatingSubcategoryData || !editSubcategoryName || filteredAvailableSubcategoriesForEdit.length === 0}>
+              <Button onClick={handleEditSubcategory} disabled={updatingSubcategoryData || !editSubcategoryName || !editNombreVisible}>
                 {updatingSubcategoryData ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
@@ -376,60 +259,6 @@ export default function SubcategoriasPage() {
                   </>
                 ) : (
                   "Actualizar Subcategoría"
-                )}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* Modal de Confirmación de Eliminación */}
-        <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Confirmar Eliminación</DialogTitle>
-              <DialogDescription>
-                ¿Estás seguro de que deseas eliminar esta subcategoría?
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="rounded-lg border p-4 space-y-2">
-                <div className="font-medium text-lg">{subcategoryToDelete?.name}</div>
-                {subcategoryToDelete?.description && (
-                  <div className="text-sm text-muted-foreground">
-                    {subcategoryToDelete.description}
-                  </div>
-                )}
-                <div className="flex items-center gap-4 text-sm text-muted-foreground pt-2">
-                  <div className="flex items-center gap-1">
-                    <Package className="h-3 w-3" />
-                    <span>{subcategoryToDelete?.productsCount || 0} productos</span>
-                  </div>
-                </div>
-              </div>
-              {deleteError && (
-                <div className="rounded-lg bg-destructive/10 border border-destructive/20 p-3">
-                  <p className="text-sm text-destructive">{deleteError}</p>
-                </div>
-              )}
-              <p className="text-sm text-muted-foreground">
-                Esta acción no se puede deshacer. La subcategoría se eliminará permanentemente de tu sitio web.
-              </p>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={handleCloseDeleteModal} disabled={deletingSubcategory}>
-                Cancelar
-              </Button>
-              <Button variant="destructive" onClick={handleConfirmDelete} disabled={deletingSubcategory}>
-                {deletingSubcategory ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Eliminando...
-                  </>
-                ) : (
-                  <>
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Eliminar Subcategoría
-                  </>
                 )}
               </Button>
             </DialogFooter>
@@ -503,6 +332,7 @@ export default function SubcategoriasPage() {
               <TableRow>
                 <TableHead className="w-12"></TableHead>
                 <TableHead>Subcategoría</TableHead>
+                <TableHead>Nombre visible</TableHead>
                 <TableHead>Series</TableHead>
                 <TableHead>Productos</TableHead>
                 <TableHead>Imagen</TableHead>
@@ -527,6 +357,9 @@ export default function SubcategoriasPage() {
                         </div>
                       )}
                     </div>
+                  </TableCell>
+                  <TableCell>
+                    <span>{subcategory.nombreVisible || '-'}</span>
                   </TableCell>
                   <TableCell>
                     <Badge variant="outline">0 series</Badge>
@@ -568,23 +401,14 @@ export default function SubcategoriasPage() {
                     </div>
                   </TableCell>
                   <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="cursor-pointer"
-                        onClick={() => handleOpenEditModal(subcategory)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleOpenDeleteModal(subcategory)}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="cursor-pointer"
+                      onClick={() => handleOpenEditModal(subcategory)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}

@@ -16,13 +16,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import {
   Table,
   TableBody,
   TableCell,
@@ -34,7 +27,6 @@ import { Switch } from "@/components/ui/switch"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import {
   Edit,
-  Trash2,
   Image as ImageIcon,
   Package,
   GripVertical,
@@ -45,16 +37,12 @@ import {
 } from "lucide-react"
 import { WebsiteCategory } from "@/types"
 import { useCategories } from "@/features/categories/useCategories"
-import { useAvailableCategories } from "@/features/categories/useAvailableCategories"
 
 export default function CategoriasPage() {
   const router = useRouter()
   // Mantener estas variables para futuras funcionalidades
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState<WebsiteCategory | null>(null)
-  const [categoryToDelete, setCategoryToDelete] = useState<WebsiteCategory | null>(null)
-  const [deleteError, setDeleteError] = useState<string | null>(null)
   
   // Hook para manejar categorías del backend
   const {
@@ -62,43 +50,29 @@ export default function CategoriasPage() {
     loading,
     error,
     toggleCategoryActive: handleToggleActive,
-    deleteCategory: handleDeleteCategory,
     updatingCategory,
-    deletingCategory,
     updateCategory,
     updatingCategoryData,
     syncCategories,
     syncingCategories
   } = useCategories()
 
-  // Hook para manejar categorías disponibles del backend
-  const {
-    availableCategories,
-    loading: loadingAvailable,
-    error: errorAvailable
-  } = useAvailableCategories()
-
-  // Filtrar categorías disponibles para edición (excluye las ya usadas excepto la actual)
-  const filteredAvailableCategoriesForEdit = availableCategories.filter(availableCat =>
-    !websiteCategories.some(visibleCat =>
-      visibleCat.name === availableCat && visibleCat.id !== selectedCategory?.id
-    )
-  )
-
   // Estado del formulario del modal de editar
   const [editCategoryName, setEditCategoryName] = useState<string>("")
+  const [editNombreVisible, setEditNombreVisible] = useState<string>("")
   const [editDescription, setEditDescription] = useState<string>("")
   const [editImage, setEditImage] = useState<string>("")
 
   // Función para manejar la edición de categoría
   const handleEditCategory = async () => {
-    if (!selectedCategory || !editCategoryName) {
+    if (!selectedCategory || !editCategoryName || !editNombreVisible) {
       alert("Por favor completa todos los campos requeridos")
       return
     }
 
     const categoryData = {
       nombre: editCategoryName,
+      nombreVisible: editNombreVisible,
       descripcion: editDescription,
       imagen: editImage || "https://example.com/mock-image.jpg", // Mock image por ahora
     }
@@ -108,6 +82,7 @@ export default function CategoriasPage() {
     if (success) {
       // Limpiar formulario y cerrar modal
       setEditCategoryName("")
+      setEditNombreVisible("")
       setEditDescription("")
       setEditImage("")
       setSelectedCategory(null)
@@ -118,6 +93,7 @@ export default function CategoriasPage() {
   // Función para resetear el formulario de edición al cerrar el modal
   const handleCloseEditModal = () => {
     setEditCategoryName("")
+    setEditNombreVisible("")
     setEditDescription("")
     setEditImage("")
     setSelectedCategory(null)
@@ -138,37 +114,10 @@ export default function CategoriasPage() {
   const handleOpenEditModal = (category: WebsiteCategory) => {
     setSelectedCategory(category)
     setEditCategoryName(category.name)
+    setEditNombreVisible(category.nombreVisible || "")
     setEditDescription(category.description || "")
     setEditImage(category.image || "")
     setIsEditDialogOpen(true)
-  }
-
-  // Función para abrir el modal de confirmación de eliminación
-  const handleOpenDeleteModal = (category: WebsiteCategory) => {
-    setCategoryToDelete(category)
-    setDeleteError(null)
-    setIsDeleteDialogOpen(true)
-  }
-
-  // Función para cerrar el modal de confirmación de eliminación
-  const handleCloseDeleteModal = () => {
-    setCategoryToDelete(null)
-    setDeleteError(null)
-    setIsDeleteDialogOpen(false)
-  }
-
-  // Función para confirmar la eliminación de la categoría
-  const handleConfirmDelete = async () => {
-    if (!categoryToDelete) return
-
-    setDeleteError(null)
-    const success = await handleDeleteCategory(categoryToDelete.id)
-
-    if (success) {
-      handleCloseDeleteModal()
-    } else {
-      setDeleteError("No se pudo eliminar la categoría. Por favor, revisa la consola para más detalles.")
-    }
   }
 
   // Mostrar estado de carga
@@ -249,38 +198,30 @@ export default function CategoriasPage() {
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label htmlFor="edit-category-select">Categoría de Productos</Label>
-                <Select
-                  disabled={loadingAvailable || updatingCategoryData}
+                <Label htmlFor="edit-category-name">Categoría de Productos</Label>
+                <Input
+                  id="edit-category-name"
                   value={editCategoryName}
-                  onValueChange={setEditCategoryName}
-                >
-                  <SelectTrigger id="edit-category-select">
-                    <SelectValue placeholder={
-                      loadingAvailable
-                        ? "Cargando categorías..."
-                        : errorAvailable
-                          ? "Error al cargar categorías"
-                          : "Selecciona una categoría"
-                    } />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {filteredAvailableCategoriesForEdit.map((cat) => (
-                      <SelectItem key={cat} value={cat}>
-                        {cat}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  disabled={true}
+                  className="bg-muted"
+                />
                 <p className="text-xs text-muted-foreground">
-                  {loadingAvailable
-                    ? "Cargando categorías del backend..."
-                    : errorAvailable
-                      ? "Error al cargar categorías disponibles"
-                      : filteredAvailableCategoriesForEdit.length === 0
-                        ? "Todas las categorías ya han sido agregadas"
-                        : `Mostrando ${filteredAvailableCategoriesForEdit.length} categorías disponibles`
-                  }
+                  El nombre de la categoría no es editable
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-nombre-visible">Nombre Visible</Label>
+                <Input
+                  id="edit-nombre-visible"
+                  placeholder="Nombre que se mostrará en el sitio web"
+                  value={editNombreVisible}
+                  onChange={(e) => setEditNombreVisible(e.target.value)}
+                  disabled={updatingCategoryData}
+                  required
+                />
+                <p className="text-xs text-muted-foreground">
+                  Nombre personalizado para mostrar en el sitio web
                 </p>
               </div>
 
@@ -317,7 +258,7 @@ export default function CategoriasPage() {
               <Button variant="outline" onClick={handleCloseEditModal} disabled={updatingCategoryData}>
                 Cancelar
               </Button>
-              <Button onClick={handleEditCategory} disabled={updatingCategoryData || !editCategoryName || filteredAvailableCategoriesForEdit.length === 0}>
+              <Button onClick={handleEditCategory} disabled={updatingCategoryData || !editCategoryName || !editNombreVisible}>
                 {updatingCategoryData ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
@@ -325,63 +266,6 @@ export default function CategoriasPage() {
                   </>
                 ) : (
                   "Actualizar Categoría"
-                )}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* Modal de Confirmación de Eliminación */}
-        <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Confirmar Eliminación</DialogTitle>
-              <DialogDescription>
-                ¿Estás seguro de que deseas eliminar esta categoría?
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="rounded-lg border p-4 space-y-2">
-                <div className="font-medium text-lg">{categoryToDelete?.name}</div>
-                {categoryToDelete?.description && (
-                  <div className="text-sm text-muted-foreground">
-                    {categoryToDelete.description}
-                  </div>
-                )}
-                <div className="flex items-center gap-4 text-sm text-muted-foreground pt-2">
-                  <div className="flex items-center gap-1">
-                    <Package className="h-3 w-3" />
-                    <span>{categoryToDelete?.productsCount || 0} productos</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span>{categoryToDelete?.subcategories.length || 0} subcategorías</span>
-                  </div>
-                </div>
-              </div>
-              {deleteError && (
-                <div className="rounded-lg bg-destructive/10 border border-destructive/20 p-3">
-                  <p className="text-sm text-destructive">{deleteError}</p>
-                </div>
-              )}
-              <p className="text-sm text-muted-foreground">
-                Esta acción no se puede deshacer. La categoría se eliminará permanentemente de tu sitio web.
-              </p>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={handleCloseDeleteModal} disabled={deletingCategory}>
-                Cancelar
-              </Button>
-              <Button variant="destructive" onClick={handleConfirmDelete} disabled={deletingCategory}>
-                {deletingCategory ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Eliminando...
-                  </>
-                ) : (
-                  <>
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Eliminar Categoría
-                  </>
                 )}
               </Button>
             </DialogFooter>
@@ -457,6 +341,7 @@ export default function CategoriasPage() {
               <TableRow>
                 <TableHead className="w-12"></TableHead>
                 <TableHead>Categoría</TableHead>
+                <TableHead>Nombre visible</TableHead>
                 <TableHead>Subcategorías</TableHead>
                 <TableHead>Productos</TableHead>
                 <TableHead>Imagen</TableHead>
@@ -481,6 +366,9 @@ export default function CategoriasPage() {
                         </div>
                       )}
                     </div>
+                  </TableCell>
+                  <TableCell>
+                    <span>{category.nombreVisible || '-'}</span>
                   </TableCell>
                   <TableCell>
                     <TooltipProvider>
@@ -541,23 +429,14 @@ export default function CategoriasPage() {
                     </div>
                   </TableCell>
                   <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="cursor-pointer"
-                        onClick={() => handleOpenEditModal(category)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleOpenDeleteModal(category)}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="cursor-pointer"
+                      onClick={() => handleOpenEditModal(category)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}
