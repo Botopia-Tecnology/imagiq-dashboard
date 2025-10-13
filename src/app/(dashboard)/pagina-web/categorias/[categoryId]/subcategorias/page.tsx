@@ -182,7 +182,7 @@ export default function SubcategoriasPage() {
 
         {/* Modal de Edición */}
         <Dialog open={isEditDialogOpen} onOpenChange={handleEditModalOpenChange}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl [&>button]:cursor-pointer">
             <DialogHeader>
               <DialogTitle>Editar Subcategoría</DialogTitle>
               <DialogDescription>
@@ -248,10 +248,10 @@ export default function SubcategoriasPage() {
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={handleCloseEditModal} disabled={updatingSubcategoryData}>
+              <Button variant="outline" onClick={handleCloseEditModal} disabled={updatingSubcategoryData} className="cursor-pointer">
                 Cancelar
               </Button>
-              <Button onClick={handleEditSubcategory} disabled={updatingSubcategoryData || !editSubcategoryName || !editNombreVisible}>
+              <Button onClick={handleEditSubcategory} disabled={updatingSubcategoryData || !editSubcategoryName || !editNombreVisible} className="cursor-pointer">
                 {updatingSubcategoryData ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
@@ -388,6 +388,7 @@ export default function SubcategoriasPage() {
                         checked={subcategory.isActive}
                         onCheckedChange={() => handleToggleActive(subcategory.id)}
                         disabled={updatingSubcategory === subcategory.id}
+                        className="cursor-pointer"
                       />
                       {updatingSubcategory === subcategory.id ? (
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>

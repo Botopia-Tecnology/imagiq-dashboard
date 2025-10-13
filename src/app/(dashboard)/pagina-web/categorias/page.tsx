@@ -189,7 +189,7 @@ export default function CategoriasPage() {
 
         {/* Modal de Edición */}
         <Dialog open={isEditDialogOpen} onOpenChange={handleEditModalOpenChange}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl [&>button]:cursor-pointer">
             <DialogHeader>
               <DialogTitle>Editar Categoría</DialogTitle>
               <DialogDescription>
@@ -255,10 +255,10 @@ export default function CategoriasPage() {
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={handleCloseEditModal} disabled={updatingCategoryData}>
+              <Button variant="outline" onClick={handleCloseEditModal} disabled={updatingCategoryData} className="cursor-pointer">
                 Cancelar
               </Button>
-              <Button onClick={handleEditCategory} disabled={updatingCategoryData || !editCategoryName || !editNombreVisible}>
+              <Button onClick={handleEditCategory} disabled={updatingCategoryData || !editCategoryName || !editNombreVisible} className="cursor-pointer">
                 {updatingCategoryData ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
@@ -416,6 +416,7 @@ export default function CategoriasPage() {
                         checked={category.isActive}
                         onCheckedChange={() => handleToggleActive(category.id)}
                         disabled={updatingCategory === category.id}
+                        className="cursor-pointer"
                       />
                       {updatingCategory === category.id ? (
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
