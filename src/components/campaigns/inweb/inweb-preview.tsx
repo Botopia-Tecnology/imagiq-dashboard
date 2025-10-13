@@ -1,256 +1,202 @@
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Chrome, Apple, Globe, X, Bell } from "lucide-react";
+import { X } from "lucide-react";
+import { memo } from "react";
 
 interface InWebPreviewProps {
-  title?: string;
-  message?: string;
-  icon?: string;
   image?: string;
-  actionButton1?: string;
-  actionButton2?: string;
-  badge?: string;
-  url?: string;
-  companyName?: string;
+  previewUrl?: string;
+  displayStyle?: "popup" | "slider";
+  contentType?: "image" | "html";
+  htmlContent?: string;
+  mode?: "desktop" | "mobile";
 }
 
-export function InWebPreview({
-  title = "Título de la notificación",
-  message = "Mensaje de la notificación push que aparecerá en el navegador del usuario.",
-  icon,
+function InWebPreviewComponent({
   image,
-  actionButton1,
-  actionButton2,
-  badge,
-  url = "https://tuempresa.com",
-  companyName = "Tu Empresa"
+  previewUrl = "",
+  displayStyle = "popup",
+  contentType = "image",
+  htmlContent = "",
+  mode = "desktop",
 }: InWebPreviewProps) {
-  const defaultIcon = "https://images.unsplash.com/photo-1572044162444-ad60f128bdea?w=64&h=64&fit=crop&crop=center";
+  const iframeUrl = previewUrl || "https://imagiq-frontend.vercel.app/productos/dispositivos-moviles?seccion=smartphones";
+  // Chrome Desktop Notification - Pop-up (bloqueante)
+  const ChromeNotificationPopup = () => {
+    const hasContent = (contentType === "html" && htmlContent) || image;
 
-  // Chrome Desktop Notification
-  const ChromeNotification = () => (
-    <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-4 max-w-sm">
-      <div className="flex items-start gap-3">
-        <img
-          src={icon || defaultIcon}
-          alt="Icon"
-          className="w-10 h-10 rounded-lg object-cover flex-shrink-0"
-        />
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between mb-1">
-            <h4 className="font-medium text-gray-900 text-sm truncate">
-              {title}
-            </h4>
-            <button className="text-gray-400 hover:text-gray-600 ml-2">
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-          <p className="text-sm text-gray-600 mb-2 line-clamp-2">
-            {message}
-          </p>
-          <div className="text-xs text-gray-500 flex items-center gap-1">
-            <Globe className="h-3 w-3" />
-            {companyName}
-          </div>
-        </div>
-      </div>
-
-      {image && (
-        <div className="mt-3 rounded-lg overflow-hidden">
-          <img
-            src={image}
-            alt="Notification"
-            className="w-full h-32 object-cover"
+    return (
+      <div className="relative w-full h-[400px] rounded-lg flex items-center justify-center border border-gray-200 shadow-lg overflow-hidden">
+        {/* Contenedor del iframe con posición relativa para los elementos superpuestos */}
+        <div className="relative w-full h-full">
+          <iframe
+            src={iframeUrl}
+            className="w-full h-full border-0"
+            title="Desktop Preview"
           />
-        </div>
-      )}
-
-      {(actionButton1 || actionButton2) && (
-        <div className="flex gap-2 mt-3">
-          {actionButton1 && (
-            <Button size="sm" variant="outline" className="text-xs h-7">
-              {actionButton1}
-            </Button>
-          )}
-          {actionButton2 && (
-            <Button size="sm" variant="outline" className="text-xs h-7">
-              {actionButton2}
-            </Button>
+          {/* Overlay oscuro solo si hay contenido */}
+          {hasContent && <div className="absolute inset-0 bg-black/30 rounded-lg" />}
+          {/* Modal centrado solo si hay contenido */}
+          {hasContent && (
+            <div className="absolute inset-0 flex items-center justify-center z-10 p-8">
+              <div className="relative bg-white border border-gray-200 rounded-lg shadow-2xl p-4 max-w-md max-h-[calc(100%-4rem)]">
+                {/* Botón de cerrar fuera del modal */}
+                <button className="absolute -top-8 right-0 rounded-full p-1.5 hover:opacity-80 transition-opacity">
+                  <X className="h-4 w-4 text-gray-800" />
+                </button>
+                {contentType === "html" && htmlContent ? (
+                  <div
+                    className="rounded-lg [&>*]:max-w-full [&_img]:max-w-full [&_img]:h-auto"
+                    dangerouslySetInnerHTML={{ __html: htmlContent }}
+                    style={{ maxHeight: 'calc(400px - 8rem)', overflow: 'hidden' }}
+                  />
+                ) : image ? (
+                  <div className="rounded-lg overflow-hidden flex items-center justify-center">
+                    <img
+                      src={image}
+                      alt="Notification"
+                      className="max-w-full max-h-[calc(400px-8rem)] object-contain"
+                    />
+                  </div>
+                ) : null}
+              </div>
+            </div>
           )}
         </div>
-      )}
-    </div>
-  );
+      </div>
+    );
+  };
 
-  // macOS Safari Notification
-  const SafariNotification = () => (
-    <div className="bg-white/95 backdrop-blur-md border border-gray-200 rounded-xl shadow-xl p-4 max-w-sm">
-      <div className="flex items-start gap-3">
-        <img
-          src={icon || defaultIcon}
-          alt="Icon"
-          className="w-12 h-12 rounded-xl object-cover flex-shrink-0"
+  // Chrome Desktop Notification - Slider (tipo toast)
+  const ChromeNotificationSlider = () => (
+    <div className="relative w-full h-[400px] rounded-lg flex items-center justify-center border border-gray-200 shadow-lg overflow-hidden">
+      {/* Contenedor del iframe con posición relativa para los elementos superpuestos */}
+      <div className="relative w-full h-full">
+        <iframe
+          src={iframeUrl}
+          className="w-full h-full border-0"
+          title="Desktop Preview"
         />
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between mb-1">
-            <h4 className="font-semibold text-gray-900 text-sm">
-              {companyName}
-            </h4>
-            <span className="text-xs text-gray-500">ahora</span>
+        {/* Modal centrado en la parte superior */}
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 max-w-sm max-h-[calc(100%-2rem)]">
+          <div className="relative bg-white border border-gray-200 rounded-lg shadow-2xl p-4">
+            {contentType === "html" && htmlContent ? (
+              <div
+                className="rounded-lg [&>*]:max-w-full [&_img]:max-w-full [&_img]:h-auto"
+                dangerouslySetInnerHTML={{ __html: htmlContent }}
+                style={{ maxHeight: 'calc(400px - 4rem)', overflow: 'hidden' }}
+              />
+            ) : image ? (
+              <div className="rounded-lg overflow-hidden">
+                <img
+                  src={image}
+                  alt="Notification"
+                  className="w-full h-auto object-contain max-h-40"
+                />
+              </div>
+            ) : null}
           </div>
-          <h5 className="font-medium text-gray-800 text-sm mb-1">
-            {title}
-          </h5>
-          <p className="text-sm text-gray-600 line-clamp-2">
-            {message}
-          </p>
         </div>
       </div>
-
-      {image && (
-        <div className="mt-3 rounded-lg overflow-hidden">
-          <img
-            src={image}
-            alt="Notification"
-            className="w-full h-28 object-cover"
-          />
-        </div>
-      )}
     </div>
   );
 
-  // Mobile Chrome Notification
-  const MobileNotification = () => (
-    <div className="bg-gray-900 text-white p-4 max-w-xs rounded-lg">
-      <div className="flex items-start gap-3">
-        <img
-          src={icon || defaultIcon}
-          alt="Icon"
-          className="w-8 h-8 rounded-full object-cover flex-shrink-0 mt-1"
+  const ChromeNotification =
+    displayStyle === "popup"
+      ? ChromeNotificationPopup
+      : ChromeNotificationSlider;
+
+  // Mobile Chrome Notification - Pop-up
+  const MobileNotificationPopup = () => {
+    const hasContent = (contentType === "html" && htmlContent) || image;
+
+    return (
+      <div className="relative w-full h-[600px] max-w-[375px] mx-auto rounded-xl flex items-center justify-center border border-gray-200 shadow-lg overflow-hidden">
+        {/* Contenedor del iframe con posición relativa para los elementos superpuestos */}
+        <div className="relative w-full h-full">
+          <iframe
+            src={iframeUrl}
+            className="w-full h-full border-0"
+            title="Mobile Preview"
+          />
+          {/* Overlay oscuro solo si hay contenido */}
+          {hasContent && (
+            <div className="absolute inset-0 bg-black/30 rounded-xl" />
+          )}
+          {/* Modal centrado solo si hay contenido */}
+          {hasContent && (
+            <div className="absolute inset-0 flex items-center justify-center z-10 p-8">
+              <div className="relative bg-white border border-gray-200 rounded-lg shadow-2xl p-4 max-w-[280px] max-h-[calc(100%-4rem)]">
+                {/* Botón de cerrar fuera del modal */}
+                <button className="absolute -top-5 right-0 rounded-full p-1 hover:opacity-80 transition-opacity">
+                  <X className="h-3.5 w-3.5 text-gray-800" />
+                </button>
+                {contentType === "html" && htmlContent ? (
+                  <div
+                    className="rounded [&>*]:max-w-full [&_img]:max-w-full [&_img]:h-auto"
+                    dangerouslySetInnerHTML={{ __html: htmlContent }}
+                    style={{ maxHeight: 'calc(600px - 8rem)', overflow: 'hidden' }}
+                  />
+                ) : image ? (
+                  <div className="rounded overflow-hidden flex items-center justify-center">
+                    <img
+                      src={image}
+                      alt="Notification"
+                      className="max-w-full max-h-[calc(600px-8rem)] object-contain"
+                    />
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  // Mobile Chrome Notification - Slider
+  const MobileNotificationSlider = () => (
+    <div className="relative w-full h-[600px] max-w-[375px] mx-auto rounded-xl flex items-center justify-center border border-gray-200 shadow-lg overflow-hidden">
+      {/* Contenedor del iframe con posición relativa para los elementos superpuestos */}
+      <div className="relative w-full h-full">
+        <iframe
+          src={iframeUrl}
+          className="w-full h-full border-0"
+          title="Mobile Preview"
         />
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between mb-1">
-            <h4 className="font-medium text-white text-sm">
-              {companyName}
-            </h4>
-            <span className="text-xs text-gray-400">2 min</span>
-          </div>
-          <p className="text-sm text-gray-300 mb-1 font-medium">
-            {title}
-          </p>
-          <p className="text-sm text-gray-400 line-clamp-2">
-            {message}
-          </p>
-        </div>
-        <div className="flex-shrink-0 ml-2">
-          <Bell className="h-4 w-4 text-gray-400" />
-        </div>
-      </div>
-
-      {image && (
-        <div className="mt-3 rounded overflow-hidden">
-          <img
-            src={image}
-            alt="Notification"
-            className="w-full h-24 object-cover"
-          />
-        </div>
-      )}
-    </div>
-  );
-
-  return (
-    <div className="space-y-6">
-      <Tabs defaultValue="chrome" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="chrome" className="flex items-center gap-2">
-            <Chrome className="h-4 w-4" />
-            Chrome
-          </TabsTrigger>
-          <TabsTrigger value="safari" className="flex items-center gap-2">
-            <Apple className="h-4 w-4" />
-            Safari
-          </TabsTrigger>
-          <TabsTrigger value="mobile" className="flex items-center gap-2">
-            <Globe className="h-4 w-4" />
-            Móvil
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="chrome" className="space-y-4">
-          <div className="p-6 bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-950 dark:to-indigo-950 rounded-lg">
-            <div className="mb-4">
-              <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-1">
-                Chrome Desktop
-              </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Notificación estándar en Chrome para escritorio
-              </p>
-            </div>
-            <div className="flex justify-center">
-              <ChromeNotification />
-            </div>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="safari" className="space-y-4">
-          <div className="p-6 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900 rounded-lg">
-            <div className="mb-4">
-              <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-1">
-                Safari macOS
-              </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Notificación nativa de macOS desde Safari
-              </p>
-            </div>
-            <div className="flex justify-center">
-              <SafariNotification />
-            </div>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="mobile" className="space-y-4">
-          <div className="p-6 bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-950 dark:to-emerald-950 rounded-lg">
-            <div className="mb-4">
-              <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-1">
-                Chrome Mobile
-              </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Notificación en dispositivos móviles
-              </p>
-            </div>
-            <div className="flex justify-center">
-              <MobileNotification />
-            </div>
-          </div>
-        </TabsContent>
-      </Tabs>
-
-      {/* Technical Info */}
-      <div className="p-4 bg-muted rounded-lg">
-        <h4 className="font-medium mb-2">Información Técnica</h4>
-        <div className="grid grid-cols-2 gap-4 text-sm">
-          <div>
-            <div className="font-medium text-gray-700 dark:text-gray-300">Título</div>
-            <div className="text-gray-600 dark:text-gray-400">{title.length}/50 caracteres</div>
-          </div>
-          <div>
-            <div className="font-medium text-gray-700 dark:text-gray-300">Mensaje</div>
-            <div className="text-gray-600 dark:text-gray-400">{message.length}/120 caracteres</div>
-          </div>
-          <div>
-            <div className="font-medium text-gray-700 dark:text-gray-300">URL</div>
-            <div className="text-gray-600 dark:text-gray-400 truncate">{url}</div>
-          </div>
-          <div>
-            <div className="font-medium text-gray-700 dark:text-gray-300">Estado</div>
-            <Badge variant="secondary">
-              {title.length <= 50 && message.length <= 120 ? "Válido" : "Revisar límites"}
-            </Badge>
+        {/* Modal en la parte superior, ajustado a los márgenes del celular */}
+        <div className="absolute top-[8%] left-[12%] right-[12%] z-10 max-h-[calc(100%-10%)]">
+          <div className="relative bg-white border border-gray-200 rounded-lg shadow-2xl p-3">
+            {contentType === "html" && htmlContent ? (
+              <div
+                className="rounded [&>*]:max-w-full [&_img]:max-w-full [&_img]:h-auto"
+                dangerouslySetInnerHTML={{ __html: htmlContent }}
+                style={{ maxHeight: 'calc(600px - 12%)', overflow: 'hidden' }}
+              />
+            ) : image ? (
+              <div className="rounded overflow-hidden">
+                <img
+                  src={image}
+                  alt="Notification"
+                  className="w-full h-auto object-contain"
+                />
+              </div>
+            ) : null}
           </div>
         </div>
       </div>
     </div>
   );
+
+  const MobileNotification =
+    displayStyle === "popup"
+      ? MobileNotificationPopup
+      : MobileNotificationSlider;
+
+  // Renderizar solo el modo seleccionado
+  if (mode === "desktop") {
+    return <ChromeNotification />;
+  }
+
+  return <MobileNotification />;
 }
+
+export const InWebPreview = memo(InWebPreviewComponent);
