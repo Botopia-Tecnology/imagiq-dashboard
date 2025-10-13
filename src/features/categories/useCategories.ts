@@ -128,9 +128,8 @@ export const useCategories = (): UseCategoriesReturn => {
       const response = await categoryEndpoints.create(data);
 
       if (response.success && response.data) {
-        // Agregar la nueva categoría al estado local
-        const newCategory = mapBackendCategoriesToFrontend([response.data])[0];
-        setCategories(prev => [...prev, newCategory]);
+        // Refrescar todas las categorías para obtener datos actualizados del backend
+        await fetchCategories();
         return true;
       } else {
         setError(response.message || "Error al crear la categoría");
@@ -143,7 +142,7 @@ export const useCategories = (): UseCategoriesReturn => {
     } finally {
       setCreatingCategory(false);
     }
-  }, []);
+  }, [fetchCategories]);
 
   // Función para actualizar una categoría
   const updateCategory = useCallback(async (categoryId: string, data: UpdateCategoryRequest): Promise<boolean> => {

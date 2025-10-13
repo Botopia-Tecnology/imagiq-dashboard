@@ -8,7 +8,7 @@
  * - TypeScript interfaces para requests/responses
  */
 
-import { BackendCategory, CreateCategoryRequest, UpdateCategoryRequest } from "@/types";
+import { BackendCategory, BackendSubcategory, CreateCategoryRequest, UpdateCategoryRequest, CreateSubcategoryRequest, UpdateSubcategoryRequest } from "@/types";
 
 // API Client configuration
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
@@ -277,4 +277,26 @@ export const categoryEndpoints = {
     apiClient.patch<{ success: boolean; message?: string }>(`/api/categorias/visibles/${uuid}/activo`, { activo }),
   delete: (uuid: string) =>
     apiClient.delete<{ success: boolean; message?: string }>(`/api/categorias/visibles/${uuid}`),
+};
+
+// Subcategories API endpoints
+export const subcategoryEndpoints = {
+  // GET /api/categorias/visibles/:categoryId/subcategorias
+  getByCategory: (categoryId: string) =>
+    apiClient.get<BackendSubcategory[]>(`/api/categorias/visibles/${categoryId}/subcategorias`),
+  // GET /api/categorias/distinct/subcategorias?categoria=CATEGORIA_NAME
+  getDistinct: (categoryName: string) =>
+    apiClient.get<string[]>(`/api/categorias/distinct/subcategorias?categoria=${encodeURIComponent(categoryName)}`),
+  // POST /api/subcategorias/visibles
+  create: (data: CreateSubcategoryRequest & { categoriasVisiblesId: string }) =>
+    apiClient.post<BackendSubcategory>(`/api/subcategorias/visibles`, data),
+  // PATCH /api/subcategorias/visibles/:subcategoryId
+  update: (subcategoryId: string, data: UpdateSubcategoryRequest) =>
+    apiClient.patch<BackendSubcategory>(`/api/subcategorias/visibles/${subcategoryId}`, data),
+  // PATCH /api/subcategorias/visibles/:subcategoryId/activo
+  updateActiveStatus: (subcategoryId: string, activo: boolean) =>
+    apiClient.patch<{ success: boolean; message?: string }>(`/api/subcategorias/visibles/${subcategoryId}/activo`, { activo }),
+  // DELETE /api/subcategorias/visibles/:subcategoryId
+  delete: (subcategoryId: string) =>
+    apiClient.delete<{ success: boolean; message?: string }>(`/api/subcategorias/visibles/${subcategoryId}`),
 };

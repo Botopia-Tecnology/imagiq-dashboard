@@ -1,7 +1,7 @@
 import { AppSidebar } from "@/components/dashboard/sidebar"
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { Separator } from "@/components/ui/separator"
-import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator, BreadcrumbPage } from "@/components/ui/breadcrumb"
+import { DynamicBreadcrumb } from "@/components/dashboard/dynamic-breadcrumb"
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute"
 import { UserProfile } from "@/components/auth/UserProfile"
 
@@ -19,19 +19,7 @@ export default function DashboardLayout({
             <div className="flex items-center gap-2 px-4 flex-1">
               <SidebarTrigger className="-ml-1" />
               <Separator orientation="vertical" className="mr-2 h-4" />
-              <Breadcrumb>
-                <BreadcrumbList>
-                  <BreadcrumbItem className="hidden md:block">
-                    <BreadcrumbLink href="/inicio">
-                      Dashboard
-                    </BreadcrumbLink>
-                  </BreadcrumbItem>
-                  <BreadcrumbSeparator className="hidden md:block" />
-                  <BreadcrumbItem>
-                    <BreadcrumbPage>E-Commerce</BreadcrumbPage>
-                  </BreadcrumbItem>
-                </BreadcrumbList>
-              </Breadcrumb>
+              <DynamicBreadcrumb />
             </div>
             <div className="flex items-center gap-2 px-4">
               <UserProfile />
