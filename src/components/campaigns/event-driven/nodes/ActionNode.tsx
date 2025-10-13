@@ -57,8 +57,8 @@ const ActionNode = memo(({ data, selected }: NodeProps<ActionNodeData>) => {
 
   const renderConfigForm = () => {
     return (
-      <div className="space-y-4">
-        <div>
+      <div className="space-y-6">
+        <div className="space-y-3">
           <Label htmlFor="campaignType">Tipo de Campaña</Label>
           <Select
             value={config.campaignType || ''}
@@ -79,7 +79,7 @@ const ActionNode = memo(({ data, selected }: NodeProps<ActionNodeData>) => {
           </Select>
         </div>
 
-        <div>
+        <div className="space-y-3">
           <Label htmlFor="templateId">Plantilla</Label>
           <Select
             value={config.templateId || ''}
@@ -112,7 +112,7 @@ const ActionNode = memo(({ data, selected }: NodeProps<ActionNodeData>) => {
     <>
       <div
         className={`
-          relative rounded-lg border-2 transition-all duration-200 cursor-pointer
+          relative rounded-lg border-2 transition-all duration-200 cursor-pointer flex
           ${selected
             ? 'border-blue-500 shadow-lg shadow-blue-200 dark:shadow-blue-900/50'
             : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
@@ -128,25 +128,24 @@ const ActionNode = memo(({ data, selected }: NodeProps<ActionNodeData>) => {
           className="w-3 h-3 !bg-gray-400 border-2 border-white dark:border-gray-800"
         />
 
-        <div className="p-3 h-full flex flex-col items-center justify-center gap-1.5">
-          {config.campaignType ? (
-            <>
-              <BrandIcon brand={config.campaignType} size={28} />
-              <span className="text-sm font-medium text-center capitalize">
-                {config.campaignType}
+        {config.campaignType ? (
+          <div className="p-3 w-full flex flex-col items-center justify-center gap-1.5">
+            <span className="text-sm font-medium text-center capitalize">
+              {config.campaignType}
+            </span>
+            {config.templateName && (
+              <span className="text-xs text-center text-muted-foreground px-2 leading-tight">
+                {config.templateName}
               </span>
-              {config.templateName && (
-                <span className="text-xs text-center text-muted-foreground px-2 leading-tight">
-                  {config.templateName}
-                </span>
-              )}
-            </>
-          ) : (
+            )}
+          </div>
+        ) : (
+          <div className="p-3 w-full flex flex-col items-center justify-center gap-1.5">
             <span className="text-sm font-medium text-center text-gray-500">
               Campaña
             </span>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       <Dialog open={isConfigOpen} onOpenChange={setIsConfigOpen}>
