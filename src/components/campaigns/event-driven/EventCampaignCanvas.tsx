@@ -201,32 +201,32 @@ const nodeTemplates = [
     items: [
       {
         id: "wait_time",
-        label: "Esperar Tiempo",
+        label: "Esperar",
         icon: { type: "lucide", name: "Timer" },
         color:
           "bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800",
       },
-      {
-        id: "wait_event",
-        label: "Esperar Evento",
-        icon: { type: "lucide", name: "ActivitySquare" },
-        color:
-          "bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800",
-      },
-      {
-        id: "wait_condition",
-        label: "Esperar Condición",
-        icon: { type: "lucide", name: "Refresh" },
-        color:
-          "bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800",
-      },
-      {
-        id: "wait_webhook",
-        label: "Esperar Webhook",
-        icon: { type: "lucide", name: "Link" },
-        color:
-          "bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800",
-      },
+      // {
+      //   id: "wait_event",
+      //   label: "Esperar Evento",
+      //   icon: { type: "lucide", name: "ActivitySquare" },
+      //   color:
+      //     "bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800",
+      // },
+      // {
+      //   id: "wait_condition",
+      //   label: "Esperar Condición",
+      //   icon: { type: "lucide", name: "Refresh" },
+      //   color:
+      //     "bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800",
+      // },
+      // {
+      //   id: "wait_webhook",
+      //   label: "Esperar Webhook",
+      //   icon: { type: "lucide", name: "Link" },
+      //   color:
+      //     "bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800",
+      // },
     ],
   },
 ];
