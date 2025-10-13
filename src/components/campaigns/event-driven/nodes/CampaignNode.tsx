@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { BrandIcon } from '@/components/icons/BrandIcon';
 import { CommunicationChannelType } from '@/types/event-driven-campaigns';
 
-interface ActionNodeData {
+interface CampaignNodeData {
   config: {
     campaignType?: CommunicationChannelType;
     templateId?: string;
@@ -18,7 +18,7 @@ interface ActionNodeData {
   icon: { type: 'brand' | 'lucide', name: string } | string;
 }
 
-const ActionNode = memo(({ data, selected }: NodeProps<ActionNodeData>) => {
+const CampaignNode = memo(({ data, selected }: NodeProps<CampaignNodeData>) => {
   const [isConfigOpen, setIsConfigOpen] = useState(false);
   const [config, setConfig] = useState<{
     campaignType?: CommunicationChannelType;
@@ -127,6 +127,11 @@ const ActionNode = memo(({ data, selected }: NodeProps<ActionNodeData>) => {
           className="w-3 h-3 !bg-gray-400 border-2 border-white dark:border-gray-800"
         />
 
+ <Handle
+          type="target"
+          position={Position.Right}
+          className="w-3 h-3 !bg-gray-400 border-2 border-white dark:border-gray-800"
+        />
         {config.campaignType ? (
           <div className="p-3 w-full flex flex-col items-center justify-center gap-1.5">
             <span className="text-sm font-medium text-center capitalize">
@@ -164,6 +169,6 @@ const ActionNode = memo(({ data, selected }: NodeProps<ActionNodeData>) => {
   );
 });
 
-ActionNode.displayName = 'ActionNode';
+CampaignNode.displayName = 'CampaignNode';
 
-export default ActionNode;
+export default CampaignNode;

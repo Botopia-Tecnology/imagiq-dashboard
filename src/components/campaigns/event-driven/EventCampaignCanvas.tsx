@@ -56,7 +56,7 @@ import {
 // Import custom node components
 import TriggerNode from './nodes/TriggerNode';
 import ConditionNode from './nodes/ConditionNode';
-import ActionNode from './nodes/ActionNode';
+import CampaignNode from './nodes/CampaignNode';
 import DelayNode from './nodes/DelayNode';
 import { IfNode } from './nodes/IfNode';
 import { WaitNode } from './nodes/WaitNode';
@@ -112,7 +112,7 @@ const NodeIcon = ({ icon, size = 16, className = "" }: {
 const nodeTypes = {
   trigger: TriggerNode,
   condition: ConditionNode,
-  action: ActionNode,
+  action: CampaignNode,
   delay: DelayNode,
   if: IfNode,
   wait: WaitNode,
