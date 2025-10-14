@@ -1,12 +1,13 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter, useParams } from "next/navigation"
+import { useParams } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
   Dialog,
   DialogContent,
@@ -24,7 +25,6 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Switch } from "@/components/ui/switch"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import {
   Edit,
   Image as ImageIcon,
@@ -32,18 +32,23 @@ import {
   GripVertical,
   Eye,
   EyeOff,
+  Save,
+  X,
 } from "lucide-react"
-import { WebsiteSubcategory, WebsiteCategory } from "@/types"
+import { WebsiteSubcategory } from "@/types"
 import { useSubcategories } from "@/features/categories/useSubcategories"
 import { useCategories } from "@/features/categories/useCategories"
 
 export default function SubcategoriasPage() {
-  const router = useRouter()
   const params = useParams()
   const categoryId = params.categoryId as string
 
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [selectedSubcategory, setSelectedSubcategory] = useState<WebsiteSubcategory | null>(null)
+  const [draggedSubcategory, setDraggedSubcategory] = useState<WebsiteSubcategory | null>(null)
+  const [hasOrderChanged, setHasOrderChanged] = useState(false)
+  const [localSubcategories, setLocalSubcategories] = useState<WebsiteSubcategory[]>([])
+  const [orderError, setOrderError] = useState<string | null>(null)
 
   // Hook para obtener la información de la categoría padre
   const { categories } = useCategories()
@@ -57,8 +62,15 @@ export default function SubcategoriasPage() {
     toggleSubcategoryActive: handleToggleActive,
     updatingSubcategory,
     updateSubcategory,
-    updatingSubcategoryData
+    updatingSubcategoryData,
+    updateSubcategoriesOrder,
+    updatingOrder
   } = useSubcategories(categoryId)
+
+  // Sincronizar el estado local con las subcategorías del hook
+  useEffect(() => {
+    setLocalSubcategories(subcategories)
+  }, [subcategories])
 
   // Estado del formulario del modal de editar
   const [editSubcategoryName, setEditSubcategoryName] = useState<string>("")
@@ -121,6 +133,71 @@ export default function SubcategoriasPage() {
     setIsEditDialogOpen(true)
   }
 
+  // Funciones para drag and drop
+  const handleDragStart = (e: React.DragEvent, subcategory: WebsiteSubcategory) => {
+    setDraggedSubcategory(subcategory)
+    e.dataTransfer.effectAllowed = 'move'
+  }
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+  }
+
+  const handleDrop = (e: React.DragEvent, targetSubcategory: WebsiteSubcategory) => {
+    e.preventDefault()
+    
+    if (!draggedSubcategory || draggedSubcategory.id === targetSubcategory.id) {
+      setDraggedSubcategory(null)
+      return
+    }
+
+    // Reordenar las subcategorías localmente
+    const newSubcategories = [...localSubcategories]
+    const draggedIndex = newSubcategories.findIndex(sub => sub.id === draggedSubcategory.id)
+    const targetIndex = newSubcategories.findIndex(sub => sub.id === targetSubcategory.id)
+    
+    // Remover el elemento arrastrado
+    const [removed] = newSubcategories.splice(draggedIndex, 1)
+    // Insertar en la nueva posición
+    newSubcategories.splice(targetIndex, 0, removed)
+    
+    // Actualizar el estado local
+    setLocalSubcategories(newSubcategories)
+    setHasOrderChanged(true)
+    setDraggedSubcategory(null)
+  }
+
+  const handleDragEnd = () => {
+    setDraggedSubcategory(null)
+  }
+
+  // Función para guardar el nuevo orden
+  const handleSaveOrder = async () => {
+    setOrderError(null)
+    try {
+      const subcategoryIds = localSubcategories.map(sub => sub.id)
+      const success = await updateSubcategoriesOrder(subcategoryIds)
+      
+      if (success) {
+        setHasOrderChanged(false)
+        // Orden guardado exitosamente 
+      } else {
+        setOrderError('Error al guardar el orden. Por favor, intenta nuevamente.')
+      }
+    } catch (error) {
+      setOrderError('Error al guardar el orden. Por favor, intenta nuevamente.')
+    }
+  }
+
+  const handleCancelOrder = () => {
+    // Restaurar el orden original
+    setLocalSubcategories(subcategories)
+    setHasOrderChanged(false)
+    setDraggedSubcategory(null)
+    setOrderError(null)
+  }
+
   // Mostrar estado de carga
   if (loading) {
     return (
@@ -179,6 +256,45 @@ export default function SubcategoriasPage() {
             Gestiona las subcategorías y series visibles de esta categoría
           </p>
         </div>
+        <div className="flex gap-2">
+          {hasOrderChanged && (
+            <>
+              <Button
+                variant="outline"
+                className="cursor-pointer"
+                onClick={handleCancelOrder}
+                disabled={updatingOrder}
+              >
+                <X className="mr-2 h-4 w-4" />
+                Cancelar
+              </Button>
+              <Button
+                className="cursor-pointer"
+                onClick={handleSaveOrder}
+                disabled={updatingOrder}
+              >
+                {updatingOrder ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Guardando...
+                  </>
+                ) : (
+                  <>
+                    <Save className="mr-2 h-4 w-4" />
+                    Guardar Orden
+                  </>
+                )}
+              </Button>
+            </>
+          )}
+        </div>
+
+        {/* Error de Orden */}
+        {orderError && (
+          <Alert variant="destructive">
+            <AlertDescription>{orderError}</AlertDescription>
+          </Alert>
+        )}
 
         {/* Modal de Edición */}
         <Dialog open={isEditDialogOpen} onOpenChange={handleEditModalOpenChange}>
@@ -341,8 +457,18 @@ export default function SubcategoriasPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {subcategories.map((subcategory) => (
-                <TableRow key={subcategory.id}>
+              {localSubcategories.map((subcategory) => (
+                <TableRow 
+                  key={subcategory.id}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, subcategory)}
+                  onDragOver={handleDragOver}
+                  onDrop={(e) => handleDrop(e, subcategory)}
+                  onDragEnd={handleDragEnd}
+                  className={`cursor-move transition-all duration-200 ${
+                    draggedSubcategory?.id === subcategory.id ? 'opacity-50 scale-95' : ''
+                  }`}
+                >
                   <TableCell>
                     <Button variant="ghost" size="icon" className="cursor-grab">
                       <GripVertical className="h-4 w-4 text-muted-foreground" />

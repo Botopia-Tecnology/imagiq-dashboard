@@ -279,6 +279,8 @@ export const categoryEndpoints = {
     apiClient.delete<{ success: boolean; message?: string }>(`/api/categorias/visibles/${uuid}`),
   sync: () =>
     apiClient.post<{ success: boolean; message?: string }>("/api/categorias/sync"),
+  updateOrder: (categoryIds: string[]) =>
+    apiClient.put<{ success: boolean; message?: string }>("/api/categorias/visibles/order", { categoryIds }),
 };
 
 // Subcategories API endpoints
@@ -301,4 +303,7 @@ export const subcategoryEndpoints = {
   // DELETE /api/subcategorias/visibles/:subcategoryId
   delete: (subcategoryId: string) =>
     apiClient.delete<{ success: boolean; message?: string }>(`/api/subcategorias/visibles/${subcategoryId}`),
+  // PUT /api/subcategorias/visibles/order
+  updateOrder: (subcategoryIds: string[]) =>
+    apiClient.put<{ success: boolean; message?: string }>("/api/subcategorias/visibles/order", { subcategoryIds }),
 };

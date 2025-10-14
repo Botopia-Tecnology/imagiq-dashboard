@@ -1,12 +1,13 @@
   "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
   Dialog,
   DialogContent,
@@ -34,6 +35,8 @@ import {
   EyeOff,
   Settings,
   RefreshCw,
+  Save,
+  X,
 } from "lucide-react"
 import { WebsiteCategory } from "@/types"
 import { useCategories } from "@/features/categories/useCategories"
@@ -43,6 +46,10 @@ export default function CategoriasPage() {
   // Mantener estas variables para futuras funcionalidades
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState<WebsiteCategory | null>(null)
+  const [draggedCategory, setDraggedCategory] = useState<WebsiteCategory | null>(null)
+  const [hasOrderChanged, setHasOrderChanged] = useState(false)
+  const [localCategories, setLocalCategories] = useState<WebsiteCategory[]>([])
+  const [orderError, setOrderError] = useState<string | null>(null)
   
   // Hook para manejar categorías del backend
   const {
@@ -54,8 +61,15 @@ export default function CategoriasPage() {
     updateCategory,
     updatingCategoryData,
     syncCategories,
-    syncingCategories
+    syncingCategories,
+    updateCategoriesOrder,
+    updatingOrder
   } = useCategories()
+
+  // Sincronizar el estado local con las categorías del hook
+  useEffect(() => {
+    setLocalCategories(websiteCategories)
+  }, [websiteCategories])
 
   // Estado del formulario del modal de editar
   const [editCategoryName, setEditCategoryName] = useState<string>("")
@@ -120,6 +134,71 @@ export default function CategoriasPage() {
     setIsEditDialogOpen(true)
   }
 
+  // Funciones para drag and drop
+  const handleDragStart = (e: React.DragEvent, category: WebsiteCategory) => {
+    setDraggedCategory(category)
+    e.dataTransfer.effectAllowed = 'move'
+  }
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+  }
+
+  const handleDrop = (e: React.DragEvent, targetCategory: WebsiteCategory) => {
+    e.preventDefault()
+    
+    if (!draggedCategory || draggedCategory.id === targetCategory.id) {
+      setDraggedCategory(null)
+      return
+    }
+
+    // Reordenar las categorías localmente
+    const newCategories = [...localCategories]
+    const draggedIndex = newCategories.findIndex(cat => cat.id === draggedCategory.id)
+    const targetIndex = newCategories.findIndex(cat => cat.id === targetCategory.id)
+    
+    // Remover el elemento arrastrado
+    const [removed] = newCategories.splice(draggedIndex, 1)
+    // Insertar en la nueva posición
+    newCategories.splice(targetIndex, 0, removed)
+    
+    // Actualizar el estado local
+    setLocalCategories(newCategories)
+    setHasOrderChanged(true)
+    setDraggedCategory(null)
+  }
+
+  const handleDragEnd = () => {
+    setDraggedCategory(null)
+  }
+
+  // Función para guardar el nuevo orden
+  const handleSaveOrder = async () => {
+    setOrderError(null)
+    try {
+      const categoryIds = localCategories.map(cat => cat.id)
+      const success = await updateCategoriesOrder(categoryIds)
+      
+      if (success) {
+        setHasOrderChanged(false)
+        // Orden guardado exitosamente 
+      } else {
+        setOrderError('Error al guardar el orden. Por favor, intenta nuevamente.')
+      }
+    } catch (error) {
+      setOrderError('Error al guardar el orden. Por favor, intenta nuevamente.')
+    }
+  }
+
+  const handleCancelOrder = () => {
+    // Restaurar el orden original
+    setLocalCategories(websiteCategories)
+    setHasOrderChanged(false)
+    setDraggedCategory(null)
+    setOrderError(null)
+  }
+
   // Mostrar estado de carga
   if (loading) {
     return (
@@ -178,14 +257,53 @@ export default function CategoriasPage() {
             Gestiona las categorías y subcategorías visibles en tu tienda
           </p>
         </div>
-        <Button
-          className="cursor-pointer"
-          onClick={syncCategories}
-          disabled={syncingCategories}
-        >
-          <RefreshCw className={`mr-2 h-4 w-4 ${syncingCategories ? 'animate-spin' : ''}`} />
-          {syncingCategories ? 'Sincronizando...' : 'Sincronizar'}
-        </Button>
+        <div className="flex gap-2">
+          {hasOrderChanged && (
+            <>
+              <Button
+                variant="outline"
+                className="cursor-pointer"
+                onClick={handleCancelOrder}
+                disabled={updatingOrder}
+              >
+                <X className="mr-2 h-4 w-4" />
+                Cancelar
+              </Button>
+              <Button
+                className="cursor-pointer"
+                onClick={handleSaveOrder}
+                disabled={updatingOrder}
+              >
+                {updatingOrder ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Guardando...
+                  </>
+                ) : (
+                  <>
+                    <Save className="mr-2 h-4 w-4" />
+                    Guardar Orden
+                  </>
+                )}
+              </Button>
+            </>
+          )}
+          <Button
+            className="cursor-pointer"
+            onClick={syncCategories}
+            disabled={syncingCategories}
+          >
+            <RefreshCw className={`mr-2 h-4 w-4 ${syncingCategories ? 'animate-spin' : ''}`} />
+            {syncingCategories ? 'Sincronizando...' : 'Sincronizar'}
+          </Button>
+        </div>
+
+        {/* Error de Orden */}
+        {orderError && (
+          <Alert variant="destructive">
+            <AlertDescription>{orderError}</AlertDescription>
+          </Alert>
+        )}
 
         {/* Modal de Edición */}
         <Dialog open={isEditDialogOpen} onOpenChange={handleEditModalOpenChange}>
@@ -350,8 +468,18 @@ export default function CategoriasPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {websiteCategories.map((category) => (
-                <TableRow key={category.id}>
+              {localCategories.map((category) => (
+                <TableRow 
+                  key={category.id}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, category)}
+                  onDragOver={handleDragOver}
+                  onDrop={(e) => handleDrop(e, category)}
+                  onDragEnd={handleDragEnd}
+                  className={`cursor-move transition-all duration-200 ${
+                    draggedCategory?.id === category.id ? 'opacity-50 scale-95' : ''
+                  }`}
+                >
                   <TableCell>
                     <Button variant="ghost" size="icon" className="cursor-grab">
                       <GripVertical className="h-4 w-4 text-muted-foreground" />

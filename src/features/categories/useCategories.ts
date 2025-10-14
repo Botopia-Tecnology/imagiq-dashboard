@@ -25,6 +25,8 @@ interface UseCategoriesReturn {
   updatingCategoryData: boolean; // Para mostrar loading al actualizar categoría
   syncCategories: () => Promise<boolean>;
   syncingCategories: boolean; // Para mostrar loading al sincronizar categorías
+  updateCategoriesOrder: (categoryIds: string[]) => Promise<boolean>;
+  updatingOrder: boolean; // Para mostrar loading al actualizar orden
 }
 
 export const useCategories = (): UseCategoriesReturn => {
@@ -35,6 +37,7 @@ export const useCategories = (): UseCategoriesReturn => {
   const [deletingCategory, setDeletingCategory] = useState(false);
   const [updatingCategoryData, setUpdatingCategoryData] = useState(false);
   const [syncingCategories, setSyncingCategories] = useState(false);
+  const [updatingOrder, setUpdatingOrder] = useState(false);
 
   // Función para obtener categorías del backend
   const fetchCategories = useCallback(async () => {
@@ -174,6 +177,31 @@ export const useCategories = (): UseCategoriesReturn => {
     }
   }, [fetchCategories]);
 
+  // Función para actualizar el orden de las categorías
+  const updateCategoriesOrder = useCallback(async (categoryIds: string[]): Promise<boolean> => {
+    setUpdatingOrder(true);
+    setError(null);
+
+    try {
+      const response = await categoryEndpoints.updateOrder(categoryIds);
+
+      if (response.success) {
+        // Recargar las categorías para obtener el nuevo orden
+        await fetchCategories();
+        return true;
+      } else {
+        setError(response.message || "Error al actualizar el orden");
+        return false;
+      }
+    } catch (error) {
+      console.error("Error al actualizar el orden de categorías:", error);
+      setError("Error al actualizar el orden de categorías");
+      return false;
+    } finally {
+      setUpdatingOrder(false);
+    }
+  }, [fetchCategories]);
+
   // Cargar categorías al montar el componente
   useEffect(() => {
     fetchCategories();
@@ -192,5 +220,7 @@ export const useCategories = (): UseCategoriesReturn => {
     updatingCategoryData,
     syncCategories,
     syncingCategories,
+    updateCategoriesOrder,
+    updatingOrder,
   };
 };
