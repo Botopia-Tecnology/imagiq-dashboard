@@ -49,10 +49,7 @@ const ConditionNode = memo(
       { value: "cart_value", label: "Valor del Carrito" },
       { value: "user_segment", label: "Segmento de Usuario" },
       { value: "geographic_location", label: "Ubicación Geográfica" },
-      { value: "time_since_event", label: "Tiempo desde Evento" },
-      { value: "previous_behavior", label: "Comportamiento Previo" },
       { value: "device_type", label: "Tipo de Dispositivo" },
-      { value: "traffic_source", label: "Fuente de Tráfico" },
     ];
 
     const operators = [
@@ -242,45 +239,6 @@ const ConditionNode = memo(
                 updateCondition(index, { value: e.target.value })
               }
             />
-          );
-
-        case "time_since_event":
-          return (
-            <div className="flex gap-2">
-              <Input
-                type="number"
-                placeholder="24"
-                value={condition.value?.amount || ""}
-                onChange={(e) =>
-                  updateCondition(index, {
-                    value: {
-                      ...condition.value,
-                      amount: parseInt(e.target.value) || 0,
-                    },
-                  })
-                }
-              />
-              <Select
-                value={condition.value?.unit || "hours"}
-                onValueChange={(unit) =>
-                  updateCondition(index, {
-                    value: {
-                      ...condition.value,
-                      unit,
-                    },
-                  })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="minutes">Minutos</SelectItem>
-                  <SelectItem value="hours">Horas</SelectItem>
-                  <SelectItem value="days">Días</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
           );
 
         case "device_type":

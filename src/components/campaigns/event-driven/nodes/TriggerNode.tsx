@@ -63,8 +63,6 @@ const TriggerNode = memo(({ data, selected }: NodeProps<TriggerNodeData>) => {
         return 'bg-indigo-50 dark:bg-indigo-950 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300';
       case 'browse_abandonment':
         return 'bg-orange-50 dark:bg-orange-950 border-orange-200 dark:border-orange-800 text-orange-700 dark:text-orange-300';
-      case 'time_delay':
-        return 'bg-cyan-50 dark:bg-cyan-950 border-cyan-200 dark:border-cyan-800 text-cyan-700 dark:text-cyan-300';
       default:
         return 'bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300';
     }
@@ -88,8 +86,6 @@ const TriggerNode = memo(({ data, selected }: NodeProps<TriggerNodeData>) => {
         return <DollarSign size={28} />;
       case 'browse_abandonment':
         return <Eye size={28} />;
-      case 'time_delay':
-        return <Clock size={28} />;
       case 'form_submission':
         return <FileText size={28} />;
       default:
@@ -109,7 +105,6 @@ const TriggerNode = memo(({ data, selected }: NodeProps<TriggerNodeData>) => {
       'user_registration': 'Registro de Usuario',
       'purchase_event': 'Evento de Compra',
       'form_submission': 'Envío de Formulario',
-      'time_delay': 'Espera de Tiempo'
     };
 
     return labels[triggerType] || triggerType;
@@ -416,7 +411,7 @@ const TriggerNode = memo(({ data, selected }: NodeProps<TriggerNodeData>) => {
                     <SelectItem value="user_registration">Registro de Usuario</SelectItem>
                     <SelectItem value="purchase_event">Evento de Compra</SelectItem>
                     <SelectItem value="form_submission">Envío de Formulario</SelectItem>
-                    <SelectItem value="time_delay">Espera de Tiempo</SelectItem>
+                    
                   </SelectContent>
                 </Select>
               </div>
