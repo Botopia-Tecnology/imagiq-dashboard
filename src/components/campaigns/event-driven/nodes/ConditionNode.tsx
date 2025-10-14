@@ -284,7 +284,7 @@ const ConditionNode = memo(
           ${getConditionColor()}
         `}
           onDoubleClick={() => setIsConfigOpen(true)}
-          style={{ width: "160px", minHeight: "100px" }}
+          style={{ width: "200px", minHeight: "100px" }}
         >
           <Handle
             type="target"
@@ -318,7 +318,7 @@ const ConditionNode = memo(
                   {config.operator === "AND" ? "Y" : "O"}
                 </span>
               )}
-              <div className="flex flex-col items-center gap-0.5 w-full overflow-y-auto">
+              <div className="flex flex-col items-center gap-0.5 w-full ">
                 {config.conditions.map((cond, idx) => {
                   const typeLabel = getConditionTypeLabel(cond.type);
                   const operatorSymbol = getOperatorSymbol(cond.operator);
@@ -409,7 +409,7 @@ const ConditionNode = memo(
                           <Select
                             value={condition.type}
                             onValueChange={(type: FilterConditionType) =>
-                              updateCondition(index, { type })
+                              updateCondition(index, { type ,value:''})
                             }
                           >
                             <SelectTrigger className="max-w-full">
