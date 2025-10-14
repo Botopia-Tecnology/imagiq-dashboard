@@ -137,7 +137,34 @@ const nodeTemplates = [
         icon: { type: "lucide", name: "Zap" },
         color:
           "bg-red-50 dark:bg-red-950/50 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800",
-      }, //Carrito Abandonado
+      },
+    ],
+  },
+  {
+    type: "campaign",
+    category: "Campaña",
+    items: [
+      {
+        id: "campaign",
+        label: "Campaña",
+        icon: { type: "lucide", name: "Megaphone" },
+        color:
+          "bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800",
+      },
+    ],
+  },
+      {
+    type: "wait",
+    category: "Esperas Avanzadas",
+    items: [
+      {
+        id: "wait_time",
+        label: "Esperar",
+        icon: { type: "lucide", name: "Timer" },
+        color:
+          "bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800",
+      },
+      
     ],
   },
   {
@@ -157,19 +184,6 @@ const nodeTemplates = [
     ],
   },
   {
-    type: "campaign",
-    category: "Campaña",
-    items: [
-      {
-        id: "campaign",
-        label: "Campaña",
-        icon: { type: "lucide", name: "Megaphone" },
-        color:
-          "bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800",
-      },
-    ],
-  },
-  {
     type: "delay",
     category: "Esperas",
     items: [
@@ -182,6 +196,8 @@ const nodeTemplates = [
       },
     ],
   },
+
+
   {
     type: "if",
     category: "Lógica",
@@ -195,40 +211,7 @@ const nodeTemplates = [
       },
     ],
   },
-  {
-    type: "wait",
-    category: "Esperas Avanzadas",
-    items: [
-      {
-        id: "wait_time",
-        label: "Esperar",
-        icon: { type: "lucide", name: "Timer" },
-        color:
-          "bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800",
-      },
-      // {
-      //   id: "wait_event",
-      //   label: "Esperar Evento",
-      //   icon: { type: "lucide", name: "ActivitySquare" },
-      //   color:
-      //     "bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800",
-      // },
-      // {
-      //   id: "wait_condition",
-      //   label: "Esperar Condición",
-      //   icon: { type: "lucide", name: "Refresh" },
-      //   color:
-      //     "bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800",
-      // },
-      // {
-      //   id: "wait_webhook",
-      //   label: "Esperar Webhook",
-      //   icon: { type: "lucide", name: "Link" },
-      //   color:
-      //     "bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800",
-      // },
-    ],
-  },
+
 ];
 
 interface EventCampaignCanvasProps {
@@ -253,7 +236,7 @@ export function EventCampaignCanvas({
 
   // Handle new connections between nodes
   const onConnect = useCallback(
-    (params: Connection) => setEdges((eds) => addEdge(params, eds)),
+    (params: Connection) =>setEdges((eds) => addEdge(params, eds)),
     [setEdges]
   );
 

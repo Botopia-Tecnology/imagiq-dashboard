@@ -127,6 +127,8 @@ const CampaignNode = memo(({ data, selected }: NodeProps<CampaignNodeData>) => {
           className="w-3 h-3 !bg-gray-400 border-2 border-white dark:border-gray-800"
         />
 
+        
+
         {config.campaignType ? (
           <div className="p-3 w-full flex flex-col items-center justify-center gap-1.5">
             <span className="text-sm font-medium text-center capitalize">
@@ -160,6 +162,11 @@ const CampaignNode = memo(({ data, selected }: NodeProps<CampaignNodeData>) => {
           </div>
         </DialogContent>
       </Dialog>
+       <Handle
+          type="source"
+          position={Position.Right}
+          className="w-3 h-3 !bg-gray-400 border-2 border-white dark:border-gray-800"
+        />
     </>
   );
 });
