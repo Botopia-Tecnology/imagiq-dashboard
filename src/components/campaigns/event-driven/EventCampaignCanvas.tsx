@@ -398,95 +398,100 @@ export function EventCampaignCanvas({
     <div className="h-screen flex">
       {/* Main canvas area */}
       <div className="flex-1 flex flex-col">
-        {/* Toolbar */}
-        <Card className="rounded-none border-b">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <h1 className="text-xl font-bold">
-                  {campaign?.name || "Nueva Campaña Basada en Eventos"}
-                </h1>
-                {campaign?.status && (
-                  <Badge
-                    variant={
-                      campaign.status === "active" ? "default" : "secondary"
-                    }
-                  >
-                    {campaign.status === "active"
-                      ? "Activa"
-                      : campaign.status === "paused"
-                      ? "Pausada"
-                      : campaign.status === "draft"
-                      ? "Borrador"
-                      : "Completada"}
-                  </Badge>
-                )}
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" onClick={onPreview}>
-                  <Eye className="h-4 w-4 mr-2" />
-                  Vista Previa
-                </Button>
-                <Button variant="outline" size="sm" onClick={handleSave}>
-                  <Save className="h-4 w-4 mr-2" />
-                  Guardar
-                </Button>
-                <Button variant="outline" size="sm" onClick={handleAutoLayout}>
-                  <RotateCcw className="h-4 w-4 mr-2" />
-                  Auto Layout
-                </Button>
-                {campaign && (
-                  <Button
-                    variant={
-                      campaign.status === "active" ? "destructive" : "default"
-                    }
-                    size="sm"
-                    onClick={handleStatusToggle}
-                  >
-                    {campaign.status === "active" ? (
-                      <>
-                        <Pause className="h-4 w-4 mr-2" />
-                        Pausar
-                      </>
-                    ) : (
-                      <>
-                        <Play className="h-4 w-4 mr-2" />
-                        Activar
-                      </>
-                    )}
-                  </Button>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Tabs for Canvas and Segmentation */}
+        {/* Tabs and Toolbar in same row */}
         <Tabs defaultValue="canvas" className="flex-1 flex flex-col">
-          <div className="border-b">
-            <TabsList className="w-full justify-start rounded-none h-12 bg-transparent p-0">
-              <TabsTrigger
-                value="canvas"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
-              >
-                <Network className="h-4 w-4 mr-2" />
-                Construcción de Flujo
-              </TabsTrigger>
-              <TabsTrigger
-                value="segment"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
-              >
-                <Target className="h-4 w-4 mr-2" />
-                Segmento de Audiencia
-              </TabsTrigger>
-            </TabsList>
-          </div>
+          <Card className="rounded-none border-b">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                {/* Tabs on the left */}
+                <TabsList className="h-auto bg-transparent p-0 border-0">
+                  <TabsTrigger
+                    value="canvas"
+                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
+                  >
+                    <Network className="h-4 w-4 mr-2" />
+                    Construcción de Flujo
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="segment"
+                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
+                  >
+                    <Target className="h-4 w-4 mr-2" />
+                    Segmento de Audiencia
+                  </TabsTrigger>
+                </TabsList>
 
-          <TabsContent value="canvas" className="flex-1 m-0">
-            {/* React Flow Canvas */}
+                {/* Separator */}
+                 <Separator orientation="vertical" className="h-full w-[1px] bg-gray-300 mx-4" />
+                
+
+                {/* Toolbar on the right */}
+                <div className="flex items-center gap-4 flex-1">
+                  <div className="flex items-center gap-4">
+
+                    <h1 className="text-xl font-bold">
+                      {campaign?.name || "Nueva Campaña Basada en Eventos"}
+                    </h1>
+                    {campaign?.status && (
+                      <Badge
+                        variant={
+                          campaign.status === "active" ? "default" : "secondary"
+                        }
+                      >
+                        {campaign.status === "active"
+                          ? "Activa"
+                          : campaign.status === "paused"
+                          ? "Pausada"
+                          : campaign.status === "draft"
+                          ? "Borrador"
+                          : "Completada"}
+                      </Badge>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2 ml-auto">
+                    <Button variant="outline" size="sm" onClick={() => onPreview && campaign && onPreview(campaign)}>
+                      <Eye className="h-4 w-4 mr-2" />
+                      Vista Previa
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={handleSave}>
+                      <Save className="h-4 w-4 mr-2" />
+                      Guardar
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={handleAutoLayout}>
+                      <RotateCcw className="h-4 w-4 mr-2" />
+                      Auto Layout
+                    </Button>
+                    {campaign && (
+                      <Button
+                        variant={
+                          campaign.status === "active" ? "destructive" : "default"
+                        }
+                        size="sm"
+                        onClick={handleStatusToggle}
+                      >
+                        {campaign.status === "active" ? (
+                          <>
+                            <Pause className="h-4 w-4 mr-2" />
+                            Pausar
+                          </>
+                        ) : (
+                          <>
+                            <Play className="h-4 w-4 mr-2" />
+                            Activar
+                          </>
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <TabsContent value="canvas" className="flex-1 m-0 flex">
             {/* Sidebar with node templates */}
-            <Card className="w-51 h-full rounded-none border-r">
+            <Card className="w-64 h-full rounded-none border-r">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   {/* <Zap className="h-5 w-5" /> */}
@@ -523,7 +528,8 @@ export function EventCampaignCanvas({
                 ))}
               </CardContent>
             </Card>
-            <div className="h-full" ref={reactFlowWrapper}>
+            {/* React Flow Canvas */}
+            <div className="flex-1 h-full" ref={reactFlowWrapper}>
               <ReactFlow
                 nodes={nodes}
                 edges={edges}
