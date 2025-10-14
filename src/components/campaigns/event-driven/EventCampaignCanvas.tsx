@@ -25,7 +25,6 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Play,
@@ -407,14 +406,46 @@ export function EventCampaignCanvas({
                 <TabsList className="h-auto bg-transparent p-0 border-0">
                   <TabsTrigger
                     value="canvas"
-                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
+                    className="
+  rounded-b-lg
+  border-b-2
+  border-transparent
+  px-4
+  py-2
+  text-gray-700
+  cursor-pointer
+  transition-all
+  duration-300
+  ease-in-out
+  data-[state=active]:border-blue-500
+  data-[state=active]:bg-blue-50
+  data-[state=active]:text-blue-700
+  hover:text-blue-600
+  hover:bg-blue-100
+"
                   >
                     <Network className="h-4 w-4 mr-2" />
                     Construcción de Flujo
                   </TabsTrigger>
                   <TabsTrigger
                     value="segment"
-                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
+                    className="
+  rounded-b-lg
+  border-b-2
+  border-transparent
+  px-4
+  py-2
+  text-gray-700
+  cursor-pointer
+  transition-all
+  duration-300
+  ease-in-out
+  data-[state=active]:border-blue-500
+  data-[state=active]:bg-blue-50
+  data-[state=active]:text-blue-700
+  hover:text-blue-600
+  hover:bg-blue-100
+"
                   >
                     <Target className="h-4 w-4 mr-2" />
                     Segmento de Audiencia
@@ -422,13 +453,11 @@ export function EventCampaignCanvas({
                 </TabsList>
 
                 {/* Separator */}
-                 <Separator orientation="vertical" className="h-full w-[1px] bg-gray-300 mx-4" />
-                
+                <div className="h-8 w-px bg-border mx-4" />
 
                 {/* Toolbar on the right */}
                 <div className="flex items-center gap-4 flex-1">
                   <div className="flex items-center gap-4">
-
                     <h1 className="text-xl font-bold">
                       {campaign?.name || "Nueva Campaña Basada en Eventos"}
                     </h1>
@@ -450,7 +479,13 @@ export function EventCampaignCanvas({
                   </div>
 
                   <div className="flex items-center gap-2 ml-auto">
-                    <Button variant="outline" size="sm" onClick={() => onPreview && campaign && onPreview(campaign)}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        onPreview && campaign && onPreview(campaign)
+                      }
+                    >
                       <Eye className="h-4 w-4 mr-2" />
                       Vista Previa
                     </Button>
@@ -458,14 +493,20 @@ export function EventCampaignCanvas({
                       <Save className="h-4 w-4 mr-2" />
                       Guardar
                     </Button>
-                    <Button variant="outline" size="sm" onClick={handleAutoLayout}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleAutoLayout}
+                    >
                       <RotateCcw className="h-4 w-4 mr-2" />
                       Auto Layout
                     </Button>
                     {campaign && (
                       <Button
                         variant={
-                          campaign.status === "active" ? "destructive" : "default"
+                          campaign.status === "active"
+                            ? "destructive"
+                            : "default"
                         }
                         size="sm"
                         onClick={handleStatusToggle}
