@@ -131,13 +131,8 @@ export const useCategories = (): UseCategoriesReturn => {
       const response = await categoryEndpoints.update(categoryId, data);
 
       if (response.success && response.data) {
-        // Actualizar la categoría en el estado local
-        const updatedCategory = mapBackendCategoriesToFrontend([response.data])[0];
-        setCategories(prev =>
-          prev.map(cat =>
-            cat.id === categoryId ? updatedCategory : cat
-          )
-        );
+        // Refrescar todas las categorías para obtener datos actualizados del backend
+        await fetchCategories();
         return true;
       } else {
         setError(response.message || "Error al actualizar la categoría");
@@ -150,7 +145,7 @@ export const useCategories = (): UseCategoriesReturn => {
     } finally {
       setUpdatingCategoryData(false);
     }
-  }, []);
+  }, [fetchCategories]);
 
   // Función para sincronizar categorías
   const syncCategories = useCallback(async (): Promise<boolean> => {
