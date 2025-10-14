@@ -129,7 +129,6 @@ const CampaignNode = memo(({ data, selected }: NodeProps<CampaignNodeData>) => {
 
         {config.campaignType ? (
           <div className="p-3 w-full flex flex-col items-center justify-center gap-1.5">
-            <BrandIcon brand={config.campaignType} size={28} />
             <span className="text-sm font-medium text-center capitalize">
               {config.campaignType}
             </span>
