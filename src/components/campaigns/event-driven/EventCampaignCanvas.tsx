@@ -409,7 +409,7 @@ export function EventCampaignCanvas({
   return (
     <div className="h-screen flex">
       {/* Sidebar with node templates */}
-      <Card className="w-80 h-full rounded-none border-r">
+      <Card className="w-51 h-full rounded-none border-r">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             {/* <Zap className="h-5 w-5" /> */}
