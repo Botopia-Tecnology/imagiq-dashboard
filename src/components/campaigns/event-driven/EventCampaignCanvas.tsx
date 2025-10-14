@@ -66,7 +66,10 @@ import DelayNode from "./nodes/DelayNode";
 import { IfNode } from "./nodes/IfNode";
 import { WaitNode } from "./nodes/WaitNode";
 import { BrandIcon } from "@/components/icons/BrandIcon";
-import { AudienceSegmentation, AudienceSegmentationData } from "./AudienceSegmentation";
+import {
+  AudienceSegmentation,
+  AudienceSegmentationData,
+} from "./AudienceSegmentation";
 
 // Icon component helper to render both BrandIcon and Lucide icons
 const NodeIcon = ({
@@ -156,7 +159,7 @@ const nodeTemplates = [
       },
     ],
   },
-      {
+  {
     type: "wait",
     category: "Esperas Avanzadas",
     items: [
@@ -167,7 +170,6 @@ const nodeTemplates = [
         color:
           "bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800",
       },
-      
     ],
   },
   {
@@ -200,7 +202,6 @@ const nodeTemplates = [
     ],
   },
 
-
   {
     type: "if",
     category: "Lógica",
@@ -214,7 +215,6 @@ const nodeTemplates = [
       },
     ],
   },
-
 ];
 
 interface EventCampaignCanvasProps {
@@ -236,11 +236,12 @@ export function EventCampaignCanvas({
   const [nodes, setNodes, onNodesChange] = useNodesState(campaign?.nodes || []);
   const [edges, setEdges, onEdgesChange] = useEdgesState(campaign?.edges || []);
   const [selectedNodeType, setSelectedNodeType] = useState<string | null>(null);
-  const [audienceSegmentation, setAudienceSegmentation] = useState<AudienceSegmentationData>();
+  const [audienceSegmentation, setAudienceSegmentation] =
+    useState<AudienceSegmentationData>();
 
   // Handle new connections between nodes
   const onConnect = useCallback(
-    (params: Connection) =>setEdges((eds) => addEdge(params, eds)),
+    (params: Connection) => setEdges((eds) => addEdge(params, eds)),
     [setEdges]
   );
 
@@ -395,41 +396,6 @@ export function EventCampaignCanvas({
 
   return (
     <div className="h-screen flex">
-      {/* Sidebar with node templates */}
-      <Card className="w-51 h-full rounded-none border-r">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            {/* <Zap className="h-5 w-5" /> */}
-            Elementos de Campaña
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-4 space-y-6 overflow-y-auto">
-          {nodeTemplates.map((template) => (
-            <div key={template.type}>
-              {/* <h3 className="font-semibold mb-3 text-sm uppercase tracking-wide text-muted-foreground">
-                {template.category}
-              </h3> */}
-              <div className="space-y-2">
-                {template.items.map((item) => (
-                  <div
-                    key={item.id}
-                    draggable
-                    onDragStart={(e) => onDragStart(e, template.type, item.id)}
-                    className={`p-3 rounded-lg border cursor-move hover:shadow-md transition-all ${item.color}`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <NodeIcon icon={item.icon} size={18} />
-                      <span className="font-medium text-sm">{item.label}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              {/* <Separator className="my-4" /> */}
-            </div>
-          ))}
-        </CardContent>
-      </Card>
-
       {/* Main canvas area */}
       <div className="flex-1 flex flex-col">
         {/* Toolbar */}
@@ -519,6 +485,44 @@ export function EventCampaignCanvas({
 
           <TabsContent value="canvas" className="flex-1 m-0">
             {/* React Flow Canvas */}
+            {/* Sidebar with node templates */}
+            <Card className="w-51 h-full rounded-none border-r">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  {/* <Zap className="h-5 w-5" /> */}
+                  Elementos de Campaña
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 space-y-6 overflow-y-auto">
+                {nodeTemplates.map((template) => (
+                  <div key={template.type}>
+                    {/* <h3 className="font-semibold mb-3 text-sm uppercase tracking-wide text-muted-foreground">
+                {template.category}
+              </h3> */}
+                    <div className="space-y-2">
+                      {template.items.map((item) => (
+                        <div
+                          key={item.id}
+                          draggable
+                          onDragStart={(e) =>
+                            onDragStart(e, template.type, item.id)
+                          }
+                          className={`p-3 rounded-lg border cursor-move hover:shadow-md transition-all ${item.color}`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <NodeIcon icon={item.icon} size={18} />
+                            <span className="font-medium text-sm">
+                              {item.label}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    {/* <Separator className="my-4" /> */}
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
             <div className="h-full" ref={reactFlowWrapper}>
               <ReactFlow
                 nodes={nodes}
@@ -535,7 +539,11 @@ export function EventCampaignCanvas({
               >
                 <Controls />
                 <MiniMap />
-                <Background variant={BackgroundVariant.Dots} gap={12} size={1} />
+                <Background
+                  variant={BackgroundVariant.Dots}
+                  gap={12}
+                  size={1}
+                />
               </ReactFlow>
             </div>
           </TabsContent>
