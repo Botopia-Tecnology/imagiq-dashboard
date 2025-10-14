@@ -8,6 +8,7 @@ import ReactFlow, {
   useEdgesState,
   Controls,
   Background,
+  BackgroundVariant,
   Connection,
   Edge,
   Node,
@@ -25,6 +26,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Play,
   Pause,
@@ -64,6 +66,7 @@ import DelayNode from "./nodes/DelayNode";
 import { IfNode } from "./nodes/IfNode";
 import { WaitNode } from "./nodes/WaitNode";
 import { BrandIcon } from "@/components/icons/BrandIcon";
+import { AudienceSegmentation, AudienceSegmentationData } from "./AudienceSegmentation";
 
 // Icon component helper to render both BrandIcon and Lucide icons
 const NodeIcon = ({
@@ -233,6 +236,7 @@ export function EventCampaignCanvas({
   const [nodes, setNodes, onNodesChange] = useNodesState(campaign?.nodes || []);
   const [edges, setEdges, onEdgesChange] = useEdgesState(campaign?.edges || []);
   const [selectedNodeType, setSelectedNodeType] = useState<string | null>(null);
+  const [audienceSegmentation, setAudienceSegmentation] = useState<AudienceSegmentationData>();
 
   // Handle new connections between nodes
   const onConnect = useCallback(
@@ -492,26 +496,57 @@ export function EventCampaignCanvas({
           </CardContent>
         </Card>
 
-        {/* React Flow Canvas */}
-        <div className="flex-1" ref={reactFlowWrapper}>
-          <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
-            onInit={setReactFlowInstance}
-            onDrop={onDrop}
-            onDragOver={onDragOver}
-            nodeTypes={nodeTypes}
-            fitView
-            className="bg-slate-50 dark:bg-slate-950"
-          >
-            <Controls />
-            <MiniMap />
-            <Background variant="dots" gap={12} size={1} />
-          </ReactFlow>
-        </div>
+        {/* Tabs for Canvas and Segmentation */}
+        <Tabs defaultValue="canvas" className="flex-1 flex flex-col">
+          <div className="border-b">
+            <TabsList className="w-full justify-start rounded-none h-12 bg-transparent p-0">
+              <TabsTrigger
+                value="canvas"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
+              >
+                <Network className="h-4 w-4 mr-2" />
+                Construcción de Flujo
+              </TabsTrigger>
+              <TabsTrigger
+                value="segment"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
+              >
+                <Target className="h-4 w-4 mr-2" />
+                Segmento de Audiencia
+              </TabsTrigger>
+            </TabsList>
+          </div>
+
+          <TabsContent value="canvas" className="flex-1 m-0">
+            {/* React Flow Canvas */}
+            <div className="h-full" ref={reactFlowWrapper}>
+              <ReactFlow
+                nodes={nodes}
+                edges={edges}
+                onNodesChange={onNodesChange}
+                onEdgesChange={onEdgesChange}
+                onConnect={onConnect}
+                onInit={setReactFlowInstance}
+                onDrop={onDrop}
+                onDragOver={onDragOver}
+                nodeTypes={nodeTypes}
+                fitView
+                className="bg-slate-50 dark:bg-slate-950"
+              >
+                <Controls />
+                <MiniMap />
+                <Background variant={BackgroundVariant.Dots} gap={12} size={1} />
+              </ReactFlow>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="segment" className="flex-1 m-0">
+            <AudienceSegmentation
+              data={audienceSegmentation}
+              onChange={setAudienceSegmentation}
+            />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
