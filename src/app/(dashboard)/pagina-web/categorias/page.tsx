@@ -117,10 +117,7 @@ export default function CategoriasPage() {
   // Función para manejar el cambio de estado del modal de edición
   const handleEditModalOpenChange = (open: boolean) => {
     if (!open) {
-      // Solo limpiar cuando se cierra, no cuando se abre
       handleCloseEditModal()
-    } else {
-      setIsEditDialogOpen(true)
     }
   }
 
@@ -187,6 +184,7 @@ export default function CategoriasPage() {
         setOrderError('Error al guardar el orden. Por favor, intenta nuevamente.')
       }
     } catch (error) {
+      console.error('Error al guardar el orden:', error)
       setOrderError('Error al guardar el orden. Por favor, intenta nuevamente.')
     }
   }
@@ -235,7 +233,7 @@ export default function CategoriasPage() {
         </div>
         <div className="flex items-center justify-center py-8">
           <div className="text-center">
-            <p className="text-destructive mb-4">{error || "Ha ocurrido un error"}</p>
+            <p className="text-destructive mb-4">{error ?? "Ha ocurrido un error"}</p>
             <Button onClick={() => window.location.reload()}>
               Reintentar
             </Button>
@@ -546,15 +544,16 @@ export default function CategoriasPage() {
                         disabled={updatingCategory === category.id}
                         className="cursor-pointer"
                       />
-                      {updatingCategory === category.id ? (
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-                      ) : (
-                        category.isActive ? (
+                      {(() => {
+                        if (updatingCategory === category.id) {
+                          return <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                        }
+                        return category.isActive ? (
                           <Eye className="h-4 w-4 text-green-600" />
                         ) : (
                           <EyeOff className="h-4 w-4 text-muted-foreground" />
                         )
-                      )}
+                      })()}
                     </div>
                   </TableCell>
                   <TableCell className="text-right">

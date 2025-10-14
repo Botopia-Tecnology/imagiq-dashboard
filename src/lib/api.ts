@@ -54,6 +54,7 @@ export class ApiClient {
         data = await response?.json();
       } catch (jsonError) {
         // Si no es JSON válido, retornar error
+        console.error("JSON parsing error:", jsonError);
         return {
           data: {} as T,
           success: false,
@@ -126,6 +127,7 @@ export class ApiClient {
         data = await response?.json();
       } catch (jsonError) {
         // Si no es JSON válido, retornar error
+        console.error("JSON parsing error:", jsonError);
         return {
           data: {} as T,
           success: false,
