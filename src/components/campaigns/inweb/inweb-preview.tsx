@@ -24,7 +24,7 @@ function InWebPreviewComponent({
     const hasContent = (contentType === "html" && htmlContent) || image;
 
     return (
-      <div className="relative w-full h-[500px] rounded-lg flex items-center justify-center border border-gray-200 shadow-lg overflow-hidden">
+      <div className="relative w-full h-[calc(100vh-10rem)] rounded-lg flex items-center justify-center border border-gray-200 shadow-lg overflow-hidden">
         {/* Contenedor del iframe con posición relativa para los elementos superpuestos */}
         <div className="relative w-full h-full overflow-hidden">
           <iframe
@@ -73,7 +73,7 @@ function InWebPreviewComponent({
 
   // Chrome Desktop Notification - Slider (tipo toast)
   const ChromeNotificationSlider = () => (
-    <div className="relative w-full h-[500px] rounded-lg flex items-center justify-center border border-gray-200 shadow-lg overflow-hidden">
+    <div className="relative w-full h-[calc(100vh-10rem)] rounded-lg flex items-center justify-center border border-gray-200 shadow-lg overflow-hidden">
       {/* Contenedor del iframe con posición relativa para los elementos superpuestos */}
       <div className="relative w-full h-full overflow-hidden">
         <iframe
