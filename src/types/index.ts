@@ -25,6 +25,7 @@ export interface Product {
 export interface WebsiteCategory {
   id: string;
   name: string;
+  nombreVisible?: string;
   slug: string;
   description?: string;
   image?: string;
@@ -40,6 +41,7 @@ export interface WebsiteSubcategory {
   id: string;
   categoryId: string;
   name: string;
+  nombreVisible?: string;
   slug: string;
   description?: string;
   image?: string;
@@ -253,6 +255,7 @@ export interface DashboardMetrics {
 export interface BackendCategory {
   uuid: string;
   nombre: string;
+  nombreVisible?: string;
   descripcion: string;
   imagen: string;
   activo: boolean;
@@ -265,6 +268,7 @@ export interface BackendCategory {
 export interface BackendSubcategory {
   uuid: string;
   nombre: string;
+  nombreVisible?: string;
   descripcion: string;
   imagen: string;
   activo: boolean;
@@ -284,6 +288,7 @@ export interface CreateCategoryRequest {
 
 export interface UpdateCategoryRequest {
   nombre: string;
+  nombreVisible: string;
   descripcion: string;
   imagen: string;
 }
@@ -304,6 +309,7 @@ export interface CreateSubcategoryRequest {
 
 export interface UpdateSubcategoryRequest {
   nombre: string;
+  nombreVisible: string;
   descripcion: string;
   imagen: string;
 }

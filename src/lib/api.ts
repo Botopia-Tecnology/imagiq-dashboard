@@ -54,6 +54,7 @@ export class ApiClient {
         data = await response?.json();
       } catch (jsonError) {
         // Si no es JSON válido, retornar error
+        console.error("JSON parsing error:", jsonError);
         return {
           data: {} as T,
           success: false,
@@ -126,6 +127,7 @@ export class ApiClient {
         data = await response?.json();
       } catch (jsonError) {
         // Si no es JSON válido, retornar error
+        console.error("JSON parsing error:", jsonError);
         return {
           data: {} as T,
           success: false,
@@ -277,6 +279,10 @@ export const categoryEndpoints = {
     apiClient.patch<{ success: boolean; message?: string }>(`/api/categorias/visibles/${uuid}/activo`, { activo }),
   delete: (uuid: string) =>
     apiClient.delete<{ success: boolean; message?: string }>(`/api/categorias/visibles/${uuid}`),
+  sync: () =>
+    apiClient.post<{ success: boolean; message?: string }>("/api/categorias/sync"),
+  updateOrder: (categoryIds: string[]) =>
+    apiClient.put<{ success: boolean; message?: string }>("/api/categorias/visibles/order", { categoryIds }),
 };
 
 // Subcategories API endpoints
@@ -299,4 +305,7 @@ export const subcategoryEndpoints = {
   // DELETE /api/subcategorias/visibles/:subcategoryId
   delete: (subcategoryId: string) =>
     apiClient.delete<{ success: boolean; message?: string }>(`/api/subcategorias/visibles/${subcategoryId}`),
+  // PUT /api/subcategorias/visibles/order
+  updateOrder: (subcategoryIds: string[]) =>
+    apiClient.put<{ success: boolean; message?: string }>("/api/subcategorias/visibles/order", { subcategoryIds }),
 };

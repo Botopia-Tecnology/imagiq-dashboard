@@ -15,6 +15,7 @@ export const mapBackendSubcategoryToFrontend = (
     id: backendSubcategory.uuid,
     categoryId: categoryId,
     name: backendSubcategory.nombre,
+    nombreVisible: backendSubcategory.nombreVisible,
     slug: backendSubcategory.nombre.toLowerCase().replace(/\s+/g, '-'),
     description: backendSubcategory.descripcion,
     image: backendSubcategory.imagen, // Usar imagen del backend
@@ -33,6 +34,7 @@ export const mapBackendCategoryToFrontend = (backendCategory: BackendCategory): 
   return {
     id: backendCategory.uuid,
     name: backendCategory.nombre,
+    nombreVisible: backendCategory.nombreVisible,
     slug: backendCategory.nombre.toLowerCase().replace(/\s+/g, '-'),
     description: backendCategory.descripcion,
     image: backendCategory.imagen, // Usar imagen del backend

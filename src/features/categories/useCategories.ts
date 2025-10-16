@@ -10,7 +10,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { categoryEndpoints } from "@/lib/api";
 import { mapBackendCategoriesToFrontend } from "@/lib/categoryMapper";
-import { WebsiteCategory, CreateCategoryRequest, UpdateCategoryRequest } from "@/types";
+import { WebsiteCategory, UpdateCategoryRequest } from "@/types";
 
 interface UseCategoriesReturn {
   categories: WebsiteCategory[];
@@ -21,10 +21,12 @@ interface UseCategoriesReturn {
   deleteCategory: (categoryId: string) => Promise<boolean>;
   updatingCategory: string | null; // Para mostrar loading en categoría específica
   deletingCategory: boolean; // Para mostrar loading al eliminar categoría
-  createCategory: (data: CreateCategoryRequest) => Promise<boolean>;
-  creatingCategory: boolean; // Para mostrar loading al crear categoría
   updateCategory: (categoryId: string, data: UpdateCategoryRequest) => Promise<boolean>;
   updatingCategoryData: boolean; // Para mostrar loading al actualizar categoría
+  syncCategories: () => Promise<boolean>;
+  syncingCategories: boolean; // Para mostrar loading al sincronizar categorías
+  updateCategoriesOrder: (categoryIds: string[]) => Promise<boolean>;
+  updatingOrder: boolean; // Para mostrar loading al actualizar orden
 }
 
 export const useCategories = (): UseCategoriesReturn => {
@@ -33,8 +35,9 @@ export const useCategories = (): UseCategoriesReturn => {
   const [error, setError] = useState<string | null>(null);
   const [updatingCategory, setUpdatingCategory] = useState<string | null>(null);
   const [deletingCategory, setDeletingCategory] = useState(false);
-  const [creatingCategory, setCreatingCategory] = useState(false);
   const [updatingCategoryData, setUpdatingCategoryData] = useState(false);
+  const [syncingCategories, setSyncingCategories] = useState(false);
+  const [updatingOrder, setUpdatingOrder] = useState(false);
 
   // Función para obtener categorías del backend
   const fetchCategories = useCallback(async () => {
@@ -119,31 +122,6 @@ export const useCategories = (): UseCategoriesReturn => {
     }
   }, []);
 
-  // Función para crear una nueva categoría
-  const createCategory = useCallback(async (data: CreateCategoryRequest): Promise<boolean> => {
-    setCreatingCategory(true);
-    setError(null);
-
-    try {
-      const response = await categoryEndpoints.create(data);
-
-      if (response.success && response.data) {
-        // Refrescar todas las categorías para obtener datos actualizados del backend
-        await fetchCategories();
-        return true;
-      } else {
-        setError(response.message || "Error al crear la categoría");
-        return false;
-      }
-    } catch (err) {
-      console.error("Error creating category:", err);
-      setError("Error de conexión al crear la categoría");
-      return false;
-    } finally {
-      setCreatingCategory(false);
-    }
-  }, [fetchCategories]);
-
   // Función para actualizar una categoría
   const updateCategory = useCallback(async (categoryId: string, data: UpdateCategoryRequest): Promise<boolean> => {
     setUpdatingCategoryData(true);
@@ -153,13 +131,8 @@ export const useCategories = (): UseCategoriesReturn => {
       const response = await categoryEndpoints.update(categoryId, data);
 
       if (response.success && response.data) {
-        // Actualizar la categoría en el estado local
-        const updatedCategory = mapBackendCategoriesToFrontend([response.data])[0];
-        setCategories(prev =>
-          prev.map(cat =>
-            cat.id === categoryId ? updatedCategory : cat
-          )
-        );
+        // Refrescar todas las categorías para obtener datos actualizados del backend
+        await fetchCategories();
         return true;
       } else {
         setError(response.message || "Error al actualizar la categoría");
@@ -172,7 +145,57 @@ export const useCategories = (): UseCategoriesReturn => {
     } finally {
       setUpdatingCategoryData(false);
     }
-  }, []);
+  }, [fetchCategories]);
+
+  // Función para sincronizar categorías
+  const syncCategories = useCallback(async (): Promise<boolean> => {
+    setSyncingCategories(true);
+    setError(null);
+
+    try {
+      const response = await categoryEndpoints.sync();
+
+      if (response.success) {
+        // Refrescar todas las categorías para obtener datos actualizados del backend
+        await fetchCategories();
+        return true;
+      } else {
+        setError(response.message || "Error al sincronizar las categorías");
+        return false;
+      }
+    } catch (err) {
+      console.error("Error syncing categories:", err);
+      setError("Error de conexión al sincronizar las categorías");
+      return false;
+    } finally {
+      setSyncingCategories(false);
+    }
+  }, [fetchCategories]);
+
+  // Función para actualizar el orden de las categorías
+  const updateCategoriesOrder = useCallback(async (categoryIds: string[]): Promise<boolean> => {
+    setUpdatingOrder(true);
+    setError(null);
+
+    try {
+      const response = await categoryEndpoints.updateOrder(categoryIds);
+
+      if (response.success) {
+        // Recargar las categorías para obtener el nuevo orden
+        await fetchCategories();
+        return true;
+      } else {
+        setError(response.message || "Error al actualizar el orden");
+        return false;
+      }
+    } catch (error) {
+      console.error("Error al actualizar el orden de categorías:", error);
+      setError("Error al actualizar el orden de categorías");
+      return false;
+    } finally {
+      setUpdatingOrder(false);
+    }
+  }, [fetchCategories]);
 
   // Cargar categorías al montar el componente
   useEffect(() => {
@@ -188,9 +211,11 @@ export const useCategories = (): UseCategoriesReturn => {
     deleteCategory,
     updatingCategory,
     deletingCategory,
-    createCategory,
-    creatingCategory,
     updateCategory,
     updatingCategoryData,
+    syncCategories,
+    syncingCategories,
+    updateCategoriesOrder,
+    updatingOrder,
   };
 };

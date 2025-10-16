@@ -25,6 +25,8 @@ interface UseSubcategoriesReturn {
   creatingSubcategory: boolean;
   updateSubcategory: (subcategoryId: string, data: UpdateSubcategoryRequest) => Promise<boolean>;
   updatingSubcategoryData: boolean;
+  updateSubcategoriesOrder: (subcategoryIds: string[]) => Promise<boolean>;
+  updatingOrder: boolean;
 }
 
 export const useSubcategories = (categoryId: string): UseSubcategoriesReturn => {
@@ -35,6 +37,7 @@ export const useSubcategories = (categoryId: string): UseSubcategoriesReturn => 
   const [deletingSubcategory, setDeletingSubcategory] = useState(false);
   const [creatingSubcategory, setCreatingSubcategory] = useState(false);
   const [updatingSubcategoryData, setUpdatingSubcategoryData] = useState(false);
+  const [updatingOrder, setUpdatingOrder] = useState(false);
 
   // Función para obtener subcategorías del backend
   const fetchSubcategories = useCallback(async () => {
@@ -158,12 +161,8 @@ export const useSubcategories = (categoryId: string): UseSubcategoriesReturn => 
       const response = await subcategoryEndpoints.update(subcategoryId, data);
 
       if (response.success && response.data) {
-        const updatedSubcategory = mapBackendSubcategoriesToFrontend([response.data], categoryId)[0];
-        setSubcategories(prev =>
-          prev.map(sub =>
-            sub.id === subcategoryId ? updatedSubcategory : sub
-          )
-        );
+        // Refrescar todas las subcategorías para obtener datos actualizados del backend
+        await fetchSubcategories();
         return true;
       } else {
         setError(response.message || "Error al actualizar la subcategoría");
@@ -176,7 +175,32 @@ export const useSubcategories = (categoryId: string): UseSubcategoriesReturn => 
     } finally {
       setUpdatingSubcategoryData(false);
     }
-  }, [categoryId]);
+  }, [fetchSubcategories]);
+
+  // Función para actualizar el orden de las subcategorías
+  const updateSubcategoriesOrder = useCallback(async (subcategoryIds: string[]): Promise<boolean> => {
+    setUpdatingOrder(true);
+    setError(null);
+
+    try {
+      const response = await subcategoryEndpoints.updateOrder(subcategoryIds);
+
+      if (response.success) {
+        // Recargar las subcategorías para obtener el nuevo orden
+        await fetchSubcategories();
+        return true;
+      } else {
+        setError(response.message || "Error al actualizar el orden");
+        return false;
+      }
+    } catch (error) {
+      console.error("Error al actualizar el orden de subcategorías:", error);
+      setError("Error al actualizar el orden de subcategorías");
+      return false;
+    } finally {
+      setUpdatingOrder(false);
+    }
+  }, [fetchSubcategories]);
 
   // Cargar subcategorías al montar el componente o cuando cambia categoryId
   useEffect(() => {
@@ -196,5 +220,7 @@ export const useSubcategories = (categoryId: string): UseSubcategoriesReturn => 
     creatingSubcategory,
     updateSubcategory,
     updatingSubcategoryData,
+    updateSubcategoriesOrder,
+    updatingOrder,
   };
 };
