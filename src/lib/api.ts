@@ -229,25 +229,25 @@ export interface ProductSummary {
 
 export interface ProductApiData {
   codigoMarketBase: string;
-  codigoMarket: string[];
+  codigoMarket?: string[];
   nombreMarket: string;
   categoria: string;
   subcategoria: string;
   modelo: string;
-  color: string[];
-  capacidad: string[];
-  descGeneral: string | null;
-  sku: string[];
-  desDetallada: string[];
-  stock: number[];
-  imagePreviewUrl: string[];
+  color?: string[];
+  capacidad?: string[];
+  descGeneral?: string | null;
+  sku?: string[];
+  desDetallada?: string[];
+  stock?: number[];
+  imagePreviewUrl?: string[];
   imageDetailsUrls?: string[][]; // Array de arrays de URLs de imágenes detalladas
-  urlImagenes: string[];
-  urlRender3D: string[];
-  precioNormal: number[];
-  precioDescto: number[];
-  fechaInicioVigencia: string[];
-  fechaFinalVigencia: string[];
+  urlImagenes?: string[];
+  urlRender3D?: string[];
+  precioNormal?: number[];
+  precioDescto?: number[];
+  fechaInicioVigencia?: string[];
+  fechaFinalVigencia?: string[];
 }
 
 // Product media update interfaces
@@ -308,4 +308,117 @@ export const subcategoryEndpoints = {
   // PUT /api/subcategorias/visibles/order
   updateOrder: (subcategoryIds: string[]) =>
     apiClient.put<{ success: boolean; message?: string }>("/api/subcategorias/visibles/order", { subcategoryIds }),
+};
+
+// Multimedia API endpoints
+export const multimediaEndpoints = {
+  // POST /api/multimedia/subcategorias - Create/upload image for subcategory (first time)
+  createSubcategoryImage: (subcategoryId: string, imageFile: File) => {
+    const formData = new FormData();
+    formData.append('subcategoriaId', subcategoryId);
+    formData.append('file', imageFile);
+
+    const url = `${API_BASE_URL}/api/multimedia/subcategorias`;
+    return fetch(url, {
+      method: "POST",
+      body: formData,
+    }).then(async (response) => {
+      const data = await response.json();
+      return {
+        data: data as { success: boolean; message?: string; imageUrl?: string },
+        success: response.ok,
+        message: data?.message,
+      };
+    }).catch((error) => ({
+      data: {} as { success: boolean; message?: string; imageUrl?: string },
+      success: false,
+      message: error instanceof Error ? error.message : "Request failed",
+    }));
+  },
+
+  // PUT /api/multimedia/subcategorias - Update image for subcategory (when image already exists)
+  updateSubcategoryImage: (subcategoryId: string, imageFile: File) => {
+    const formData = new FormData();
+    formData.append('subcategoriaId', subcategoryId);
+    formData.append('file', imageFile);
+
+    const url = `${API_BASE_URL}/api/multimedia/subcategorias`;
+    return fetch(url, {
+      method: "PUT",
+      body: formData,
+    }).then(async (response) => {
+      const data = await response.json();
+      return {
+        data: data as { success: boolean; message?: string; imageUrl?: string },
+        success: response.ok,
+        message: data?.message,
+      };
+    }).catch((error) => ({
+      data: {} as { success: boolean; message?: string; imageUrl?: string },
+      success: false,
+      message: error instanceof Error ? error.message : "Request failed",
+    }));
+  },
+
+  // POST /api/multimedia/categorias - Create/upload image for category (first time)
+  createCategoryImage: (categoryId: string, imageFile: File) => {
+    const formData = new FormData();
+    formData.append('categoriaId', categoryId);
+    formData.append('file', imageFile);
+
+    const url = `${API_BASE_URL}/api/multimedia/categorias`;
+    return fetch(url, {
+      method: "POST",
+      body: formData,
+    }).then(async (response) => {
+      const data = await response.json();
+      return {
+        data: data as { success: boolean; message?: string; imageUrl?: string },
+        success: response.ok,
+        message: data?.message,
+      };
+    }).catch((error) => ({
+      data: {} as { success: boolean; message?: string; imageUrl?: string },
+      success: false,
+      message: error instanceof Error ? error.message : "Request failed",
+    }));
+  },
+
+  // PUT /api/multimedia/categorias - Update image for category (when image already exists)
+  updateCategoryImage: (categoryId: string, imageFile: File) => {
+    const formData = new FormData();
+    formData.append('categoriaId', categoryId);
+    formData.append('file', imageFile);
+
+    const url = `${API_BASE_URL}/api/multimedia/categorias`;
+    return fetch(url, {
+      method: "PUT",
+      body: formData,
+    }).then(async (response) => {
+      const data = await response.json();
+      return {
+        data: data as { success: boolean; message?: string; imageUrl?: string },
+        success: response.ok,
+        message: data?.message,
+      };
+    }).catch((error) => ({
+      data: {} as { success: boolean; message?: string; imageUrl?: string },
+      success: false,
+      message: error instanceof Error ? error.message : "Request failed",
+    }));
+  },
+
+  // DELETE /api/multimedia/subcategorias/:id - Delete subcategory image
+  deleteSubcategoryImage: (subcategoryId: string) => {
+    return apiClient.delete<{ success: boolean; message?: string }>(
+      `/api/multimedia/subcategorias/${subcategoryId}`
+    );
+  },
+
+  // DELETE /api/multimedia/categorias/:id - Delete category image
+  deleteCategoryImage: (categoryId: string) => {
+    return apiClient.delete<{ success: boolean; message?: string }>(
+      `/api/multimedia/categorias/${categoryId}`
+    );
+  },
 };

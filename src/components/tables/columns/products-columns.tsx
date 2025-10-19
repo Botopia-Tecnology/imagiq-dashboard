@@ -142,13 +142,21 @@ export const createProductColumns = (
     },
   },
   {
-    accessorKey: "subcategory",
+    accessorKey: "category",
     header: "Categoría",
     cell: ({ row }) => {
+      const product = row.original
       return (
-        <Badge variant="outline">
-          {row.getValue("subcategory")}
-        </Badge>
+        <div className="flex flex-col gap-1">
+          <Badge variant="outline" className="w-fit">
+            {product.category || "Sin categoría"}
+          </Badge>
+          {product.subcategory && (
+            <span className="text-xs text-muted-foreground">
+              {product.subcategory}
+            </span>
+          )}
+        </div>
       )
     },
     filterFn: (row, id, value) => {
