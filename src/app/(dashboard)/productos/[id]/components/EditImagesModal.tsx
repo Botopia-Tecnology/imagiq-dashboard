@@ -1,8 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Image from "next/image"
-import { Upload, Trash2, Image as ImageIcon, Video, Box } from "lucide-react"
+import { Upload, Trash2, Image as ImageIcon, Video, Box, GripVertical } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -14,6 +14,8 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ProductCardProps, ProductColor } from "@/features/products/useProducts"
+import { productEndpoints } from "@/lib/api"
+import { toast } from "sonner"
 
 interface EditImagesModalProps {
   isOpen: boolean
@@ -30,13 +32,65 @@ export function EditImagesModal({
 }: EditImagesModalProps) {
   const [previewImage, setPreviewImage] = useState<string | null>(null)
   const [previewImageFile, setPreviewImageFile] = useState<File | null>(null)
-  const [detailImages, setDetailImages] = useState<string[]>([])
-  const [detailImageFiles, setDetailImageFiles] = useState<File[]>([])
+  const [originalPreviewUrl, setOriginalPreviewUrl] = useState<string | null>(null)
+
+  // Imágenes de detalle: pueden ser URLs (existentes) o archivos (nuevos)
+  const [detailImages, setDetailImages] = useState<(string | File)[]>([])
+  const [originalDetailUrls, setOriginalDetailUrls] = useState<string[]>([])
+
   const [videos, setVideos] = useState<string[]>([])
   const [videoFiles, setVideoFiles] = useState<File[]>([])
   const [glbFile, setGlbFile] = useState<File | null>(null)
   const [usdzFile, setUsdzFile] = useState<File | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [isLoadingData, setIsLoadingData] = useState(false)
+
+  // Estado para drag and drop
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
+
+  // Cargar multimedia existente cuando se abre el modal
+  useEffect(() => {
+    const loadExistingMultimedia = async () => {
+      if (!isOpen || !selectedColor?.sku) return
+
+      setIsLoadingData(true)
+      try {
+        const response = await productEndpoints.getMultimedia(selectedColor.sku)
+
+        if (response.success && response.data) {
+          // Cargar imagen preview
+          if (response.data.image_preview_url) {
+            setPreviewImage(response.data.image_preview_url)
+            setOriginalPreviewUrl(response.data.image_preview_url)
+          }
+
+          // Cargar imágenes de detalle
+          if (response.data.image_details_urls && response.data.image_details_urls.length > 0) {
+            setDetailImages(response.data.image_details_urls)
+            setOriginalDetailUrls(response.data.image_details_urls)
+          }
+
+          // Cargar videos
+          if (response.data.video_urls && response.data.video_urls.length > 0) {
+            setVideos(response.data.video_urls)
+          }
+        } else {
+          // No hay multimedia, resetear estados
+          setPreviewImage(null)
+          setOriginalPreviewUrl(null)
+          setDetailImages([])
+          setOriginalDetailUrls([])
+        }
+      } catch (error) {
+        console.error("Error al cargar multimedia:", error)
+        toast.error("Error al cargar multimedia existente")
+      } finally {
+        setIsLoadingData(false)
+      }
+    }
+
+    loadExistingMultimedia()
+  }, [isOpen, selectedColor?.sku])
 
   const handlePreviewImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -54,25 +108,39 @@ export function EditImagesModal({
     const files = e.target.files
     if (files) {
       const filesArray = Array.from(files)
-      setDetailImageFiles((prev) => [...prev, ...filesArray])
-
-      const newImages: string[] = []
-      filesArray.forEach((file) => {
-        const reader = new FileReader()
-        reader.onloadend = () => {
-          newImages.push(reader.result as string)
-          if (newImages.length === files.length) {
-            setDetailImages((prev) => [...prev, ...newImages])
-          }
-        }
-        reader.readAsDataURL(file)
-      })
+      // Agregar archivos directamente al array de imágenes de detalle
+      setDetailImages((prev) => [...prev, ...filesArray])
     }
   }
 
   const removeDetailImage = (index: number) => {
     setDetailImages((prev) => prev.filter((_, i) => i !== index))
-    setDetailImageFiles((prev) => prev.filter((_, i) => i !== index))
+  }
+
+  // Funciones de drag and drop para reordenar imágenes
+  const handleDragStart = (index: number) => {
+    setDraggedIndex(index)
+  }
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault()
+
+    if (draggedIndex === null || draggedIndex === index) return
+
+    const newImages = [...detailImages]
+    const draggedItem = newImages[draggedIndex]
+
+    // Remover el item de su posición original
+    newImages.splice(draggedIndex, 1)
+    // Insertarlo en la nueva posición
+    newImages.splice(index, 0, draggedItem)
+
+    setDetailImages(newImages)
+    setDraggedIndex(index)
+  }
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null)
   }
 
   const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -111,57 +179,154 @@ export function EditImagesModal({
 
   const handleSave = async () => {
     if (!selectedColor) {
-      alert("No se ha seleccionado un color")
+      toast.error("No se ha seleccionado un color")
       return
     }
 
     setIsLoading(true)
 
     try {
-      const formData = new FormData()
-      formData.append("sku", selectedColor.sku)
-      formData.append("codigoMarket", product.id)
+      let uploadErrors = false
 
-      // Agregar imagen preview
+      // 1. Manejar imagen preview
       if (previewImageFile) {
-        formData.append("previewImage", previewImageFile)
+        toast.info("Actualizando imagen preview...")
+        const response = await productEndpoints.updateImageAtPosition(
+          selectedColor.sku,
+          1, // Posición 1 = preview
+          previewImageFile
+        )
+
+        if (!response.success) {
+          toast.error(response.message || "Error al actualizar imagen preview")
+          uploadErrors = true
+        } else {
+          toast.success("Imagen preview actualizada")
+        }
       }
 
-      // Agregar imágenes de detalle
-      detailImageFiles.forEach((file) => {
-        formData.append("detailImages", file)
-      })
+      // 2. Procesar imágenes de detalle manteniendo el orden
+      // Primero, subir TODAS las imágenes nuevas (Files)
+      const uploadedUrlsMap = new Map<number, string>() // índice -> URL subida
 
-      // Agregar videos
-      videoFiles.forEach((file) => {
-        formData.append("videos", file)
-      })
+      for (let i = 0; i < detailImages.length; i++) {
+        const image = detailImages[i]
 
-      // Agregar archivos AR
-      if (glbFile) {
-        formData.append("glbFile", glbFile)
+        if (image instanceof File) {
+          const isReplacement = i < originalDetailUrls.length
+
+          if (isReplacement) {
+            // Reemplazar imagen existente
+            const position = i + 2 // +2 porque posición 1 es preview
+            toast.info(`Actualizando imagen en posición ${i + 1}...`)
+
+            const response = await productEndpoints.updateImageAtPosition(
+              selectedColor.sku,
+              position,
+              image
+            )
+
+            if (!response.success) {
+              toast.error(response.message || `Error al actualizar imagen ${i + 1}`)
+              uploadErrors = true
+            } else if (response.data?.url) {
+              uploadedUrlsMap.set(i, response.data.url)
+            }
+          }
+        }
       }
-      if (usdzFile) {
-        formData.append("usdzFile", usdzFile)
+
+      // Ahora subir todas las imágenes NUEVAS (que no reemplazan)
+      const newFilesWithIndex: { file: File; index: number }[] = []
+      for (let i = 0; i < detailImages.length; i++) {
+        const image = detailImages[i]
+        const isReplacement = i < originalDetailUrls.length
+
+        if (image instanceof File && !isReplacement) {
+          newFilesWithIndex.push({ file: image, index: i })
+        }
       }
 
-      // Hacer petición con FormData
-      const response = await fetch(`/api/products/${product.id}/media`, {
-        method: "PUT",
-        body: formData,
-      })
+      if (newFilesWithIndex.length > 0) {
+        const newFiles = newFilesWithIndex.map(item => item.file)
 
-      const data = await response.json()
+        if (newFiles.length === 1) {
+          // Solo una imagen nueva
+          toast.info("Agregando nueva imagen...")
+          const response = await productEndpoints.addImage(selectedColor.sku, newFiles[0])
 
-      if (response.ok && data.success) {
-        alert("Multimedia actualizada correctamente")
+          if (!response.success) {
+            toast.error(response.message || "Error al agregar imagen")
+            uploadErrors = true
+          } else if (response.data?.url) {
+            uploadedUrlsMap.set(newFilesWithIndex[0].index, response.data.url)
+          }
+        } else {
+          // Varias imágenes nuevas
+          toast.info(`Agregando ${newFiles.length} imágenes nuevas...`)
+          const response = await productEndpoints.addMultipleImages(selectedColor.sku, newFiles)
+
+          if (!response.success) {
+            toast.error(response.message || "Error al agregar imágenes")
+            uploadErrors = true
+          } else if (response.data?.urls && Array.isArray(response.data.urls)) {
+            // Mapear cada URL subida a su índice original
+            response.data.urls.forEach((url: string, idx: number) => {
+              uploadedUrlsMap.set(newFilesWithIndex[idx].index, url)
+            })
+          }
+        }
+      }
+
+      // Construir el array final en el orden correcto
+      const finalImageUrls: string[] = []
+
+      // Primero la preview
+      if (previewImage && typeof previewImage === 'string') {
+        finalImageUrls.push(previewImage)
+      }
+
+      // Luego las imágenes de detalle en el orden actual
+      for (let i = 0; i < detailImages.length; i++) {
+        const image = detailImages[i]
+
+        if (uploadedUrlsMap.has(i)) {
+          // Usar la URL que se subió
+          finalImageUrls.push(uploadedUrlsMap.get(i)!)
+        } else if (typeof image === 'string') {
+          // Es una URL existente
+          finalImageUrls.push(image)
+        }
+      }
+
+      // 3. SIEMPRE reordenar si hay imágenes nuevas o cambió el orden
+      const hasNewImages = newFilesWithIndex.length > 0
+      const orderChanged = JSON.stringify(finalImageUrls.slice(1)) !== JSON.stringify(originalDetailUrls)
+
+      if ((orderChanged || hasNewImages) && finalImageUrls.length > 1) {
+        toast.info("Reordenando imágenes...")
+        const response = await productEndpoints.reorderImages(selectedColor.sku, finalImageUrls)
+
+        if (!response.success) {
+          toast.error(response.message || "Error al reordenar imágenes")
+          uploadErrors = true
+        } else {
+          toast.success("Imágenes organizadas correctamente")
+        }
+      }
+
+      // 4. Resultado final
+      if (!uploadErrors) {
+        toast.success("Multimedia actualizada correctamente")
         onClose()
+        // Recargar la página para ver los cambios
+        window.location.reload()
       } else {
-        alert(`Error: ${data.message}`)
+        toast.warning("Algunos cambios no se guardaron correctamente")
       }
     } catch (error) {
       console.error("Error al actualizar multimedia:", error)
-      alert("Error al actualizar multimedia")
+      toast.error("Error inesperado al actualizar multimedia")
     } finally {
       setIsLoading(false)
     }
@@ -172,7 +337,7 @@ export function EditImagesModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Editar multimedia</DialogTitle>
           <DialogDescription>
@@ -251,27 +416,55 @@ export function EditImagesModal({
 
             {/* Grid de imágenes */}
             {currentDetails.length > 0 && (
-              <div className="grid grid-cols-3 gap-4">
-                {currentDetails.map((url, index) => (
-                  <div key={index} className="relative group">
-                    <div className="relative w-full h-32 rounded-lg border overflow-hidden bg-muted">
-                      <Image
-                        src={url}
-                        alt={`Detalle ${index + 1}`}
-                        fill
-                        className="object-cover"
-                      />
-                    </div>
-                    <Button
-                      variant="destructive"
-                      size="icon"
-                      className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={() => removeDetailImage(index)}
+              <div className="grid grid-cols-4 gap-4">
+                {currentDetails.map((imageItem, index) => {
+                  // Determinar la URL a mostrar (File o string)
+                  const displayUrl = imageItem instanceof File
+                    ? URL.createObjectURL(imageItem)
+                    : imageItem
+
+                  return (
+                    <div
+                      key={index}
+                      draggable
+                      onDragStart={() => handleDragStart(index)}
+                      onDragOver={(e) => handleDragOver(e, index)}
+                      onDragEnd={handleDragEnd}
+                      className={`relative group cursor-move ${
+                        draggedIndex === index ? 'opacity-50' : ''
+                      }`}
                     >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
+                      <div className="relative w-full h-32 rounded-lg border overflow-hidden bg-muted">
+                        <Image
+                          src={displayUrl}
+                          alt={`Detalle ${index + 1}`}
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+
+                      {/* Icono de arrastrar */}
+                      <div className="absolute top-2 left-2 bg-black/50 rounded p-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <GripVertical className="h-4 w-4 text-white" />
+                      </div>
+
+                      {/* Botón eliminar */}
+                      <Button
+                        variant="destructive"
+                        size="icon"
+                        className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => removeDetailImage(index)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+
+                      {/* Número de posición */}
+                      <div className="absolute bottom-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
+                        {index + 1}
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             )}
 

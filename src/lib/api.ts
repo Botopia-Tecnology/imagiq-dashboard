@@ -187,6 +187,87 @@ export const productEndpoints = {
   getSummary: () => apiClient.get<ProductSummary>("/api/products/summary"),
   updateMedia: (id: string, data: ProductMediaUpdateData) =>
     apiClient.put<ProductMediaUpdateResponse>(`/api/products/${id}/media`, data),
+  getMultimedia: (sku: string) =>
+    apiClient.get<ProductMultimediaData>(`/api/multimedia/producto/${sku}`),
+
+  // Modificar imagen en posición específica
+  updateImageAtPosition: (sku: string, numero: number, imageFile: File) => {
+    const formData = new FormData();
+    formData.append('file', imageFile);
+
+    return fetch(`${API_BASE_URL}/api/multimedia/producto/${sku}/imagen/${numero}`, {
+      method: "PUT",
+      body: formData,
+    }).then(async (response) => {
+      const data = await response.json();
+      return {
+        data,
+        success: response.ok,
+        message: typeof data?.message === 'string' ? data.message : (data?.error || "Error desconocido"),
+      };
+    }).catch((error) => ({
+      data: {},
+      success: false,
+      message: error instanceof Error ? error.message : "Request failed",
+    }));
+  },
+
+  // Agregar una imagen al final
+  addImage: (sku: string, imageFile: File) => {
+    const formData = new FormData();
+    formData.append('file', imageFile);
+
+    return fetch(`${API_BASE_URL}/api/multimedia/producto/${sku}/imagen/agregar`, {
+      method: "POST",
+      body: formData,
+    }).then(async (response) => {
+      const data = await response.json();
+      return {
+        data,
+        success: response.ok,
+        message: typeof data?.message === 'string' ? data.message : (data?.error || "Error desconocido"),
+      };
+    }).catch((error) => ({
+      data: {},
+      success: false,
+      message: error instanceof Error ? error.message : "Request failed",
+    }));
+  },
+
+  // Agregar varias imágenes al final
+  addMultipleImages: (sku: string, imageFiles: File[]) => {
+    const formData = new FormData();
+    imageFiles.forEach((file) => {
+      formData.append('files', file);
+    });
+
+    return fetch(`${API_BASE_URL}/api/multimedia/producto/${sku}/imagenes/agregar-multiples`, {
+      method: "POST",
+      body: formData,
+    }).then(async (response) => {
+      const data = await response.json();
+      return {
+        data,
+        success: response.ok,
+        message: typeof data?.message === 'string' ? data.message : (data?.error || "Error desconocido"),
+      };
+    }).catch((error) => ({
+      data: {},
+      success: false,
+      message: error instanceof Error ? error.message : "Request failed",
+    }));
+  },
+
+  // Reordenar imágenes existentes
+  reorderImages: (sku: string, imageUrls: string[]) => {
+    return apiClient.put<{ success: boolean; message: string }>(
+      `/api/multimedia/producto/${sku}/reordenar`,
+      {
+        sku,
+        imageUrls
+      }
+    );
+  },
 };
 
 // Product filter parameters interface
@@ -267,6 +348,18 @@ export interface ProductMediaUpdateResponse {
   data?: unknown;
 }
 
+export interface ProductMultimediaData {
+  id: number;
+  sku: string;
+  image_preview_url: string | null;
+  image_details_urls: string[];
+  video_urls: string[];
+  total_images: number;
+  content: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+}
+
 // Categories API endpoints
 export const categoryEndpoints = {
   getVisible: () => apiClient.get<BackendCategory[]>("/api/categorias/visibles"),
@@ -327,7 +420,7 @@ export const multimediaEndpoints = {
       return {
         data: data as { success: boolean; message?: string; imageUrl?: string },
         success: response.ok,
-        message: data?.message,
+        message: typeof data?.message === 'string' ? data.message : (data?.error || "Error desconocido"),
       };
     }).catch((error) => ({
       data: {} as { success: boolean; message?: string; imageUrl?: string },
@@ -351,7 +444,7 @@ export const multimediaEndpoints = {
       return {
         data: data as { success: boolean; message?: string; imageUrl?: string },
         success: response.ok,
-        message: data?.message,
+        message: typeof data?.message === 'string' ? data.message : (data?.error || "Error desconocido"),
       };
     }).catch((error) => ({
       data: {} as { success: boolean; message?: string; imageUrl?: string },
@@ -375,7 +468,7 @@ export const multimediaEndpoints = {
       return {
         data: data as { success: boolean; message?: string; imageUrl?: string },
         success: response.ok,
-        message: data?.message,
+        message: typeof data?.message === 'string' ? data.message : (data?.error || "Error desconocido"),
       };
     }).catch((error) => ({
       data: {} as { success: boolean; message?: string; imageUrl?: string },
@@ -399,7 +492,7 @@ export const multimediaEndpoints = {
       return {
         data: data as { success: boolean; message?: string; imageUrl?: string },
         success: response.ok,
-        message: data?.message,
+        message: typeof data?.message === 'string' ? data.message : (data?.error || "Error desconocido"),
       };
     }).catch((error) => ({
       data: {} as { success: boolean; message?: string; imageUrl?: string },

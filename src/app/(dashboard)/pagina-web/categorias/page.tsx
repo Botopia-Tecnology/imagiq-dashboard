@@ -120,7 +120,8 @@ export default function CategoriasPage() {
 
         if (uploadResponse.success) {
           // Si la respuesta incluye imageUrl, usarla; si no, mantener la imagen actual
-          imageUrl = uploadResponse.data?.imageUrl || uploadResponse.data?.url || editImage
+          const data = uploadResponse.data as { imageUrl?: string; url?: string } | undefined
+          imageUrl = data?.imageUrl || data?.url || editImage
           toast.success("Imagen subida exitosamente")
         } else {
           toast.error(uploadResponse.message || "Error al subir la imagen")
@@ -196,7 +197,7 @@ export default function CategoriasPage() {
     // Verificar si tiene imagen existente y configurar preview
     const hasImage = !!(category.image && category.image !== "https://example.com/mock-image.jpg")
     setHasExistingImage(hasImage)
-    setImagePreviewUrl(hasImage ? category.image : "")
+    setImagePreviewUrl(hasImage && category.image ? category.image : "")
 
     setIsEditDialogOpen(true)
   }
