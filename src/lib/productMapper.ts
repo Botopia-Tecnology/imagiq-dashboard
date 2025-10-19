@@ -103,6 +103,11 @@ export function mapApiProductToFrontend(apiProduct: ProductApiData): ProductCard
   const id = apiProduct.codigoMarketBase;
 
   
+  const capacidadArray = Array.isArray(apiProduct.capacidad) ? apiProduct.capacidad : [];
+  const stockArray = Array.isArray(apiProduct.stock) ? apiProduct.stock : [];
+  const skuArray = Array.isArray(apiProduct.sku) ? apiProduct.sku : [];
+  const desDetalladaArray = Array.isArray(apiProduct.desDetallada) ? apiProduct.desDetallada : [];
+
   return {
     id,
     name: apiProduct.nombreMarket,
@@ -120,10 +125,10 @@ export function mapApiProductToFrontend(apiProduct: ProductApiData): ProductCard
     model: apiProduct.modelo,
     category: apiProduct.categoria,
     subcategory: apiProduct.subcategoria,
-    capacity: apiProduct.capacidad?.join(', ') || null,
-    stock: apiProduct.stock?.reduce((sum, s) => sum + s, 0) || 0,
-    sku: apiProduct.sku?.join(', ') || null,
-    detailedDescription: apiProduct.desDetallada?.join(' ') || null,
+    capacity: capacidadArray.length > 0 ? capacidadArray.join(', ') : null,
+    stock: stockArray.reduce((sum, s) => sum + s, 0),
+    sku: skuArray.length > 0 ? skuArray.join(', ') : null,
+    detailedDescription: desDetalladaArray.length > 0 ? desDetalladaArray.join(' ') : null,
   };
 }
 
@@ -132,11 +137,12 @@ export function mapApiProductToFrontend(apiProduct: ProductApiData): ProductCard
  */
 function getProductImage(apiProduct: ProductApiData): string | StaticImageData {
   // Si hay URL de imagen en la API, usarla (cuando esté disponible)
-  const firstImageUrl = apiProduct.imagePreviewUrl.find(url => url && url.trim() !== '');
+  const imagePreviewArray = Array.isArray(apiProduct.imagePreviewUrl) ? apiProduct.imagePreviewUrl : [];
+  const firstImageUrl = imagePreviewArray.find(url => url && url.trim() !== '');
   if (firstImageUrl) {
     return firstImageUrl;
   }
-    
+
   // Usar imagen por defecto cuando no hay imagen de la API
   return emptyImg;
 }
@@ -157,9 +163,10 @@ function createProductColorsFromArray(apiProduct: ProductApiData): ProductColor[
   }>();
   
   // Agrupar precios por color
-  apiProduct.color.forEach((color, index) => {
-    const precioNormal = apiProduct.precioNormal[index] || 0;
-    const precioDescto = apiProduct.precioDescto[index] || 0;
+  const colorsArray = Array.isArray(apiProduct.color) ? apiProduct.color : [];
+  colorsArray.forEach((color, index) => {
+    const precioNormal = Array.isArray(apiProduct.precioNormal) ? (apiProduct.precioNormal[index] || 0) : 0;
+    const precioDescto = Array.isArray(apiProduct.precioDescto) ? (apiProduct.precioDescto[index] || 0) : 0;
     
     // Solo incluir colores con precios válidos (mayores a 0)
     if (precioNormal > 0 || precioDescto > 0) {
@@ -211,38 +218,46 @@ function createProductColorsFromArray(apiProduct: ProductApiData): ProductColor[
     }
 
     // Usar el primer SKU disponible para este color
-    const firstIndex = indices[0];
+    const firstIndex = indices[0] ?? 0;
 
     // Calcular el stock total para este color sumando todos los índices
+    const stockArray = Array.isArray(apiProduct.stock) ? apiProduct.stock : [];
     const stockTotal = indices.reduce((total, idx) => {
-      return total + (apiProduct.stock[idx] || 0);
+      return total + (stockArray[idx] || 0);
     }, 0);
 
     // Obtener descripción detallada del primer índice
-    const description = apiProduct.desDetallada[firstIndex] || '';
+    const desDetalladaArray = Array.isArray(apiProduct.desDetallada) ? apiProduct.desDetallada : [];
+    const description = desDetalladaArray[firstIndex] || '';
 
     // Obtener capacidad del primer índice (o combinar todas si son diferentes)
-    const capacidades = [...new Set(indices.map(idx => apiProduct.capacidad[idx]).filter(Boolean))];
+    const capacidadArray = Array.isArray(apiProduct.capacidad) ? apiProduct.capacidad : [];
+    const capacidades = [...new Set(indices.map(idx => capacidadArray[idx]).filter(Boolean))];
     const capacity = capacidades.length > 0 ? capacidades.join(', ') : undefined;
 
     // Obtener la URL de la imagen del primer índice
-    const imageUrl = apiProduct.imagePreviewUrl[firstIndex] && apiProduct.imagePreviewUrl[firstIndex].trim() !== ''
-      ? apiProduct.imagePreviewUrl[firstIndex]
+    const imagePreviewArray = Array.isArray(apiProduct.imagePreviewUrl) ? apiProduct.imagePreviewUrl : [];
+    const imageUrl = imagePreviewArray[firstIndex] && imagePreviewArray[firstIndex].trim() !== ''
+      ? imagePreviewArray[firstIndex]
       : undefined;
 
     // Obtener las URLs de imágenes detalladas del primer índice
     // Primero intentar usar imageDetailsUrls si existe, sino usar urlImagenes
     let imageDetailsUrls: string[] | undefined;
-    if (apiProduct.imageDetailsUrls && apiProduct.imageDetailsUrls[firstIndex]) {
-      const filteredUrls = apiProduct.imageDetailsUrls[firstIndex].filter(url => url && url.trim() !== '');
+    const imageDetailsArray = Array.isArray(apiProduct.imageDetailsUrls) ? apiProduct.imageDetailsUrls : [];
+    const urlImagenesArray = Array.isArray(apiProduct.urlImagenes) ? apiProduct.urlImagenes : [];
+
+    if (imageDetailsArray[firstIndex]) {
+      const filteredUrls = imageDetailsArray[firstIndex].filter(url => url && url.trim() !== '');
       imageDetailsUrls = filteredUrls.length > 0 ? filteredUrls : [emptyImg.src];
-    } else if (apiProduct.urlImagenes[firstIndex]) {
-      const filteredUrls = apiProduct.urlImagenes[firstIndex].split(',').map(url => url.trim()).filter(url => url !== '');
+    } else if (urlImagenesArray[firstIndex]) {
+      const filteredUrls = urlImagenesArray[firstIndex].split(',').map(url => url.trim()).filter(url => url !== '');
       imageDetailsUrls = filteredUrls.length > 0 ? filteredUrls : [emptyImg.src];
     } else {
       imageDetailsUrls = [emptyImg.src];
     }
 
+    const skuArray = Array.isArray(apiProduct.sku) ? apiProduct.sku : [];
     colorsWithPrices.push({
       name: normalizedColor.replace(/\s+/g, '-'),
       hex: colorInfo.hex,
@@ -250,7 +265,7 @@ function createProductColorsFromArray(apiProduct: ProductApiData): ProductColor[
       price,
       originalPrice,
       discount,
-      sku: apiProduct.sku[firstIndex],
+      sku: skuArray[firstIndex] || '',
       stock: stockTotal,
       description,
       capacity,
@@ -268,8 +283,12 @@ function createProductColorsFromArray(apiProduct: ProductApiData): ProductColor[
  */
 function calculatePricingFromArray(apiProduct: ProductApiData) {
   // Filtrar precios válidos (mayores a 0)
-  const preciosNormalesValidos = apiProduct.precioNormal.filter(p => p > 0);
-  const preciosDescuentoValidos = apiProduct.precioDescto.filter(p => p > 0);
+  const preciosNormalesValidos = Array.isArray(apiProduct.precioNormal)
+    ? apiProduct.precioNormal.filter(p => p > 0)
+    : [];
+  const preciosDescuentoValidos = Array.isArray(apiProduct.precioDescto)
+    ? apiProduct.precioDescto.filter(p => p > 0)
+    : [];
   
   // Si no hay precios válidos, usar valores por defecto
   if (preciosNormalesValidos.length === 0 && preciosDescuentoValidos.length === 0) {
@@ -304,7 +323,10 @@ function calculatePricingFromArray(apiProduct: ProductApiData) {
   }
   
   // Determinar si es producto nuevo (menos de 30 días desde fecha de inicio)
-  const fechaInicio = new Date(apiProduct.fechaInicioVigencia[0]);
+  const fechaVigenciaArray = Array.isArray(apiProduct.fechaInicioVigencia) ? apiProduct.fechaInicioVigencia : [];
+  const fechaInicio = fechaVigenciaArray.length > 0 && fechaVigenciaArray[0]
+    ? new Date(fechaVigenciaArray[0])
+    : new Date();
   const ahora = new Date();
   const diasDiferencia = (ahora.getTime() - fechaInicio.getTime()) / (1000 * 60 * 60 * 24);
   const isNew = diasDiferencia < 30;

@@ -187,6 +187,87 @@ export const productEndpoints = {
   getSummary: () => apiClient.get<ProductSummary>("/api/products/summary"),
   updateMedia: (id: string, data: ProductMediaUpdateData) =>
     apiClient.put<ProductMediaUpdateResponse>(`/api/products/${id}/media`, data),
+  getMultimedia: (sku: string) =>
+    apiClient.get<ProductMultimediaData>(`/api/multimedia/producto/${sku}`),
+
+  // Modificar imagen en posición específica
+  updateImageAtPosition: (sku: string, numero: number, imageFile: File) => {
+    const formData = new FormData();
+    formData.append('file', imageFile);
+
+    return fetch(`${API_BASE_URL}/api/multimedia/producto/${sku}/imagen/${numero}`, {
+      method: "PUT",
+      body: formData,
+    }).then(async (response) => {
+      const data = await response.json();
+      return {
+        data,
+        success: response.ok,
+        message: typeof data?.message === 'string' ? data.message : (data?.error || "Error desconocido"),
+      };
+    }).catch((error) => ({
+      data: {},
+      success: false,
+      message: error instanceof Error ? error.message : "Request failed",
+    }));
+  },
+
+  // Agregar una imagen al final
+  addImage: (sku: string, imageFile: File) => {
+    const formData = new FormData();
+    formData.append('file', imageFile);
+
+    return fetch(`${API_BASE_URL}/api/multimedia/producto/${sku}/imagen/agregar`, {
+      method: "POST",
+      body: formData,
+    }).then(async (response) => {
+      const data = await response.json();
+      return {
+        data,
+        success: response.ok,
+        message: typeof data?.message === 'string' ? data.message : (data?.error || "Error desconocido"),
+      };
+    }).catch((error) => ({
+      data: {},
+      success: false,
+      message: error instanceof Error ? error.message : "Request failed",
+    }));
+  },
+
+  // Agregar varias imágenes al final
+  addMultipleImages: (sku: string, imageFiles: File[]) => {
+    const formData = new FormData();
+    imageFiles.forEach((file) => {
+      formData.append('files', file);
+    });
+
+    return fetch(`${API_BASE_URL}/api/multimedia/producto/${sku}/imagenes/agregar-multiples`, {
+      method: "POST",
+      body: formData,
+    }).then(async (response) => {
+      const data = await response.json();
+      return {
+        data,
+        success: response.ok,
+        message: typeof data?.message === 'string' ? data.message : (data?.error || "Error desconocido"),
+      };
+    }).catch((error) => ({
+      data: {},
+      success: false,
+      message: error instanceof Error ? error.message : "Request failed",
+    }));
+  },
+
+  // Reordenar imágenes existentes
+  reorderImages: (sku: string, imageUrls: string[]) => {
+    return apiClient.put<{ success: boolean; message: string }>(
+      `/api/multimedia/producto/${sku}/reordenar`,
+      {
+        sku,
+        imageUrls
+      }
+    );
+  },
 };
 
 // Product filter parameters interface
@@ -229,25 +310,25 @@ export interface ProductSummary {
 
 export interface ProductApiData {
   codigoMarketBase: string;
-  codigoMarket: string[];
+  codigoMarket?: string[];
   nombreMarket: string;
   categoria: string;
   subcategoria: string;
   modelo: string;
-  color: string[];
-  capacidad: string[];
-  descGeneral: string | null;
-  sku: string[];
-  desDetallada: string[];
-  stock: number[];
-  imagePreviewUrl: string[];
+  color?: string[];
+  capacidad?: string[];
+  descGeneral?: string | null;
+  sku?: string[];
+  desDetallada?: string[];
+  stock?: number[];
+  imagePreviewUrl?: string[];
   imageDetailsUrls?: string[][]; // Array de arrays de URLs de imágenes detalladas
-  urlImagenes: string[];
-  urlRender3D: string[];
-  precioNormal: number[];
-  precioDescto: number[];
-  fechaInicioVigencia: string[];
-  fechaFinalVigencia: string[];
+  urlImagenes?: string[];
+  urlRender3D?: string[];
+  precioNormal?: number[];
+  precioDescto?: number[];
+  fechaInicioVigencia?: string[];
+  fechaFinalVigencia?: string[];
 }
 
 // Product media update interfaces
@@ -265,6 +346,18 @@ export interface ProductMediaUpdateResponse {
   success: boolean;
   message: string;
   data?: unknown;
+}
+
+export interface ProductMultimediaData {
+  id: number;
+  sku: string;
+  image_preview_url: string | null;
+  image_details_urls: string[];
+  video_urls: string[];
+  total_images: number;
+  content: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
 }
 
 // Categories API endpoints
@@ -308,4 +401,117 @@ export const subcategoryEndpoints = {
   // PUT /api/subcategorias/visibles/order
   updateOrder: (subcategoryIds: string[]) =>
     apiClient.put<{ success: boolean; message?: string }>("/api/subcategorias/visibles/order", { subcategoryIds }),
+};
+
+// Multimedia API endpoints
+export const multimediaEndpoints = {
+  // POST /api/multimedia/subcategorias - Create/upload image for subcategory (first time)
+  createSubcategoryImage: (subcategoryId: string, imageFile: File) => {
+    const formData = new FormData();
+    formData.append('subcategoriaId', subcategoryId);
+    formData.append('file', imageFile);
+
+    const url = `${API_BASE_URL}/api/multimedia/subcategorias`;
+    return fetch(url, {
+      method: "POST",
+      body: formData,
+    }).then(async (response) => {
+      const data = await response.json();
+      return {
+        data: data as { success: boolean; message?: string; imageUrl?: string },
+        success: response.ok,
+        message: typeof data?.message === 'string' ? data.message : (data?.error || "Error desconocido"),
+      };
+    }).catch((error) => ({
+      data: {} as { success: boolean; message?: string; imageUrl?: string },
+      success: false,
+      message: error instanceof Error ? error.message : "Request failed",
+    }));
+  },
+
+  // PUT /api/multimedia/subcategorias - Update image for subcategory (when image already exists)
+  updateSubcategoryImage: (subcategoryId: string, imageFile: File) => {
+    const formData = new FormData();
+    formData.append('subcategoriaId', subcategoryId);
+    formData.append('file', imageFile);
+
+    const url = `${API_BASE_URL}/api/multimedia/subcategorias`;
+    return fetch(url, {
+      method: "PUT",
+      body: formData,
+    }).then(async (response) => {
+      const data = await response.json();
+      return {
+        data: data as { success: boolean; message?: string; imageUrl?: string },
+        success: response.ok,
+        message: typeof data?.message === 'string' ? data.message : (data?.error || "Error desconocido"),
+      };
+    }).catch((error) => ({
+      data: {} as { success: boolean; message?: string; imageUrl?: string },
+      success: false,
+      message: error instanceof Error ? error.message : "Request failed",
+    }));
+  },
+
+  // POST /api/multimedia/categorias - Create/upload image for category (first time)
+  createCategoryImage: (categoryId: string, imageFile: File) => {
+    const formData = new FormData();
+    formData.append('categoriaId', categoryId);
+    formData.append('file', imageFile);
+
+    const url = `${API_BASE_URL}/api/multimedia/categorias`;
+    return fetch(url, {
+      method: "POST",
+      body: formData,
+    }).then(async (response) => {
+      const data = await response.json();
+      return {
+        data: data as { success: boolean; message?: string; imageUrl?: string },
+        success: response.ok,
+        message: typeof data?.message === 'string' ? data.message : (data?.error || "Error desconocido"),
+      };
+    }).catch((error) => ({
+      data: {} as { success: boolean; message?: string; imageUrl?: string },
+      success: false,
+      message: error instanceof Error ? error.message : "Request failed",
+    }));
+  },
+
+  // PUT /api/multimedia/categorias - Update image for category (when image already exists)
+  updateCategoryImage: (categoryId: string, imageFile: File) => {
+    const formData = new FormData();
+    formData.append('categoriaId', categoryId);
+    formData.append('file', imageFile);
+
+    const url = `${API_BASE_URL}/api/multimedia/categorias`;
+    return fetch(url, {
+      method: "PUT",
+      body: formData,
+    }).then(async (response) => {
+      const data = await response.json();
+      return {
+        data: data as { success: boolean; message?: string; imageUrl?: string },
+        success: response.ok,
+        message: typeof data?.message === 'string' ? data.message : (data?.error || "Error desconocido"),
+      };
+    }).catch((error) => ({
+      data: {} as { success: boolean; message?: string; imageUrl?: string },
+      success: false,
+      message: error instanceof Error ? error.message : "Request failed",
+    }));
+  },
+
+  // DELETE /api/multimedia/subcategorias/:id - Delete subcategory image
+  deleteSubcategoryImage: (subcategoryId: string) => {
+    return apiClient.delete<{ success: boolean; message?: string }>(
+      `/api/multimedia/subcategorias/${subcategoryId}`
+    );
+  },
+
+  // DELETE /api/multimedia/categorias/:id - Delete category image
+  deleteCategoryImage: (categoryId: string) => {
+    return apiClient.delete<{ success: boolean; message?: string }>(
+      `/api/multimedia/categorias/${categoryId}`
+    );
+  },
 };

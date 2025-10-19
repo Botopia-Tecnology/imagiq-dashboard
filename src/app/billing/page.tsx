@@ -36,12 +36,36 @@ import { BudgetManagement } from '@/components/billing/BudgetManagement';
 import { UsageAnalytics } from '@/components/billing/UsageAnalytics';
 import { BillingAlerts } from '@/components/billing/BillingAlerts';
 
+// Type definitions
+interface Service {
+  service: string;
+  icon: React.ReactNode;
+  cost: number;
+  usage: number;
+  trend: 'up' | 'down' | 'stable';
+  change: number;
+  category: string;
+  description: string;
+}
+
+interface Recommendation {
+  id: number;
+  service: string;
+  type: 'rightsizing' | 'usage' | 'reserved' | 'scheduling' | 'storage';
+  title: string;
+  description: string;
+  potentialSavings: number;
+  effort: 'low' | 'medium' | 'high';
+  impact: 'low' | 'medium' | 'high';
+  priority: 'low' | 'medium' | 'high';
+}
+
 // Mock data for demonstration
 const currentMonthTotal = 2847.35;
 const lastMonthTotal = 2631.22;
 const monthlyChange = ((currentMonthTotal - lastMonthTotal) / lastMonthTotal) * 100;
 
-const servicesCosts = [
+const servicesCosts: Service[] = [
   {
     service: 'AWS',
     icon: <Cloud className="h-5 w-5" />,
@@ -114,7 +138,7 @@ const servicesCosts = [
   }
 ];
 
-const optimizationRecommendations = [
+const optimizationRecommendations: Recommendation[] = [
   {
     id: 1,
     service: 'AWS',

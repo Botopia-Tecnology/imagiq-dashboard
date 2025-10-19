@@ -253,7 +253,7 @@ const ConditionNode = memo(({ data, selected }: NodeProps<ConditionNodeData>) =>
                                 <Label className="text-xs">Operador</Label>
                                 <Select
                                   value={condition.operator}
-                                  onValueChange={(operator) => updateCondition(index, { operator })}
+                                  onValueChange={(operator: 'equals' | 'not_equals' | 'greater_than' | 'less_than' | 'contains' | 'in' | 'not_in') => updateCondition(index, { operator })}
                                 >
                                   <SelectTrigger>
                                     <SelectValue />

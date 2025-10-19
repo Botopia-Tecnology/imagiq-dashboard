@@ -40,6 +40,8 @@ import {
 } from "lucide-react"
 import { WebsiteCategory } from "@/types"
 import { useCategories } from "@/features/categories/useCategories"
+import { multimediaEndpoints } from "@/lib/api"
+import { toast } from "sonner"
 
 export default function CategoriasPage() {
   const router = useRouter()
@@ -63,7 +65,8 @@ export default function CategoriasPage() {
     syncCategories,
     syncingCategories,
     updateCategoriesOrder,
-    updatingOrder
+    updatingOrder,
+    refreshCategories
   } = useCategories()
 
   // Sincronizar el estado local con las categorías del hook
@@ -76,31 +79,87 @@ export default function CategoriasPage() {
   const [editNombreVisible, setEditNombreVisible] = useState<string>("")
   const [editDescription, setEditDescription] = useState<string>("")
   const [editImage, setEditImage] = useState<string>("")
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null)
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string>("")
+  const [hasExistingImage, setHasExistingImage] = useState<boolean>(false)
+  const [imageToDelete, setImageToDelete] = useState<boolean>(false)
 
   // Función para manejar la edición de categoría
   const handleEditCategory = async () => {
     if (!selectedCategory || !editCategoryName || !editNombreVisible) {
-      alert("Por favor completa todos los campos requeridos")
+      toast.error("Por favor completa todos los campos requeridos")
       return
     }
 
-    const categoryData = {
-      nombre: editCategoryName,
-      nombreVisible: editNombreVisible,
-      descripcion: editDescription,
-      imagen: editImage || "https://example.com/mock-image.jpg", // Mock image por ahora
-    }
+    try {
+      let imageUrl = editImage
 
-    const success = await updateCategory(selectedCategory.id, categoryData)
+      // 1. Si se marcó para eliminar la imagen
+      if (imageToDelete && hasExistingImage) {
+        toast.info("Eliminando imagen...")
+        const deleteResponse = await multimediaEndpoints.deleteCategoryImage(selectedCategory.id)
 
-    if (success) {
-      // Limpiar formulario y cerrar modal
-      setEditCategoryName("")
-      setEditNombreVisible("")
-      setEditDescription("")
-      setEditImage("")
-      setSelectedCategory(null)
-      setIsEditDialogOpen(false)
+        if (deleteResponse.success) {
+          imageUrl = ""
+          toast.success("Imagen eliminada exitosamente")
+        } else {
+          toast.error(deleteResponse.message || "Error al eliminar la imagen")
+          return
+        }
+      }
+      // 2. Si se seleccionó una nueva imagen
+      else if (selectedImageFile) {
+        toast.info("Subiendo imagen...")
+
+        // Decidir entre POST (crear) o PUT (actualizar) según si hay imagen existente
+        const uploadResponse = hasExistingImage
+          ? await multimediaEndpoints.updateCategoryImage(selectedCategory.id, selectedImageFile)
+          : await multimediaEndpoints.createCategoryImage(selectedCategory.id, selectedImageFile)
+
+        console.log("Upload response:", uploadResponse)
+
+        if (uploadResponse.success) {
+          // Si la respuesta incluye imageUrl, usarla; si no, mantener la imagen actual
+          const data = uploadResponse.data as { imageUrl?: string; url?: string } | undefined
+          imageUrl = data?.imageUrl || data?.url || editImage
+          toast.success("Imagen subida exitosamente")
+        } else {
+          toast.error(uploadResponse.message || "Error al subir la imagen")
+          return
+        }
+      }
+
+      // 2. Luego actualizar los datos de la categoría
+      const categoryData = {
+        nombre: editCategoryName,
+        nombreVisible: editNombreVisible,
+        descripcion: editDescription,
+        imagen: imageUrl || "https://example.com/mock-image.jpg",
+      }
+
+      const success = await updateCategory(selectedCategory.id, categoryData)
+
+      if (success) {
+        toast.success("Categoría actualizada correctamente")
+
+        // Refrescar las categorías para obtener la imagen actualizada
+        await refreshCategories()
+
+        setEditCategoryName("")
+        setEditNombreVisible("")
+        setEditDescription("")
+        setEditImage("")
+        setSelectedImageFile(null)
+        setImagePreviewUrl("")
+        setHasExistingImage(false)
+        setSelectedCategory(null)
+        setIsEditDialogOpen(false)
+      } else {
+        toast.error("Error al actualizar la categoría")
+      }
+    } catch (error) {
+      console.error("Error al actualizar categoría:", error)
+      toast.error("Error inesperado al actualizar la categoría")
     }
   }
 
@@ -110,6 +169,10 @@ export default function CategoriasPage() {
     setEditNombreVisible("")
     setEditDescription("")
     setEditImage("")
+    setSelectedImageFile(null)
+    setImagePreviewUrl("")
+    setHasExistingImage(false)
+    setImageToDelete(false)
     setSelectedCategory(null)
     setIsEditDialogOpen(false)
   }
@@ -128,7 +191,54 @@ export default function CategoriasPage() {
     setEditNombreVisible(category.nombreVisible || "")
     setEditDescription(category.description || "")
     setEditImage(category.image || "")
+    setSelectedImageFile(null)
+    setImageToDelete(false)
+
+    // Verificar si tiene imagen existente y configurar preview
+    const hasImage = !!(category.image && category.image !== "https://example.com/mock-image.jpg")
+    setHasExistingImage(hasImage)
+    setImagePreviewUrl(hasImage && category.image ? category.image : "")
+
     setIsEditDialogOpen(true)
+  }
+
+  // Función para eliminar la imagen actual
+  const handleRemoveImage = () => {
+    setImageToDelete(true)
+    setImagePreviewUrl("")
+    setSelectedImageFile(null)
+    toast.info("Imagen marcada para eliminar")
+  }
+
+  // Función para manejar la selección de archivo de imagen
+  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      // Validar que sea una imagen
+      if (!file.type.startsWith('image/')) {
+        toast.error("Por favor selecciona un archivo de imagen válido")
+        return
+      }
+
+      // Validar tamaño máximo (5MB)
+      const maxSize = 5 * 1024 * 1024 // 5MB
+      if (file.size > maxSize) {
+        toast.error("La imagen no debe superar los 5MB")
+        return
+      }
+
+      setSelectedImageFile(file)
+      setImageToDelete(false) // Cancelar eliminación si se selecciona nueva imagen
+
+      // Crear URL de preview para la nueva imagen seleccionada
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setImagePreviewUrl(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+
+      toast.success(`Imagen "${file.name}" seleccionada`)
+    }
   }
 
   // Funciones para drag and drop
@@ -354,16 +464,59 @@ export default function CategoriasPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="edit-image">Imagen de la Categoría</Label>
+
+                {/* Preview de la imagen */}
+                {imagePreviewUrl && !imageToDelete && (
+                  <div className="relative w-full h-48 border rounded-lg overflow-hidden bg-muted">
+                    <img
+                      src={imagePreviewUrl}
+                      alt="Preview"
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute top-2 right-2 flex gap-2">
+                      <Badge variant={hasExistingImage && !selectedImageFile ? "secondary" : "default"}>
+                        {hasExistingImage && !selectedImageFile ? "Imagen actual" : "Nueva imagen"}
+                      </Badge>
+                      {hasExistingImage && !selectedImageFile && (
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="sm"
+                          onClick={handleRemoveImage}
+                          disabled={updatingCategoryData}
+                          className="cursor-pointer"
+                        >
+                          <X className="h-4 w-4 mr-1" />
+                          Eliminar
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Mensaje si se marcó para eliminar */}
+                {imageToDelete && (
+                  <div className="p-4 border rounded-lg bg-destructive/10 border-destructive/30">
+                    <p className="text-sm text-destructive font-medium">
+                      La imagen se eliminará al presionar "Actualizar Categoría"
+                    </p>
+                  </div>
+                )}
+
                 <div className="flex gap-2">
                   <Input
                     id="edit-image"
                     type="file"
                     accept="image/*"
                     disabled={updatingCategoryData}
+                    onChange={handleImageFileChange}
                   />
-                  <Button type="button" variant="outline" size="icon" disabled={updatingCategoryData}>
-                    <ImageIcon className="h-4 w-4" />
-                  </Button>
+                  {selectedImageFile && (
+                    <Badge variant="secondary" className="gap-1">
+                      <ImageIcon className="h-3 w-3" />
+                      {selectedImageFile.name}
+                    </Badge>
+                  )}
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Tamaño recomendado: 600x400px

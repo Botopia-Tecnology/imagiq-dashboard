@@ -118,55 +118,55 @@ const nodeTemplates = [
     type: 'trigger',
     category: 'Triggers',
     items: [
-      { id: 'abandoned_cart', label: 'Carrito Abandonado', icon: { type: 'lucide', name: 'ShoppingCart' }, color: 'bg-red-50 dark:bg-red-950/50 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800' },
-      { id: 'product_view', label: 'Ver Producto', icon: { type: 'lucide', name: 'Eye' }, color: 'bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800' },
-      { id: 'add_to_favorites', label: 'Agregar Favoritos', icon: { type: 'lucide', name: 'Heart' }, color: 'bg-pink-50 dark:bg-pink-950/50 text-pink-700 dark:text-pink-300 border-pink-200 dark:border-pink-800' },
-      { id: 'page_view', label: 'Ver Página', icon: { type: 'lucide', name: 'FileText' }, color: 'bg-green-50 dark:bg-green-950/50 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800' },
-      { id: 'user_registration', label: 'Registro', icon: { type: 'lucide', name: 'User' }, color: 'bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800' },
+      { id: 'abandoned_cart', label: 'Carrito Abandonado', icon: { type: 'lucide' as const, name: 'ShoppingCart' }, color: 'bg-red-50 dark:bg-red-950/50 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800' },
+      { id: 'product_view', label: 'Ver Producto', icon: { type: 'lucide' as const, name: 'Eye' }, color: 'bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800' },
+      { id: 'add_to_favorites', label: 'Agregar Favoritos', icon: { type: 'lucide' as const, name: 'Heart' }, color: 'bg-pink-50 dark:bg-pink-950/50 text-pink-700 dark:text-pink-300 border-pink-200 dark:border-pink-800' },
+      { id: 'page_view', label: 'Ver Página', icon: { type: 'lucide' as const, name: 'FileText' }, color: 'bg-green-50 dark:bg-green-950/50 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800' },
+      { id: 'user_registration', label: 'Registro', icon: { type: 'lucide' as const, name: 'User' }, color: 'bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800' },
     ]
   },
   {
     type: 'condition',
     category: 'Condiciones',
     items: [
-      { id: 'user_segment', label: 'Segmento Usuario', icon: { type: 'lucide', name: 'Target' }, color: 'bg-yellow-50 dark:bg-yellow-950/50 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800' },
-      { id: 'cart_value', label: 'Valor Carrito', icon: { type: 'lucide', name: 'DollarSign' }, color: 'bg-green-50 dark:bg-green-950/50 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800' },
-      { id: 'geographic_location', label: 'Ubicación', icon: { type: 'lucide', name: 'Globe' }, color: 'bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800' },
-      { id: 'device_type', label: 'Tipo Dispositivo', icon: { type: 'lucide', name: 'Smartphone' }, color: 'bg-gray-50 dark:bg-gray-950/50 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-800' },
+      { id: 'user_segment', label: 'Segmento Usuario', icon: { type: 'lucide' as const, name: 'Target' }, color: 'bg-yellow-50 dark:bg-yellow-950/50 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800' },
+      { id: 'cart_value', label: 'Valor Carrito', icon: { type: 'lucide' as const, name: 'DollarSign' }, color: 'bg-green-50 dark:bg-green-950/50 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800' },
+      { id: 'geographic_location', label: 'Ubicación', icon: { type: 'lucide' as const, name: 'Globe' }, color: 'bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800' },
+      { id: 'device_type', label: 'Tipo Dispositivo', icon: { type: 'lucide' as const, name: 'Smartphone' }, color: 'bg-gray-50 dark:bg-gray-950/50 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-800' },
     ]
   },
   {
     type: 'action',
     category: 'Acciones',
     items: [
-      { id: 'email', label: 'Email', icon: { type: 'brand', name: 'gmail' }, color: 'bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800' },
-      { id: 'sms', label: 'SMS', icon: { type: 'lucide', name: 'MessageSquare' }, color: 'bg-green-50 dark:bg-green-950/50 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800' },
-      { id: 'whatsapp', label: 'WhatsApp', icon: { type: 'brand', name: 'whatsapp' }, color: 'bg-green-50 dark:bg-green-950/50 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800' },
-      { id: 'inweb', label: 'In-Web', icon: { type: 'lucide', name: 'Monitor' }, color: 'bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800' },
+      { id: 'email', label: 'Email', icon: { type: 'brand' as const, name: 'gmail' }, color: 'bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800' },
+      { id: 'sms', label: 'SMS', icon: { type: 'lucide' as const, name: 'MessageSquare' }, color: 'bg-green-50 dark:bg-green-950/50 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800' },
+      { id: 'whatsapp', label: 'WhatsApp', icon: { type: 'brand' as const, name: 'whatsapp' }, color: 'bg-green-50 dark:bg-green-950/50 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800' },
+      { id: 'inweb', label: 'In-Web', icon: { type: 'lucide' as const, name: 'Monitor' }, color: 'bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800' },
     ]
   },
   {
     type: 'delay',
     category: 'Esperas',
     items: [
-      { id: 'time_delay', label: 'Esperar', icon: { type: 'lucide', name: 'Timer' }, color: 'bg-orange-50 dark:bg-orange-950/50 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-800' },
+      { id: 'time_delay', label: 'Esperar', icon: { type: 'lucide' as const, name: 'Timer' }, color: 'bg-orange-50 dark:bg-orange-950/50 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-800' },
     ]
   },
   {
     type: 'if',
     category: 'Lógica',
     items: [
-      { id: 'conditional', label: 'IF Condicional', icon: { type: 'lucide', name: 'GitBranch' }, color: 'bg-orange-50 dark:bg-orange-950/50 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-800' },
+      { id: 'conditional', label: 'IF Condicional', icon: { type: 'lucide' as const, name: 'GitBranch' }, color: 'bg-orange-50 dark:bg-orange-950/50 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-800' },
     ]
   },
   {
     type: 'wait',
     category: 'Esperas Avanzadas',
     items: [
-      { id: 'wait_time', label: 'Esperar Tiempo', icon: { type: 'lucide', name: 'Timer' }, color: 'bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800' },
-      { id: 'wait_event', label: 'Esperar Evento', icon: { type: 'lucide', name: 'ActivitySquare' }, color: 'bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800' },
-      { id: 'wait_condition', label: 'Esperar Condición', icon: { type: 'lucide', name: 'Refresh' }, color: 'bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800' },
-      { id: 'wait_webhook', label: 'Esperar Webhook', icon: { type: 'lucide', name: 'Link' }, color: 'bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800' },
+      { id: 'wait_time', label: 'Esperar Tiempo', icon: { type: 'lucide' as const, name: 'Timer' }, color: 'bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800' },
+      { id: 'wait_event', label: 'Esperar Evento', icon: { type: 'lucide' as const, name: 'ActivitySquare' }, color: 'bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800' },
+      { id: 'wait_condition', label: 'Esperar Condición', icon: { type: 'lucide' as const, name: 'Refresh' }, color: 'bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800' },
+      { id: 'wait_webhook', label: 'Esperar Webhook', icon: { type: 'lucide' as const, name: 'Link' }, color: 'bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800' },
     ]
   }
 ];
@@ -186,8 +186,8 @@ export function EventCampaignCanvas({
 }: EventCampaignCanvasProps) {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null);
-  const [nodes, setNodes, onNodesChange] = useNodesState(campaign?.nodes || []);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(campaign?.edges || []);
+  const [nodes, setNodes, onNodesChange] = useNodesState(campaign?.nodes || [] as any);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(campaign?.edges || [] as any);
   const [selectedNodeType, setSelectedNodeType] = useState<string | null>(null);
 
   // Handle new connections between nodes
@@ -396,7 +396,7 @@ export function EventCampaignCanvas({
               </div>
 
               <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" onClick={onPreview}>
+                <Button variant="outline" size="sm" onClick={() => onPreview && campaign && onPreview(campaign)}>
                   <Eye className="h-4 w-4 mr-2" />
                   Vista Previa
                 </Button>
@@ -449,7 +449,7 @@ export function EventCampaignCanvas({
           >
             <Controls />
             <MiniMap />
-            <Background variant="dots" gap={12} size={1} />
+            <Background variant={"dots" as any} gap={12} size={1} />
           </ReactFlow>
         </div>
       </div>
