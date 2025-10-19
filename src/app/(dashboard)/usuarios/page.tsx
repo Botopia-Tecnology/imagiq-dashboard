@@ -21,7 +21,7 @@ import { UsersDataTable } from "@/components/users/users-data-table";
 import { UserFormModal } from "@/components/users/user-form-modal";
 import { userColumns } from "@/components/users/user-columns";
 import { mockUsers, mockUserActivity, mockUserStats, rolePermissions } from "@/lib/mock-data/users";
-import { User, UserActivity } from "@/types/users";
+import { User, UserActivity, UserRole, Permission } from "@/types/users";
 import {
   Users,
   UserPlus,
@@ -51,7 +51,7 @@ export default function UsuariosPage() {
       email: userData.email,
       name: userData.name,
       role: userData.role,
-      permissions: userData.customPermissions || rolePermissions[userData.role],
+      permissions: userData.customPermissions || (rolePermissions as Record<UserRole, Permission[]>)[userData.role as UserRole],
       status: userData.status,
       department: userData.department,
       phoneNumber: userData.phoneNumber,
@@ -74,7 +74,7 @@ export default function UsuariosPage() {
       newUsersThisMonth: prev.newUsersThisMonth + 1,
       usersByRole: {
         ...prev.usersByRole,
-        [userData.role]: prev.usersByRole[userData.role] + 1
+        [userData.role as UserRole]: (prev.usersByRole as Record<UserRole, number>)[userData.role as UserRole] + 1
       }
     }));
   };
@@ -86,7 +86,7 @@ export default function UsuariosPage() {
       ...editingUser,
       name: userData.name,
       role: userData.role,
-      permissions: userData.customPermissions || rolePermissions[userData.role],
+      permissions: userData.customPermissions || (rolePermissions as Record<UserRole, Permission[]>)[userData.role as UserRole],
       status: userData.status,
       department: userData.department,
       phoneNumber: userData.phoneNumber,

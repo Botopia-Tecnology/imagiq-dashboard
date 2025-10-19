@@ -1,6 +1,6 @@
-import { Customer } from '@/types';
+import { CustomerSimple } from '@/types';
 
-export const mockCustomers: Customer[] = [
+export const mockCustomers: CustomerSimple[] = [
   {
     id: '1',
     name: 'María González',

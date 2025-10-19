@@ -111,7 +111,7 @@ const TriggerNode = memo(({ data, selected }: NodeProps<TriggerNodeData>) => {
                 onChange={(e) => setConfig({
                   ...config,
                   abandoned_cart: {
-                    ...config.abandoned_cart,
+                    timeThreshold: config.abandoned_cart?.timeThreshold || 30,
                     minCartValue: parseFloat(e.target.value) || undefined
                   }
                 })}
@@ -185,7 +185,7 @@ const TriggerNode = memo(({ data, selected }: NodeProps<TriggerNodeData>) => {
                 onChange={(e) => setConfig({
                   ...config,
                   page_view: {
-                    ...config.page_view,
+                    pageUrls: config.page_view?.pageUrls || [],
                     timeOnPage: parseInt(e.target.value) || undefined
                   }
                 })}

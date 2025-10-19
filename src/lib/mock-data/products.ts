@@ -1,6 +1,6 @@
 import { Product } from '@/types';
 
-export const mockProducts: Product[] = [
+export const mockProducts = [
   {
     id: '1',
     name: 'iPhone 15 Pro Max',
@@ -10,8 +10,6 @@ export const mockProducts: Product[] = [
     category: 'Smartphones',
     status: 'active',
     image: 'https://images.unsplash.com/photo-1592899677977-9c10ca588bbd?w=300&h=300&fit=crop',
-    createdAt: new Date('2024-01-15'),
-    updatedAt: new Date('2024-09-20'),
   },
   {
     id: '2',
@@ -22,8 +20,6 @@ export const mockProducts: Product[] = [
     category: 'Smartphones',
     status: 'active',
     image: 'https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=300&h=300&fit=crop',
-    createdAt: new Date('2024-02-10'),
-    updatedAt: new Date('2024-09-18'),
   },
   {
     id: '3',
@@ -34,8 +30,6 @@ export const mockProducts: Product[] = [
     category: 'Laptops',
     status: 'active',
     image: 'https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=300&h=300&fit=crop',
-    createdAt: new Date('2024-01-20'),
-    updatedAt: new Date('2024-09-15'),
   },
   {
     id: '4',
@@ -46,8 +40,6 @@ export const mockProducts: Product[] = [
     category: 'Audio',
     status: 'active',
     image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=300&h=300&fit=crop',
-    createdAt: new Date('2024-03-05'),
-    updatedAt: new Date('2024-09-10'),
   },
   {
     id: '5',
@@ -58,8 +50,6 @@ export const mockProducts: Product[] = [
     category: 'Tablets',
     status: 'active',
     image: 'https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=300&h=300&fit=crop',
-    createdAt: new Date('2024-02-28'),
-    updatedAt: new Date('2024-09-12'),
   },
   {
     id: '6',
@@ -70,8 +60,6 @@ export const mockProducts: Product[] = [
     category: 'Gaming',
     status: 'active',
     image: 'https://images.unsplash.com/photo-1606144042614-b2417e99c4e3?w=300&h=300&fit=crop',
-    createdAt: new Date('2024-01-30'),
-    updatedAt: new Date('2024-09-08'),
   },
   {
     id: '7',
@@ -82,8 +70,6 @@ export const mockProducts: Product[] = [
     category: 'Laptops',
     status: 'active',
     image: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=300&h=300&fit=crop',
-    createdAt: new Date('2024-03-12'),
-    updatedAt: new Date('2024-09-14'),
   },
   {
     id: '8',
@@ -94,8 +80,6 @@ export const mockProducts: Product[] = [
     category: 'Audio',
     status: 'active',
     image: 'https://images.unsplash.com/photo-1600294037681-c80b4cb5b434?w=300&h=300&fit=crop',
-    createdAt: new Date('2024-02-18'),
-    updatedAt: new Date('2024-09-16'),
   },
   {
     id: '9',
@@ -106,8 +90,6 @@ export const mockProducts: Product[] = [
     category: 'Monitores',
     status: 'active',
     image: 'https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=300&h=300&fit=crop',
-    createdAt: new Date('2024-01-25'),
-    updatedAt: new Date('2024-09-11'),
   },
   {
     id: '10',
@@ -118,8 +100,6 @@ export const mockProducts: Product[] = [
     category: 'Cámaras',
     status: 'active',
     image: 'https://images.unsplash.com/photo-1502920917128-1aa500764cbd?w=300&h=300&fit=crop',
-    createdAt: new Date('2024-03-01'),
-    updatedAt: new Date('2024-09-13'),
   },
   {
     id: '11',
@@ -130,8 +110,6 @@ export const mockProducts: Product[] = [
     category: 'Accesorios',
     status: 'inactive',
     image: 'https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=300&h=300&fit=crop',
-    createdAt: new Date('2024-02-15'),
-    updatedAt: new Date('2024-09-09'),
   },
   {
     id: '12',
@@ -142,7 +120,5 @@ export const mockProducts: Product[] = [
     category: 'Tablets',
     status: 'active',
     image: 'https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=300&h=300&fit=crop',
-    createdAt: new Date('2024-01-18'),
-    updatedAt: new Date('2024-09-17'),
   },
 ];
