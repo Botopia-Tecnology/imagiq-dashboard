@@ -95,6 +95,19 @@ export function EditImagesModal({
   const handlePreviewImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
+      // Validar que sea una imagen
+      if (!file.type.startsWith('image/')) {
+        toast.error("Solo se permiten archivos de imagen para la preview")
+        return
+      }
+
+      // Validar tamaño máximo (10MB)
+      const maxSize = 10 * 1024 * 1024 // 10MB
+      if (file.size > maxSize) {
+        toast.error("La imagen preview no puede ser mayor a 10MB")
+        return
+      }
+
       setPreviewImageFile(file)
       const reader = new FileReader()
       reader.onloadend = () => {
@@ -104,10 +117,33 @@ export function EditImagesModal({
     }
   }
 
+  const handleDeletePreview = () => {
+    // Solo eliminar del estado local, no del backend todavía
+    setPreviewImage(null)
+    setPreviewImageFile(null)
+    toast.info("La imagen preview se eliminará al guardar los cambios")
+  }
+
   const handleDetailImagesUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     if (files) {
       const filesArray = Array.from(files)
+      
+      // Validar que todos sean imágenes
+      const invalidFiles = filesArray.filter(file => !file.type.startsWith('image/'))
+      if (invalidFiles.length > 0) {
+        toast.error("Solo se permiten archivos de imagen para las imágenes de detalle")
+        return
+      }
+
+      // Validar tamaño máximo (10MB por imagen)
+      const maxSize = 10 * 1024 * 1024 // 10MB
+      const oversizedFiles = filesArray.filter(file => file.size > maxSize)
+      if (oversizedFiles.length > 0) {
+        toast.error(`Algunas imágenes exceden el tamaño máximo de 10MB`)
+        return
+      }
+
       // Agregar archivos directamente al array de imágenes de detalle
       setDetailImages((prev) => [...prev, ...filesArray])
     }
@@ -189,6 +225,28 @@ export function EditImagesModal({
       let uploadErrors = false
 
       // 1. Manejar imagen preview
+      // Si había una imagen preview original pero ahora está null, eliminarla del backend
+      if (originalPreviewUrl && !previewImage && !previewImageFile) {
+        toast.info("Eliminando imagen preview...")
+        const deleteResponse = await fetch(`/api/products/${product.id}/media/preview`, {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ sku: selectedColor.sku }),
+        })
+
+        const deleteData = await deleteResponse.json()
+
+        if (!deleteResponse.ok || !deleteData.success) {
+          toast.error(deleteData.message || "Error al eliminar imagen preview")
+          uploadErrors = true
+        } else {
+          toast.success("Imagen preview eliminada")
+        }
+      }
+
+      // Si hay una nueva imagen preview, subirla
       if (previewImageFile) {
         toast.info("Actualizando imagen preview...")
         const response = await productEndpoints.updateImageAtPosition(
@@ -205,7 +263,39 @@ export function EditImagesModal({
         }
       }
 
-      // 2. Procesar imágenes de detalle manteniendo el orden
+      // 2. Eliminar imágenes de detalle que fueron removidas
+      const imagenesEliminadas: number[] = []
+      
+      // Identificar qué imágenes de detalle fueron eliminadas
+      originalDetailUrls.forEach((originalUrl, index) => {
+        // Verificar si esta URL original todavía existe en detailImages
+        const stillExists = detailImages.some(img => 
+          typeof img === 'string' && img === originalUrl
+        )
+        
+        if (!stillExists) {
+          // Esta imagen fue eliminada, agregar su número de posición
+          imagenesEliminadas.push(index + 2) // +2 porque posición 1 es preview
+        }
+      })
+
+      // Eliminar las imágenes de detalle del backend si hay alguna
+      if (imagenesEliminadas.length > 0) {
+        toast.info(`Eliminando ${imagenesEliminadas.length} imagen(es) de detalle...`)
+        const deleteResponse = await productEndpoints.deleteDetailImages(
+          selectedColor.sku,
+          imagenesEliminadas
+        )
+
+        if (!deleteResponse.success) {
+          toast.error(deleteResponse.message || "Error al eliminar imágenes de detalle")
+          uploadErrors = true
+        } else {
+          toast.success(`${imagenesEliminadas.length} imagen(es) de detalle eliminada(s)`)
+        }
+      }
+
+      // 3. Procesar imágenes de detalle manteniendo el orden
       // Primero, subir TODAS las imágenes nuevas (Files)
       const uploadedUrlsMap = new Map<number, string>() // índice -> URL subida
 
@@ -299,7 +389,7 @@ export function EditImagesModal({
         }
       }
 
-      // 3. SIEMPRE reordenar si hay imágenes nuevas o cambió el orden
+      // 4. SIEMPRE reordenar si hay imágenes nuevas o cambió el orden
       const hasNewImages = newFilesWithIndex.length > 0
       const orderChanged = JSON.stringify(finalImageUrls.slice(1)) !== JSON.stringify(originalDetailUrls)
 
@@ -315,7 +405,7 @@ export function EditImagesModal({
         }
       }
 
-      // 4. Resultado final
+      // 5. Resultado final
       if (!uploadErrors) {
         toast.success("Multimedia actualizada correctamente")
         onClose()
@@ -366,7 +456,10 @@ export function EditImagesModal({
           <TabsContent value="images" className="space-y-6 py-4">
           {/* Imagen Preview */}
           <div className="space-y-3">
-            <Label>Imagen Preview</Label>
+            <div className="flex items-center justify-between">
+              <Label>Imagen Preview</Label>
+              <span className="text-xs text-muted-foreground">Solo una imagen</span>
+            </div>
             {currentPreview ? (
               <div className="space-y-3">
                 <div className="relative w-full h-64 rounded-lg border overflow-hidden bg-muted">
@@ -379,10 +472,7 @@ export function EditImagesModal({
                 </div>
                 <Button
                   variant="outline"
-                  onClick={() => {
-                    setPreviewImage(null)
-                    setPreviewImageFile(null)
-                  }}
+                  onClick={handleDeletePreview}
                   className="w-full"
                 >
                   <Trash2 className="h-4 w-4 mr-2" />
@@ -390,7 +480,7 @@ export function EditImagesModal({
                 </Button>
               </div>
             ) : (
-              <div>
+              <div className="space-y-3">
                 <input
                   type="file"
                   id="preview-upload"
@@ -406,13 +496,19 @@ export function EditImagesModal({
                   <Upload className="h-4 w-4 mr-2" />
                   Subir imagen preview
                 </Button>
+                <p className="text-xs text-muted-foreground text-center">
+                  La imagen preview es la imagen principal del producto que se muestra en listados y vistas generales
+                </p>
               </div>
             )}
           </div>
 
           {/* Imágenes de Detalle */}
           <div className="space-y-3">
-            <Label>Imágenes de Detalle</Label>
+            <div className="flex items-center justify-between">
+              <Label>Imágenes de Detalle</Label>
+              <span className="text-xs text-muted-foreground">Múltiples imágenes</span>
+            </div>
 
             {/* Grid de imágenes */}
             {currentDetails.length > 0 && (
@@ -469,7 +565,7 @@ export function EditImagesModal({
             )}
 
             {/* Botón para agregar más imágenes */}
-            <div>
+            <div className="space-y-3">
               <input
                 type="file"
                 id="details-upload"
@@ -486,6 +582,9 @@ export function EditImagesModal({
                 <Upload className="h-4 w-4 mr-2" />
                 Agregar imágenes de detalle
               </Button>
+              <p className="text-xs text-muted-foreground text-center">
+                Las imágenes de detalle se muestran en la vista completa del producto. Puedes agregar múltiples imágenes y reordenarlas arrastrándolas.
+              </p>
             </div>
           </div>
           </TabsContent>
