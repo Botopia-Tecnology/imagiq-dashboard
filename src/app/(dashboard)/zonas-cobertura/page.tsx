@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import dynamic from "next/dynamic"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -9,7 +9,8 @@ import { Input } from "@/components/ui/input"
 import { CitySelector } from "@/components/coverage-zones/city-selector"
 import { cities, coverageZones as initialZones } from "@/lib/mock-data/coverage-zones"
 import type { CoverageZone } from "@/types/coverage-zones"
-import { MapPin, Pencil, Trash2, Check, X } from "lucide-react"
+import { MapPin, Pencil, Trash2, Check, X, RefreshCw, Cloud, CloudOff } from "lucide-react"
+import { useCoverageZones } from "@/hooks/use-coverage-zones"
 
 // Dynamic import to avoid SSR issues with Leaflet
 const MapViewer = dynamic(
@@ -19,9 +20,40 @@ const MapViewer = dynamic(
 
 export default function ZonasCoberturaPage() {
   const [selectedCityId, setSelectedCityId] = useState<string>(cities[0].id)
-  const [zones, setZones] = useState<CoverageZone[]>(initialZones)
   const [editingZoneId, setEditingZoneId] = useState<string | null>(null)
   const [editingName, setEditingName] = useState<string>("")
+  const [useOnlineMode, setUseOnlineMode] = useState<boolean>(true)
+
+  // Hook para API con modo offline fallback
+  const {
+    zones: apiZones,
+    isLoading,
+    error,
+    createZone: createZoneAPI,
+    updateZone: updateZoneAPI,
+    deleteZone: deleteZoneAPI,
+    refreshZones,
+    addZoneLocally,
+    updateZoneLocally,
+    deleteZoneLocally,
+  } = useCoverageZones({
+    cityId: selectedCityId,
+    autoFetch: useOnlineMode,
+  })
+
+  // Modo offline: usar datos mock
+  const [offlineZones, setOfflineZones] = useState<CoverageZone[]>(initialZones)
+
+  // Seleccionar fuente de datos según modo
+  const zones = useOnlineMode && !error ? apiZones : offlineZones
+
+  // Detectar si el backend está disponible
+  useEffect(() => {
+    if (error && error.status === 0) {
+      // Network error = backend no disponible
+      setUseOnlineMode(false)
+    }
+  }, [error])
 
   const selectedCity = useMemo(
     () => cities.find((city) => city.id === selectedCityId),
@@ -33,7 +65,7 @@ export default function ZonasCoberturaPage() {
     [zones, selectedCityId]
   )
 
-  const handleZoneCreated = (newZone: Partial<CoverageZone>) => {
+  const handleZoneCreated = async (newZone: Partial<CoverageZone>) => {
     const zone: CoverageZone = {
       id: `zone-${Date.now()}`,
       cityId: selectedCityId,
@@ -47,19 +79,36 @@ export default function ZonasCoberturaPage() {
       isActive: true,
     }
 
-    setZones((prev) => [...prev, zone])
+    if (useOnlineMode && !error) {
+      // Modo online: enviar al backend
+      await createZoneAPI(zone)
+    } else {
+      // Modo offline: guardar localmente
+      setOfflineZones((prev) => [...prev, zone])
+    }
   }
 
-  const handleToggleZone = (zoneId: string) => {
-    setZones((prev) =>
-      prev.map((zone) =>
-        zone.id === zoneId ? { ...zone, isActive: !zone.isActive } : zone
+  const handleToggleZone = async (zoneId: string) => {
+    const zone = zones.find((z) => z.id === zoneId)
+    if (!zone) return
+
+    const updates = { isActive: !zone.isActive }
+
+    if (useOnlineMode && !error) {
+      await updateZoneAPI(zoneId, updates)
+    } else {
+      setOfflineZones((prev) =>
+        prev.map((zone) => (zone.id === zoneId ? { ...zone, ...updates } : zone))
       )
-    )
+    }
   }
 
-  const handleDeleteZone = (zoneId: string) => {
-    setZones((prev) => prev.filter((zone) => zone.id !== zoneId))
+  const handleDeleteZone = async (zoneId: string) => {
+    if (useOnlineMode && !error) {
+      await deleteZoneAPI(zoneId)
+    } else {
+      setOfflineZones((prev) => prev.filter((zone) => zone.id !== zoneId))
+    }
   }
 
   const handleStartEdit = (zone: CoverageZone) => {
@@ -67,13 +116,19 @@ export default function ZonasCoberturaPage() {
     setEditingName(zone.name)
   }
 
-  const handleSaveEdit = (zoneId: string) => {
+  const handleSaveEdit = async (zoneId: string) => {
     if (editingName.trim()) {
-      setZones((prev) =>
-        prev.map((zone) =>
-          zone.id === zoneId ? { ...zone, name: editingName.trim(), updatedAt: new Date() } : zone
+      const updates = { name: editingName.trim() }
+
+      if (useOnlineMode && !error) {
+        await updateZoneAPI(zoneId, updates)
+      } else {
+        setOfflineZones((prev) =>
+          prev.map((zone) =>
+            zone.id === zoneId ? { ...zone, ...updates, updatedAt: new Date() } : zone
+          )
         )
-      )
+      }
     }
     setEditingZoneId(null)
     setEditingName("")
@@ -84,20 +139,61 @@ export default function ZonasCoberturaPage() {
     setEditingName("")
   }
 
+  const handleColorChange = async (zoneId: string, color: string) => {
+    const updates = { color }
+
+    if (useOnlineMode && !error) {
+      await updateZoneAPI(zoneId, updates)
+    } else {
+      setOfflineZones((prev) =>
+        prev.map((zone) =>
+          zone.id === zoneId ? { ...zone, ...updates, updatedAt: new Date() } : zone
+        )
+      )
+    }
+  }
+
   return (
     <div className="flex flex-col gap-3 h-full">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Zonas de Cobertura</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-bold tracking-tight">Zonas de Cobertura</h1>
+            {!useOnlineMode ? (
+              <Badge variant="outline" className="flex items-center gap-1">
+                <CloudOff className="h-3 w-3" />
+                Modo Offline
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="flex items-center gap-1 text-green-600">
+                <Cloud className="h-3 w-3" />
+                Conectado
+              </Badge>
+            )}
+          </div>
           <p className="text-muted-foreground">
             Configura las zonas de entrega para cada ciudad
+            {!useOnlineMode && " (trabajando con datos locales)"}
           </p>
         </div>
-        <CitySelector
-          cities={cities}
-          selectedCityId={selectedCityId}
-          onCityChange={setSelectedCityId}
-        />
+        <div className="flex items-center gap-2">
+          {useOnlineMode && (
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => refreshZones()}
+              disabled={isLoading}
+              title="Refrescar zonas"
+            >
+              <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
+            </Button>
+          )}
+          <CitySelector
+            cities={cities}
+            selectedCityId={selectedCityId}
+            onCityChange={setSelectedCityId}
+          />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 flex-1 min-h-0">
@@ -149,10 +245,19 @@ export default function ZonasCoberturaPage() {
                     className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent/50 transition-colors"
                   >
                     <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <div
-                        className="w-4 h-4 rounded-sm flex-shrink-0"
-                        style={{ backgroundColor: zone.color }}
-                      />
+                      <div className="relative group flex-shrink-0">
+                        <div
+                          className="w-4 h-4 rounded-sm cursor-pointer"
+                          style={{ backgroundColor: zone.color }}
+                        />
+                        <input
+                          type="color"
+                          value={zone.color || "#3b82f6"}
+                          onChange={(e) => handleColorChange(zone.id, e.target.value)}
+                          className="absolute inset-0 w-4 h-4 opacity-0 cursor-pointer"
+                          title="Cambiar color"
+                        />
+                      </div>
                       <div className="flex-1 min-w-0">
                         {editingZoneId === zone.id ? (
                           <div className="flex items-center gap-2">
