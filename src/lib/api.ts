@@ -268,6 +268,28 @@ export const productEndpoints = {
       }
     );
   },
+
+  // Eliminar una o varias imágenes de detalle
+  deleteDetailImages: (sku: string, numeros: number[]) => {
+    return fetch(`${API_BASE_URL}/api/multimedia/producto/${sku}/imagenes-detalle`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ numeros }),
+    }).then(async (response) => {
+      const data = await response.json();
+      return {
+        data,
+        success: response.ok,
+        message: typeof data?.message === 'string' ? data.message : (data?.error || "Error desconocido"),
+      };
+    }).catch((error) => ({
+      data: {},
+      success: false,
+      message: error instanceof Error ? error.message : "Request failed",
+    }));
+  },
 };
 
 // Product filter parameters interface
