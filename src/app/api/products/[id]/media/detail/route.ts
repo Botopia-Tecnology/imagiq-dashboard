@@ -9,10 +9,10 @@ import { NextRequest, NextResponse } from "next/server";
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id: codigoMarketBase } = params;
+    const { id: codigoMarketBase } = await params;
     const body = await request.json();
     const { sku, numeros } = body;
 
