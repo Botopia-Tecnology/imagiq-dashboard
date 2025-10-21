@@ -55,7 +55,7 @@ export interface ProductCardProps {
   brand?: string;
   model?: string;
   category?: string;
-  subcategory?: string;
+  menu?: string;
   capacity?: string | null;
   stock?: number;
   sku?: string | null;
@@ -68,7 +68,7 @@ export interface ProductCardProps {
 
 export interface ProductFilters {
   category?: string;
-  subcategory?: string;
+  menu?: string;
   precioMin?: number;
   precioMax?: number;
   color?: string;
@@ -134,7 +134,7 @@ export const useProducts = (
 
       // Aplicar filtros específicos (pueden sobrescribir el precioMin por defecto)
       if (filters.category) params.categoria = filters.category;
-      if (filters.subcategory) params.subcategoria = filters.subcategory;
+      if (filters.menu) params.menu = filters.menu;
 
       // Manejar filtros de precio usando precioMin/precioMax
       if (filters.precioMin !== undefined) {
