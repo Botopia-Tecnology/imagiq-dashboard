@@ -36,10 +36,12 @@ export function UserProfile() {
       .slice(0, 2);
   };
 
-  const getRoleColor = (role?: string) => {
+  const getRoleColor = (role?: string | number | null) => {
     if (!role) return 'text-gray-600 dark:text-gray-400';
 
-    switch (role.toLowerCase()) {
+    const roleStr = String(role).toLowerCase();
+
+    switch (roleStr) {
       case 'admin':
         return 'text-red-600 dark:text-red-400';
       case 'user':
