@@ -25,7 +25,9 @@ export function UserProfile() {
     router.push('/login');
   };
 
-  const getInitials = (name: string) => {
+  const getInitials = (name?: string) => {
+    if (!name) return 'U';
+
     return name
       .split(' ')
       .map(word => word.charAt(0))
@@ -34,7 +36,9 @@ export function UserProfile() {
       .slice(0, 2);
   };
 
-  const getRoleColor = (role: string) => {
+  const getRoleColor = (role?: string) => {
+    if (!role) return 'text-gray-600 dark:text-gray-400';
+
     switch (role.toLowerCase()) {
       case 'admin':
         return 'text-red-600 dark:text-red-400';
@@ -59,16 +63,18 @@ export function UserProfile() {
       <DropdownMenuContent className="w-56" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{user.name}</p>
+            <p className="text-sm font-medium leading-none">{user.name || 'Usuario'}</p>
             <p className="text-xs leading-none text-muted-foreground">
-              {user.email}
+              {user.email || 'Sin email'}
             </p>
-            <div className="flex items-center gap-1 mt-1">
-              <Shield className="h-3 w-3" />
-              <span className={`text-xs font-medium ${getRoleColor(user.role)}`}>
-                {user.role}
-              </span>
-            </div>
+            {user.role && (
+              <div className="flex items-center gap-1 mt-1">
+                <Shield className="h-3 w-3" />
+                <span className={`text-xs font-medium ${getRoleColor(user.role)}`}>
+                  {user.role}
+                </span>
+              </div>
+            )}
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
