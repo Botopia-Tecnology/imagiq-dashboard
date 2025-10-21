@@ -5,10 +5,11 @@ import dynamic from "next/dynamic"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
 import { CitySelector } from "@/components/coverage-zones/city-selector"
 import { cities, coverageZones as initialZones } from "@/lib/mock-data/coverage-zones"
 import type { CoverageZone } from "@/types/coverage-zones"
-import { MapPin, Plus, Trash2 } from "lucide-react"
+import { MapPin, Pencil, Trash2, Check, X } from "lucide-react"
 
 // Dynamic import to avoid SSR issues with Leaflet
 const MapViewer = dynamic(
@@ -19,6 +20,8 @@ const MapViewer = dynamic(
 export default function ZonasCoberturaPage() {
   const [selectedCityId, setSelectedCityId] = useState<string>(cities[0].id)
   const [zones, setZones] = useState<CoverageZone[]>(initialZones)
+  const [editingZoneId, setEditingZoneId] = useState<string | null>(null)
+  const [editingName, setEditingName] = useState<string>("")
 
   const selectedCity = useMemo(
     () => cities.find((city) => city.id === selectedCityId),
@@ -57,6 +60,28 @@ export default function ZonasCoberturaPage() {
 
   const handleDeleteZone = (zoneId: string) => {
     setZones((prev) => prev.filter((zone) => zone.id !== zoneId))
+  }
+
+  const handleStartEdit = (zone: CoverageZone) => {
+    setEditingZoneId(zone.id)
+    setEditingName(zone.name)
+  }
+
+  const handleSaveEdit = (zoneId: string) => {
+    if (editingName.trim()) {
+      setZones((prev) =>
+        prev.map((zone) =>
+          zone.id === zoneId ? { ...zone, name: editingName.trim(), updatedAt: new Date() } : zone
+        )
+      )
+    }
+    setEditingZoneId(null)
+    setEditingName("")
+  }
+
+  const handleCancelEdit = () => {
+    setEditingZoneId(null)
+    setEditingName("")
   }
 
   return (
@@ -129,38 +154,83 @@ export default function ZonasCoberturaPage() {
                         style={{ backgroundColor: zone.color }}
                       />
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm truncate">{zone.name}</p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <Badge variant="secondary" className="text-xs">
-                            {zone.type}
-                          </Badge>
-                          <Badge
-                            variant={zone.isActive ? "default" : "outline"}
-                            className="text-xs"
-                          >
-                            {zone.isActive ? "Activa" : "Inactiva"}
-                          </Badge>
-                        </div>
+                        {editingZoneId === zone.id ? (
+                          <div className="flex items-center gap-2">
+                            <Input
+                              value={editingName}
+                              onChange={(e) => setEditingName(e.target.value)}
+                              className="h-7 text-sm"
+                              autoFocus
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") handleSaveEdit(zone.id)
+                                if (e.key === "Escape") handleCancelEdit()
+                              }}
+                            />
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 flex-shrink-0"
+                              onClick={() => handleSaveEdit(zone.id)}
+                            >
+                              <Check className="h-4 w-4 text-green-600" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 flex-shrink-0"
+                              onClick={handleCancelEdit}
+                            >
+                              <X className="h-4 w-4 text-red-600" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium text-sm truncate">{zone.name}</p>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 flex-shrink-0"
+                                onClick={() => handleStartEdit(zone)}
+                              >
+                                <Pencil className="h-3 w-3" />
+                              </Button>
+                            </div>
+                            <div className="flex items-center gap-2 mt-1">
+                              <Badge variant="secondary" className="text-xs">
+                                {zone.type}
+                              </Badge>
+                              <Badge
+                                variant={zone.isActive ? "default" : "outline"}
+                                className="text-xs"
+                              >
+                                {zone.isActive ? "Activa" : "Inactiva"}
+                              </Badge>
+                            </div>
+                          </>
+                        )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-1 flex-shrink-0">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => handleToggleZone(zone.id)}
-                      >
-                        <MapPin className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-destructive"
-                        onClick={() => handleDeleteZone(zone.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
+                    {editingZoneId !== zone.id && (
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => handleToggleZone(zone.id)}
+                        >
+                          <MapPin className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive"
+                          onClick={() => handleDeleteZone(zone.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

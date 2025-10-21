@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useState } from "react"
 import { MapContainer, TileLayer, Polygon, Circle, Rectangle, useMap } from "react-leaflet"
 import { FeatureGroup } from "react-leaflet"
 import { EditControl } from "react-leaflet-draw-next"
@@ -29,7 +29,7 @@ function MapController({ center, zoom }: { center: LatLngExpression; zoom: numbe
 }
 
 export function MapViewer({ center, zoom, zones, onZoneCreated, onZoneEdited, onZoneDeleted }: MapViewerProps) {
-  const featureGroupRef = useRef<L.FeatureGroup>(null)
+  const [featureGroup, setFeatureGroup] = useState<L.FeatureGroup | null>(null)
 
   const handleCreated = (e: any) => {
     const { layerType, layer } = e
@@ -46,8 +46,8 @@ export function MapViewer({ center, zoom, zones, onZoneCreated, onZoneEdited, on
     onZoneCreated?.(newZone)
 
     // Remove the drawn layer as we'll render it from state
-    if (featureGroupRef.current) {
-      featureGroupRef.current.removeLayer(layer)
+    if (featureGroup) {
+      featureGroup.removeLayer(layer)
     }
   }
 
@@ -82,24 +82,27 @@ export function MapViewer({ center, zoom, zones, onZoneCreated, onZoneEdited, on
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-        <FeatureGroup ref={featureGroupRef}>
-          <EditControl
-            position="topright"
-            onCreated={handleCreated}
-            onEdited={handleEdited}
-            onDeleted={handleDeleted}
-            draw={{
-              rectangle: true,
-              circle: true,
-              circlemarker: false,
-              marker: false,
-              polyline: false,
-              polygon: {
-                allowIntersection: false,
-                showArea: true,
-              },
-            }}
-          />
+        <FeatureGroup ref={setFeatureGroup}>
+          {featureGroup && (
+            <EditControl
+              position="topright"
+              onCreated={handleCreated}
+              onEdited={handleEdited}
+              onDeleted={handleDeleted}
+              featureGroup={featureGroup}
+              draw={{
+                rectangle: true,
+                circle: true,
+                circlemarker: false,
+                marker: false,
+                polyline: false,
+                polygon: {
+                  allowIntersection: false,
+                  showArea: true,
+                },
+              }}
+            />
+          )}
         </FeatureGroup>
 
         {zones.map((zone) => {
