@@ -362,7 +362,7 @@ export default function CategoriasPage() {
             Categorías del Sitio Web
           </h1>
           <p className="text-sm text-muted-foreground">
-            Gestiona las categorías y subcategorías visibles en tu tienda
+            Gestiona las categorías y menús visibles en tu tienda
           </p>
         </div>
         <div className="flex gap-2">
@@ -561,7 +561,7 @@ export default function CategoriasPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {websiteCategories.reduce((acc, cat) => acc + cat.subcategories.length, 0)}
+              {websiteCategories.reduce((acc, cat) => acc + cat.menus.length, 0)}
             </div>
             <p className="text-xs text-muted-foreground">
               En todas las categorías
@@ -658,15 +658,15 @@ export default function CategoriasPage() {
                             size="sm"
                             className="cursor-pointer hover:bg-primary/10 hover:border-primary/20 transition-colors"
                             onClick={() => {
-                              router.push(`/pagina-web/categorias/${category.id}/subcategorias`)
+                              router.push(`/pagina-web/categorias/${category.id}/menus`)
                             }}
                           >
                             <Settings className="h-3 w-3 mr-1" />
-                            {category.subcategories.length} {category.subcategories.length === 1 ? 'subcategoría' : 'subcategorías'}
+                            {category.menus.length} {category.menus.length === 1 ? 'menú' : 'menús'}
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p>Configurar subcategorías de {category.name}</p>
+                          <p>Configurar menús de {category.name}</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>

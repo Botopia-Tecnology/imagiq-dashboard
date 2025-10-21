@@ -8,7 +8,7 @@
  * - TypeScript interfaces para requests/responses
  */
 
-import { BackendCategory, BackendSubcategory, CreateCategoryRequest, UpdateCategoryRequest, CreateSubcategoryRequest, UpdateSubcategoryRequest } from "@/types";
+import { BackendCategory, BackendMenu, CreateCategoryRequest, UpdateCategoryRequest, CreateMenuRequest, UpdateMenuRequest } from "@/types";
 
 // API Client configuration
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
@@ -174,9 +174,9 @@ export const productEndpoints = {
     apiClient.get<ProductApiResponse>(
       `/api/products/filtered?categoria=${category}`
     ),
-  getBySubcategory: (subcategory: string) =>
+  getByMenu: (menu: string) =>
     apiClient.get<ProductApiResponse>(
-      `/api/products/filtered?subcategoria=${subcategory}`
+      `/api/products/filtered?menu=${menu}`
     ),
   getByCodigoMarket: (codigoMarket: string) =>
     apiClient.get<ProductApiResponse>(
@@ -295,7 +295,7 @@ export const productEndpoints = {
 // Product filter parameters interface
 export interface ProductFilterParams {
   categoria?: string;
-  subcategoria?: string;
+  menu?: string;
   precioMin?: number;
   precioMax?: number;
   conDescuento?: boolean;
@@ -335,7 +335,7 @@ export interface ProductApiData {
   codigoMarket?: string[];
   nombreMarket: string;
   categoria: string;
-  subcategoria: string;
+  menu: string;
   modelo: string;
   color?: string[];
   capacidad?: string[];
@@ -400,40 +400,40 @@ export const categoryEndpoints = {
     apiClient.put<{ success: boolean; message?: string }>("/api/categorias/visibles/order", { categoryIds }),
 };
 
-// Subcategories API endpoints
-export const subcategoryEndpoints = {
-  // GET /api/categorias/visibles/:categoryId/subcategorias
+// Menus API endpoints
+export const menuEndpoints = {
+  // GET /api/categorias/visibles/:categoryId/menus
   getByCategory: (categoryId: string) =>
-    apiClient.get<BackendSubcategory[]>(`/api/categorias/visibles/${categoryId}/subcategorias`),
-  // GET /api/categorias/distinct/subcategorias?categoria=CATEGORIA_NAME
+    apiClient.get<BackendMenu[]>(`/api/categorias/visibles/${categoryId}/menus`),
+  // GET /api/categorias/distinct/menus?categoria=CATEGORIA_NAME
   getDistinct: (categoryName: string) =>
-    apiClient.get<string[]>(`/api/categorias/distinct/subcategorias?categoria=${encodeURIComponent(categoryName)}`),
-  // POST /api/subcategorias/visibles
-  create: (data: CreateSubcategoryRequest & { categoriasVisiblesId: string }) =>
-    apiClient.post<BackendSubcategory>(`/api/subcategorias/visibles`, data),
-  // PATCH /api/subcategorias/visibles/:subcategoryId
-  update: (subcategoryId: string, data: UpdateSubcategoryRequest) =>
-    apiClient.patch<BackendSubcategory>(`/api/subcategorias/visibles/${subcategoryId}`, data),
-  // PATCH /api/subcategorias/visibles/:subcategoryId/activo
-  updateActiveStatus: (subcategoryId: string, activo: boolean) =>
-    apiClient.patch<{ success: boolean; message?: string }>(`/api/subcategorias/visibles/${subcategoryId}/activo`, { activo }),
-  // DELETE /api/subcategorias/visibles/:subcategoryId
-  delete: (subcategoryId: string) =>
-    apiClient.delete<{ success: boolean; message?: string }>(`/api/subcategorias/visibles/${subcategoryId}`),
-  // PUT /api/subcategorias/visibles/order
-  updateOrder: (subcategoryIds: string[]) =>
-    apiClient.put<{ success: boolean; message?: string }>("/api/subcategorias/visibles/order", { subcategoryIds }),
+    apiClient.get<string[]>(`/api/categorias/distinct/menus?categoria=${encodeURIComponent(categoryName)}`),
+  // POST /api/menus/visibles
+  create: (data: CreateMenuRequest & { categoriasVisiblesId: string }) =>
+    apiClient.post<BackendMenu>(`/api/menus/visibles`, data),
+  // PATCH /api/menus/visibles/:menuId
+  update: (menuId: string, data: UpdateMenuRequest) =>
+    apiClient.patch<BackendMenu>(`/api/menus/visibles/${menuId}`, data),
+  // PATCH /api/menus/visibles/:menuId/activo
+  updateActiveStatus: (menuId: string, activo: boolean) =>
+    apiClient.patch<{ success: boolean; message?: string }>(`/api/menus/visibles/${menuId}/activo`, { activo }),
+  // DELETE /api/menus/visibles/:menuId
+  delete: (menuId: string) =>
+    apiClient.delete<{ success: boolean; message?: string }>(`/api/menus/visibles/${menuId}`),
+  // PUT /api/menus/visibles/order
+  updateOrder: (menuIds: string[]) =>
+    apiClient.put<{ success: boolean; message?: string }>("/api/menus/visibles/order", { menuIds }),
 };
 
 // Multimedia API endpoints
 export const multimediaEndpoints = {
-  // POST /api/multimedia/subcategorias - Create/upload image for subcategory (first time)
-  createSubcategoryImage: (subcategoryId: string, imageFile: File) => {
+  // POST /api/multimedia/menus - Create/upload image for menu (first time)
+  createMenuImage: (menuId: string, imageFile: File) => {
     const formData = new FormData();
-    formData.append('subcategoriaId', subcategoryId);
+    formData.append('menuId', menuId);
     formData.append('file', imageFile);
 
-    const url = `${API_BASE_URL}/api/multimedia/subcategorias`;
+    const url = `${API_BASE_URL}/api/multimedia/menus`;
     return fetch(url, {
       method: "POST",
       body: formData,
@@ -451,13 +451,13 @@ export const multimediaEndpoints = {
     }));
   },
 
-  // PUT /api/multimedia/subcategorias - Update image for subcategory (when image already exists)
-  updateSubcategoryImage: (subcategoryId: string, imageFile: File) => {
+  // PUT /api/multimedia/menus - Update image for menu (when image already exists)
+  updateMenuImage: (menuId: string, imageFile: File) => {
     const formData = new FormData();
-    formData.append('subcategoriaId', subcategoryId);
+    formData.append('menuId', menuId);
     formData.append('file', imageFile);
 
-    const url = `${API_BASE_URL}/api/multimedia/subcategorias`;
+    const url = `${API_BASE_URL}/api/multimedia/menus`;
     return fetch(url, {
       method: "PUT",
       body: formData,
@@ -523,10 +523,10 @@ export const multimediaEndpoints = {
     }));
   },
 
-  // DELETE /api/multimedia/subcategorias/:id - Delete subcategory image
-  deleteSubcategoryImage: (subcategoryId: string) => {
+  // DELETE /api/multimedia/menus/:id - Delete menu image
+  deleteMenuImage: (menuId: string) => {
     return apiClient.delete<{ success: boolean; message?: string }>(
-      `/api/multimedia/subcategorias/${subcategoryId}`
+      `/api/multimedia/menus/${menuId}`
     );
   },
 

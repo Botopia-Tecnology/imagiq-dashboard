@@ -151,9 +151,9 @@ export const createProductColumns = (
           <Badge variant="outline" className="w-fit">
             {product.category || "Sin categoría"}
           </Badge>
-          {product.subcategory && (
+          {product.menu && (
             <span className="text-xs text-muted-foreground">
-              {product.subcategory}
+              {product.menu}
             </span>
           )}
         </div>

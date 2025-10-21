@@ -2,28 +2,28 @@
  * Mapper para convertir datos de categorías del backend al formato del frontend
  */
 
-import { BackendCategory, BackendSubcategory, WebsiteCategory, WebsiteSubcategory } from "@/types";
+import { BackendCategory, BackendMenu, WebsiteCategory, WebsiteMenu } from "@/types";
 
 /**
- * Convierte una subcategoría del backend al formato del frontend
+ * Convierte un menú del backend al formato del frontend
  */
-export const mapBackendSubcategoryToFrontend = (
-  backendSubcategory: BackendSubcategory,
+export const mapBackendMenuToFrontend = (
+  backendMenu: BackendMenu,
   categoryId: string
-): WebsiteSubcategory => {
+): WebsiteMenu => {
   return {
-    id: backendSubcategory.uuid,
+    id: backendMenu.uuid,
     categoryId: categoryId,
-    name: backendSubcategory.nombre,
-    nombreVisible: backendSubcategory.nombreVisible,
-    slug: backendSubcategory.nombre.toLowerCase().replace(/\s+/g, '-'),
-    description: backendSubcategory.descripcion,
-    image: backendSubcategory.imagen, // Usar imagen del backend
+    name: backendMenu.nombre,
+    nombreVisible: backendMenu.nombreVisible,
+    slug: backendMenu.nombre.toLowerCase().replace(/\s+/g, '-'),
+    description: backendMenu.descripcion,
+    image: backendMenu.imagen, // Usar imagen del backend
     order: 1, // Mock order por ahora
-    isActive: backendSubcategory.activo,
-    productsCount: backendSubcategory.totalProducts || 0, // Usar totalProducts del backend
-    createdAt: new Date(backendSubcategory.createdAt),
-    updatedAt: new Date(backendSubcategory.updatedAt),
+    isActive: backendMenu.activo,
+    productsCount: backendMenu.totalProducts || 0, // Usar totalProducts del backend
+    createdAt: new Date(backendMenu.createdAt),
+    updatedAt: new Date(backendMenu.updatedAt),
   };
 };
 
@@ -41,8 +41,8 @@ export const mapBackendCategoryToFrontend = (backendCategory: BackendCategory): 
     order: 1, // Mock order por ahora
     isActive: backendCategory.activo,
     productsCount: backendCategory.totalProducts,
-    subcategories: backendCategory.subcategorias?.map(subcategory =>
-      mapBackendSubcategoryToFrontend(subcategory, backendCategory.uuid)
+    menus: backendCategory.menus?.map(menu =>
+      mapBackendMenuToFrontend(menu, backendCategory.uuid)
     ) || [],
     createdAt: new Date(backendCategory.createdAt),
     updatedAt: new Date(backendCategory.updatedAt),
@@ -57,13 +57,13 @@ export const mapBackendCategoriesToFrontend = (backendCategories: BackendCategor
 };
 
 /**
- * Convierte un array de subcategorías del backend al formato del frontend
+ * Convierte un array de menús del backend al formato del frontend
  */
-export const mapBackendSubcategoriesToFrontend = (
-  backendSubcategories: BackendSubcategory[],
+export const mapBackendMenusToFrontend = (
+  backendMenus: BackendMenu[],
   categoryId: string
-): WebsiteSubcategory[] => {
-  return backendSubcategories.map(subcategory =>
-    mapBackendSubcategoryToFrontend(subcategory, categoryId)
+): WebsiteMenu[] => {
+  return backendMenus.map(menu =>
+    mapBackendMenuToFrontend(menu, categoryId)
   );
 };

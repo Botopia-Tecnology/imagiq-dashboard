@@ -21,7 +21,7 @@ export function DynamicBreadcrumb() {
       'inicio': 'Inicio',
       'pagina-web': 'Página Web',
       'categorias': 'Categorías',
-      'subcategorias': 'Subcategorías',
+      'menus': 'Menús',
       'productos': 'Productos',
       'clientes': 'Clientes',
       'pedidos': 'Pedidos',
@@ -37,9 +37,9 @@ export function DynamicBreadcrumb() {
       // Si es un UUID (categoryId), buscar el nombre de la categoría
       if (segment.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
         const category = categories.find(cat => cat.id === segment)
-        if (category && paths[i + 1] === 'subcategorias') {
+        if (category && paths[i + 1] === 'menus') {
           breadcrumbs.push({
-            label: `Subcategorías de ${category.name}`,
+            label: `Menús de ${category.name}`,
             href: undefined // Es la página actual
           })
           break // No continuar procesando
