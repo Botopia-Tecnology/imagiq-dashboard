@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { CitySelector } from "@/components/coverage-zones/city-selector"
 import { cities, coverageZones as initialZones } from "@/lib/mock-data/coverage-zones"
 import type { CoverageZone } from "@/types/coverage-zones"
-import { MapPin, Pencil, Trash2, Check, X } from "lucide-react"
+import { MapPin, Pencil, Trash2, Check, X, Palette } from "lucide-react"
 
 // Dynamic import to avoid SSR issues with Leaflet
 const MapViewer = dynamic(
@@ -84,6 +84,14 @@ export default function ZonasCoberturaPage() {
     setEditingName("")
   }
 
+  const handleColorChange = (zoneId: string, color: string) => {
+    setZones((prev) =>
+      prev.map((zone) =>
+        zone.id === zoneId ? { ...zone, color, updatedAt: new Date() } : zone
+      )
+    )
+  }
+
   return (
     <div className="flex flex-col gap-3 h-full">
       <div className="flex items-center justify-between">
@@ -149,10 +157,19 @@ export default function ZonasCoberturaPage() {
                     className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent/50 transition-colors"
                   >
                     <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <div
-                        className="w-4 h-4 rounded-sm flex-shrink-0"
-                        style={{ backgroundColor: zone.color }}
-                      />
+                      <div className="relative group flex-shrink-0">
+                        <div
+                          className="w-4 h-4 rounded-sm cursor-pointer"
+                          style={{ backgroundColor: zone.color }}
+                        />
+                        <input
+                          type="color"
+                          value={zone.color || "#3b82f6"}
+                          onChange={(e) => handleColorChange(zone.id, e.target.value)}
+                          className="absolute inset-0 w-4 h-4 opacity-0 cursor-pointer"
+                          title="Cambiar color"
+                        />
+                      </div>
                       <div className="flex-1 min-w-0">
                         {editingZoneId === zone.id ? (
                           <div className="flex items-center gap-2">
