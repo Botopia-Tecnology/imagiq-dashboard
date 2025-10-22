@@ -58,6 +58,7 @@ export interface ProductCardProps {
   menu?: string;
   capacity?: string | null;
   stock?: number;
+  stockTotal?: number;
   sku?: string | null;
   detailedDescription?: string | null;
   selectedColor?: ProductColor;

@@ -202,7 +202,7 @@ export const createProductColumns = (
     },
   },
   {
-    accessorKey: "stock",
+    accessorKey: "stockTotal",
     header: ({ column }) => {
       return (
         <Button
@@ -220,7 +220,7 @@ export const createProductColumns = (
       )
     },
     cell: ({ row }) => {
-      const stock = row.getValue("stock") as number | undefined
+      const stock = row.getValue("stockTotal") as number | undefined
       return (
         <div className="flex items-center">
           <span className="font-medium">{stock ?? 0}</span>
