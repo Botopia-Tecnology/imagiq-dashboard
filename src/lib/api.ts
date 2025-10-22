@@ -308,6 +308,7 @@ export interface ProductFilterParams {
   codigoMarket?: string;
   filterMode?: string;
   page?: number;
+  stock?:number;
   limit?: number;
   sortBy?: string;
   sortOrder?:  "desc"  |"asc" ;

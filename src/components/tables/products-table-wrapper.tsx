@@ -9,7 +9,6 @@ import { categoryEndpoints } from "@/lib/api";
 const statuses = [
   { label: "Activo", value: "active" },
   { label: "Inactivo", value: "inactive" },
-  { label: "Borrador", value: "draft" },
 ];
 
 export function ProductsTableWrapper() {
@@ -232,6 +231,10 @@ export function ProductsTableWrapper() {
         filters.sortOrder = sortOrder;
       }
 
+      if(newFilters){
+
+      }
+
       filterProducts(filters);
     },
     [filterProducts, pageSize, searchQuery, currentFilters, sortBy, sortOrder]
@@ -244,11 +247,11 @@ export function ProductsTableWrapper() {
         title: "Menú",
         options: categories,
       },
-      // {
-      //   id: "status",
-      //   title: "Estado",
-      //   options: statuses,
-      // },
+      {
+        id: "status",
+        title: "Estado",
+        options: statuses,
+      },
     ],
     [categories]
   );
