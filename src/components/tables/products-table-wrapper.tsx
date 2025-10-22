@@ -1,29 +1,10 @@
 "use client";
 
-import { useMemo, useCallback, useState } from "react";
+import { useMemo, useCallback, useState, useEffect } from "react";
 import { DataTable } from "@/components/tables/data-table";
 import { createProductColumns } from "@/components/tables/columns/products-columns";
 import { useProducts } from "@/features/products/useProducts";
-
-const categories = [
-  { label: "Smartphones", value: "Celulares" },
-  { label: "Tablets", value: "Tablets" },
-  { label: "Relojes", value: "Wearables" },
-  { label: "Accesorios", value: "Accesorios" },
-  { label: "Galaxy buds falta buds", value: "buds" },
-
-  { label: "Televisores", value: "Televisores" },
-  { label: "Barras de sonido", value: "Barras de sonido" },
-  { label: "Sistemas de audio", value: "Sistemas de audio" },
-
-  { label: "Refrigeradores", value: "Neveras,Nevecon" },
-  { label: "Lavadora", value: "Lavadora,Secadora" },
-  { label: "Lavavajillas", value: "Lavavajillas" },
-  { label: "Aire acondicionado", value: "Aire Acondicionado" },
-  { label: "Microondas", value: "Microondas" },
-  { label: "Aspiradoras", value: "Aspiradoras" },
-  { label: "Hornos", value: "Hornos" },
-];
+import { categoryEndpoints } from "@/lib/api";
 
 const statuses = [
   { label: "Activo", value: "active" },
@@ -39,6 +20,29 @@ export function ProductsTableWrapper() {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<string | undefined>();
   const [sortOrder, setSortOrder] = useState< "desc" | "asc" | undefined>();
+  const [categories, setCategories] = useState<{ label: string; value: string }[]>([]);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await categoryEndpoints.getVisible();
+        const categoryOptions = response.data.flatMap(category =>
+          category.menus
+            .filter(menu => menu.nombre) // Filtrar menús vacíos
+            .map(menu => ({
+              label: menu.nombre,
+              value: menu.nombre
+            }))
+        );
+        console.log(categoryOptions)
+        setCategories(categoryOptions);
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+      }
+    };
+ 
+    fetchCategories();
+  }, []);
 
   const initialFilters = useMemo(() => ({ limit: 10 }), []);
 
@@ -246,7 +250,7 @@ export function ProductsTableWrapper() {
       //   options: statuses,
       // },
     ],
-    []
+    [categories]
   );
 
   const columns = useMemo(
