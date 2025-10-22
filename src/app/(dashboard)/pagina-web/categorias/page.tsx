@@ -611,7 +611,7 @@ export default function CategoriasPage() {
                 <TableHead className="w-12"></TableHead>
                 <TableHead>Categoría</TableHead>
                 <TableHead>Nombre visible</TableHead>
-                <TableHead>Subcategorías</TableHead>
+                <TableHead>Menús</TableHead>
                 <TableHead>Productos</TableHead>
                 <TableHead>Imagen</TableHead>
                 <TableHead>Estado</TableHead>

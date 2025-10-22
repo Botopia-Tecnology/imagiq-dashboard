@@ -2,7 +2,30 @@
  * Mapper para convertir datos de categorías del backend al formato del frontend
  */
 
-import { BackendCategory, BackendMenu, WebsiteCategory, WebsiteMenu } from "@/types";
+import { BackendCategory, BackendMenu, BackendSubmenu, WebsiteCategory, WebsiteMenu, WebsiteSubmenu } from "@/types";
+
+/**
+ * Convierte un submenú del backend al formato del frontend
+ */
+export const mapBackendSubmenuToFrontend = (
+  backendSubmenu: BackendSubmenu,
+  menuId: string
+): WebsiteSubmenu => {
+  return {
+    id: backendSubmenu.uuid,
+    menuId: menuId,
+    name: backendSubmenu.nombre,
+    nombreVisible: backendSubmenu.nombreVisible,
+    slug: backendSubmenu.nombre.toLowerCase().replace(/\s+/g, '-'),
+    description: backendSubmenu.descripcion,
+    image: backendSubmenu.imagen,
+    order: 1, // Mock order por ahora
+    isActive: backendSubmenu.activo,
+    productsCount: backendSubmenu.totalProducts || 0,
+    createdAt: new Date(backendSubmenu.createdAt),
+    updatedAt: new Date(backendSubmenu.updatedAt),
+  };
+};
 
 /**
  * Convierte un menú del backend al formato del frontend
@@ -22,6 +45,9 @@ export const mapBackendMenuToFrontend = (
     order: 1, // Mock order por ahora
     isActive: backendMenu.activo,
     productsCount: backendMenu.totalProducts || 0, // Usar totalProducts del backend
+    submenus: backendMenu.submenus?.map(submenu =>
+      mapBackendSubmenuToFrontend(submenu, backendMenu.uuid)
+    ) || [],
     createdAt: new Date(backendMenu.createdAt),
     updatedAt: new Date(backendMenu.updatedAt),
   };
@@ -65,5 +91,17 @@ export const mapBackendMenusToFrontend = (
 ): WebsiteMenu[] => {
   return backendMenus.map(menu =>
     mapBackendMenuToFrontend(menu, categoryId)
+  );
+};
+
+/**
+ * Convierte un array de submenús del backend al formato del frontend
+ */
+export const mapBackendSubmenusToFrontend = (
+  backendSubmenus: BackendSubmenu[],
+  menuId: string
+): WebsiteSubmenu[] => {
+  return backendSubmenus.map(submenu =>
+    mapBackendSubmenuToFrontend(submenu, menuId)
   );
 };

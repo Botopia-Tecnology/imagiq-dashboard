@@ -8,7 +8,7 @@
  * - TypeScript interfaces para requests/responses
  */
 
-import { BackendCategory, BackendMenu, CreateCategoryRequest, UpdateCategoryRequest, CreateMenuRequest, UpdateMenuRequest } from "@/types";
+import { BackendCategory, BackendMenu, BackendSubmenu, CreateCategoryRequest, UpdateCategoryRequest, CreateMenuRequest, UpdateMenuRequest, CreateSubmenuRequest, UpdateSubmenuRequest } from "@/types";
 
 // API Client configuration
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
@@ -425,6 +425,28 @@ export const menuEndpoints = {
     apiClient.put<{ success: boolean; message?: string }>("/api/menus/visibles/order", { menuIds }),
 };
 
+// Submenus API endpoints
+export const submenuEndpoints = {
+  // GET /api/menus/visibles/:menuId/submenus
+  getByMenu: (menuId: string) =>
+    apiClient.get<BackendSubmenu[]>(`/api/menus/visibles/${menuId}/submenus`),
+  // POST /api/submenus/visibles
+  create: (data: CreateSubmenuRequest & { menusVisiblesId: string }) =>
+    apiClient.post<BackendSubmenu>(`/api/submenus/visibles`, data),
+  // PATCH /api/submenus/visibles/:submenuId
+  update: (submenuId: string, data: UpdateSubmenuRequest) =>
+    apiClient.patch<BackendSubmenu>(`/api/submenus/visibles/${submenuId}`, data),
+  // PATCH /api/submenus/visibles/:submenuId/activo
+  updateActiveStatus: (submenuId: string, activo: boolean) =>
+    apiClient.patch<{ success: boolean; message?: string }>(`/api/submenus/visibles/${submenuId}/activo`, { activo }),
+  // DELETE /api/submenus/visibles/:submenuId
+  delete: (submenuId: string) =>
+    apiClient.delete<{ success: boolean; message?: string }>(`/api/submenus/visibles/${submenuId}`),
+  // PUT /api/submenus/visibles/order
+  updateOrder: (submenuIds: string[]) =>
+    apiClient.put<{ success: boolean; message?: string }>("/api/submenus/visibles/order", { submenuIds }),
+};
+
 // Multimedia API endpoints
 export const multimediaEndpoints = {
   // POST /api/multimedia/menus - Create/upload image for menu (first time)
@@ -534,6 +556,61 @@ export const multimediaEndpoints = {
   deleteCategoryImage: (categoryId: string) => {
     return apiClient.delete<{ success: boolean; message?: string }>(
       `/api/multimedia/categorias/${categoryId}`
+    );
+  },
+
+  // POST /api/multimedia/submenus - Create/upload image for submenu (first time)
+  createSubmenuImage: (submenuId: string, imageFile: File) => {
+    const formData = new FormData();
+    formData.append('submenuId', submenuId);
+    formData.append('file', imageFile);
+
+    const url = `${API_BASE_URL}/api/multimedia/submenus`;
+    return fetch(url, {
+      method: "POST",
+      body: formData,
+    }).then(async (response) => {
+      const data = await response.json();
+      return {
+        data: data as { success: boolean; message?: string; imageUrl?: string },
+        success: response.ok,
+        message: typeof data?.message === 'string' ? data.message : (data?.error || "Error desconocido"),
+      };
+    }).catch((error) => ({
+      data: {} as { success: boolean; message?: string; imageUrl?: string },
+      success: false,
+      message: error instanceof Error ? error.message : "Request failed",
+    }));
+  },
+
+  // PUT /api/multimedia/submenus - Update image for submenu (when image already exists)
+  updateSubmenuImage: (submenuId: string, imageFile: File) => {
+    const formData = new FormData();
+    formData.append('submenuId', submenuId);
+    formData.append('file', imageFile);
+
+    const url = `${API_BASE_URL}/api/multimedia/submenus`;
+    return fetch(url, {
+      method: "PUT",
+      body: formData,
+    }).then(async (response) => {
+      const data = await response.json();
+      return {
+        data: data as { success: boolean; message?: string; imageUrl?: string },
+        success: response.ok,
+        message: typeof data?.message === 'string' ? data.message : (data?.error || "Error desconocido"),
+      };
+    }).catch((error) => ({
+      data: {} as { success: boolean; message?: string; imageUrl?: string },
+      success: false,
+      message: error instanceof Error ? error.message : "Request failed",
+    }));
+  },
+
+  // DELETE /api/multimedia/submenus/:id - Delete submenu image
+  deleteSubmenuImage: (submenuId: string) => {
+    return apiClient.delete<{ success: boolean; message?: string }>(
+      `/api/multimedia/submenus/${submenuId}`
     );
   },
 };
