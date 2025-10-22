@@ -48,6 +48,22 @@ export interface WebsiteMenu {
   order: number;
   isActive: boolean;
   productsCount?: number;
+  submenus: WebsiteSubmenu[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface WebsiteSubmenu {
+  id: string;
+  menuId: string;
+  name: string;
+  nombreVisible?: string;
+  slug: string;
+  description?: string;
+  image?: string;
+  order: number;
+  isActive: boolean;
+  productsCount?: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -276,6 +292,20 @@ export interface BackendMenu {
   createdAt: string;
   updatedAt: string;
   totalProducts?: number;
+  submenus?: BackendSubmenu[];
+}
+
+export interface BackendSubmenu {
+  uuid: string;
+  nombre: string;
+  nombreVisible?: string;
+  descripcion: string;
+  imagen: string;
+  activo: boolean;
+  menusVisiblesId: string;
+  createdAt: string;
+  updatedAt: string;
+  totalProducts?: number;
 }
 
 // Types for creating categories
@@ -308,6 +338,21 @@ export interface CreateMenuRequest {
 }
 
 export interface UpdateMenuRequest {
+  nombre: string;
+  nombreVisible: string;
+  descripcion: string;
+  imagen: string;
+}
+
+// Types for creating submenus
+export interface CreateSubmenuRequest {
+  nombre: string;
+  descripcion: string;
+  imagen: string;
+  activo: boolean;
+}
+
+export interface UpdateSubmenuRequest {
   nombre: string;
   nombreVisible: string;
   descripcion: string;
