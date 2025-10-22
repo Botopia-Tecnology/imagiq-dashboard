@@ -35,48 +35,48 @@ import {
   Save,
   X,
 } from "lucide-react"
-import { WebsiteSubcategory } from "@/types"
-import { useSubcategories } from "@/features/categories/useSubcategories"
+import { WebsiteMenu } from "@/types"
+import { useMenus } from "@/features/categories/useMenus"
 import { useCategories } from "@/features/categories/useCategories"
 import { multimediaEndpoints } from "@/lib/api"
 import { toast } from "sonner"
 
-export default function SubcategoriasPage() {
+export default function MenusPage() {
   const params = useParams()
   const categoryId = params.categoryId as string
 
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
-  const [selectedSubcategory, setSelectedSubcategory] = useState<WebsiteSubcategory | null>(null)
-  const [draggedSubcategory, setDraggedSubcategory] = useState<WebsiteSubcategory | null>(null)
+  const [selectedMenu, setSelectedMenu] = useState<WebsiteMenu | null>(null)
+  const [draggedMenu, setDraggedMenu] = useState<WebsiteMenu | null>(null)
   const [hasOrderChanged, setHasOrderChanged] = useState(false)
-  const [localSubcategories, setLocalSubcategories] = useState<WebsiteSubcategory[]>([])
+  const [localMenus, setLocalMenus] = useState<WebsiteMenu[]>([])
   const [orderError, setOrderError] = useState<string | null>(null)
 
   // Hook para obtener la información de la categoría padre
   const { categories } = useCategories()
   const category = categories.find(cat => cat.id === categoryId)
 
-  // Hook para manejar subcategorías del backend
+  // Hook para manejar menús del backend
   const {
-    subcategories,
+    menus,
     loading,
     error,
-    toggleSubcategoryActive: handleToggleActive,
-    updatingSubcategory,
-    updateSubcategory,
-    updatingSubcategoryData,
-    updateSubcategoriesOrder,
+    toggleMenuActive: handleToggleActive,
+    updatingMenu,
+    updateMenu,
+    updatingMenuData,
+    updateMenusOrder,
     updatingOrder,
-    refreshSubcategories
-  } = useSubcategories(categoryId)
+    refreshMenus
+  } = useMenus(categoryId)
 
-  // Sincronizar el estado local con las subcategorías del hook
+  // Sincronizar el estado local con los menús del hook
   useEffect(() => {
-    setLocalSubcategories(subcategories)
-  }, [subcategories])
+    setLocalMenus(menus)
+  }, [menus])
 
   // Estado del formulario del modal de editar
-  const [editSubcategoryName, setEditSubcategoryName] = useState<string>("")
+  const [editMenuName, setEditMenuName] = useState<string>("")
   const [editNombreVisible, setEditNombreVisible] = useState<string>("")
   const [editDescription, setEditDescription] = useState<string>("")
   const [editImage, setEditImage] = useState<string>("")
@@ -85,9 +85,9 @@ export default function SubcategoriasPage() {
   const [hasExistingImage, setHasExistingImage] = useState<boolean>(false)
   const [imageToDelete, setImageToDelete] = useState<boolean>(false)
 
-  // Función para manejar la edición de subcategoría
-  const handleEditSubcategory = async () => {
-    if (!selectedSubcategory || !editSubcategoryName || !editNombreVisible) {
+  // Función para manejar la edición de menú
+  const handleEditMenu = async () => {
+    if (!selectedMenu || !editMenuName || !editNombreVisible) {
       toast.error("Por favor completa todos los campos requeridos")
       return
     }
@@ -98,7 +98,7 @@ export default function SubcategoriasPage() {
       // 1. Si se marcó para eliminar la imagen
       if (imageToDelete && hasExistingImage) {
         toast.info("Eliminando imagen...")
-        const deleteResponse = await multimediaEndpoints.deleteSubcategoryImage(selectedSubcategory.id)
+        const deleteResponse = await multimediaEndpoints.deleteMenuImage(selectedMenu.id)
 
         if (deleteResponse.success) {
           imageUrl = ""
@@ -114,8 +114,8 @@ export default function SubcategoriasPage() {
 
         // Decidir entre POST (crear) o PUT (actualizar) según si hay imagen existente
         const uploadResponse = hasExistingImage
-          ? await multimediaEndpoints.updateSubcategoryImage(selectedSubcategory.id, selectedImageFile)
-          : await multimediaEndpoints.createSubcategoryImage(selectedSubcategory.id, selectedImageFile)
+          ? await multimediaEndpoints.updateMenuImage(selectedMenu.id, selectedImageFile)
+          : await multimediaEndpoints.createMenuImage(selectedMenu.id, selectedImageFile)
 
         console.log("Upload response:", uploadResponse)
 
@@ -130,43 +130,43 @@ export default function SubcategoriasPage() {
         }
       }
 
-      // 2. Luego actualizar los datos de la subcategoría
-      const subcategoryData = {
-        nombre: editSubcategoryName,
+      // 2. Luego actualizar los datos del menú
+      const menuData = {
+        nombre: editMenuName,
         nombreVisible: editNombreVisible,
         descripcion: editDescription,
         imagen: imageUrl || "https://example.com/mock-image.jpg",
       }
 
-      const success = await updateSubcategory(selectedSubcategory.id, subcategoryData)
+      const success = await updateMenu(selectedMenu.id, menuData)
 
       if (success) {
-        toast.success("Subcategoría actualizada correctamente")
+        toast.success("Menú actualizado correctamente")
 
-        // Refrescar las subcategorías para obtener la imagen actualizada
-        await refreshSubcategories()
+        // Refrescar los menús para obtener la imagen actualizada
+        await refreshMenus()
 
-        setEditSubcategoryName("")
+        setEditMenuName("")
         setEditNombreVisible("")
         setEditDescription("")
         setEditImage("")
         setSelectedImageFile(null)
         setImagePreviewUrl("")
         setHasExistingImage(false)
-        setSelectedSubcategory(null)
+        setSelectedMenu(null)
         setIsEditDialogOpen(false)
       } else {
-        toast.error("Error al actualizar la subcategoría")
+        toast.error("Error al actualizar el menú")
       }
     } catch (error) {
-      console.error("Error al actualizar subcategoría:", error)
-      toast.error("Error inesperado al actualizar la subcategoría")
+      console.error("Error al actualizar menú:", error)
+      toast.error("Error inesperado al actualizar el menú")
     }
   }
 
   // Función para resetear el formulario de edición al cerrar el modal
   const handleCloseEditModal = () => {
-    setEditSubcategoryName("")
+    setEditMenuName("")
     setEditNombreVisible("")
     setEditDescription("")
     setEditImage("")
@@ -174,7 +174,7 @@ export default function SubcategoriasPage() {
     setImagePreviewUrl("")
     setHasExistingImage(false)
     setImageToDelete(false)
-    setSelectedSubcategory(null)
+    setSelectedMenu(null)
     setIsEditDialogOpen(false)
   }
 
@@ -185,20 +185,20 @@ export default function SubcategoriasPage() {
     }
   }
 
-  // Función para abrir el modal de edición con los datos de la subcategoría
-  const handleOpenEditModal = (subcategory: WebsiteSubcategory) => {
-    setSelectedSubcategory(subcategory)
-    setEditSubcategoryName(subcategory.name)
-    setEditNombreVisible(subcategory.nombreVisible || "")
-    setEditDescription(subcategory.description || "")
-    setEditImage(subcategory.image || "")
+  // Función para abrir el modal de edición con los datos del menú
+  const handleOpenEditModal = (menu: WebsiteMenu) => {
+    setSelectedMenu(menu)
+    setEditMenuName(menu.name)
+    setEditNombreVisible(menu.nombreVisible || "")
+    setEditDescription(menu.description || "")
+    setEditImage(menu.image || "")
     setSelectedImageFile(null)
     setImageToDelete(false)
 
     // Verificar si tiene imagen existente y configurar preview
-    const hasImage = !!(subcategory.image && subcategory.image !== "https://example.com/mock-image.jpg")
+    const hasImage = !!(menu.image && menu.image !== "https://example.com/mock-image.jpg")
     setHasExistingImage(hasImage)
-    setImagePreviewUrl(hasImage && subcategory.image ? subcategory.image : "")
+    setImagePreviewUrl(hasImage && menu.image ? menu.image : "")
 
     setIsEditDialogOpen(true)
   }
@@ -243,8 +243,8 @@ export default function SubcategoriasPage() {
   }
 
   // Funciones para drag and drop
-  const handleDragStart = (e: React.DragEvent, subcategory: WebsiteSubcategory) => {
-    setDraggedSubcategory(subcategory)
+  const handleDragStart = (e: React.DragEvent, menu: WebsiteMenu) => {
+    setDraggedMenu(menu)
     e.dataTransfer.effectAllowed = 'move'
   }
 
@@ -253,40 +253,40 @@ export default function SubcategoriasPage() {
     e.dataTransfer.dropEffect = 'move'
   }
 
-  const handleDrop = (e: React.DragEvent, targetSubcategory: WebsiteSubcategory) => {
+  const handleDrop = (e: React.DragEvent, targetMenu: WebsiteMenu) => {
     e.preventDefault()
     
-    if (!draggedSubcategory || draggedSubcategory.id === targetSubcategory.id) {
-      setDraggedSubcategory(null)
+    if (!draggedMenu || draggedMenu.id === targetMenu.id) {
+      setDraggedMenu(null)
       return
     }
 
-    // Reordenar las subcategorías localmente
-    const newSubcategories = [...localSubcategories]
-    const draggedIndex = newSubcategories.findIndex(sub => sub.id === draggedSubcategory.id)
-    const targetIndex = newSubcategories.findIndex(sub => sub.id === targetSubcategory.id)
+    // Reordenar los menús localmente
+    const newMenus = [...localMenus]
+    const draggedIndex = newMenus.findIndex(m => m.id === draggedMenu.id)
+    const targetIndex = newMenus.findIndex(m => m.id === targetMenu.id)
     
     // Remover el elemento arrastrado
-    const [removed] = newSubcategories.splice(draggedIndex, 1)
+    const [removed] = newMenus.splice(draggedIndex, 1)
     // Insertar en la nueva posición
-    newSubcategories.splice(targetIndex, 0, removed)
+    newMenus.splice(targetIndex, 0, removed)
     
     // Actualizar el estado local
-    setLocalSubcategories(newSubcategories)
+    setLocalMenus(newMenus)
     setHasOrderChanged(true)
-    setDraggedSubcategory(null)
+    setDraggedMenu(null)
   }
 
   const handleDragEnd = () => {
-    setDraggedSubcategory(null)
+    setDraggedMenu(null)
   }
 
   // Función para guardar el nuevo orden
   const handleSaveOrder = async () => {
     setOrderError(null)
     try {
-      const subcategoryIds = localSubcategories.map(sub => sub.id)
-      const success = await updateSubcategoriesOrder(subcategoryIds)
+      const menuIds = localMenus.map(m => m.id)
+      const success = await updateMenusOrder(menuIds)
       
       if (success) {
         setHasOrderChanged(false)
@@ -302,9 +302,9 @@ export default function SubcategoriasPage() {
 
   const handleCancelOrder = () => {
     // Restaurar el orden original
-    setLocalSubcategories(subcategories)
+    setLocalMenus(menus)
     setHasOrderChanged(false)
-    setDraggedSubcategory(null)
+    setDraggedMenu(null)
     setOrderError(null)
   }
 
@@ -314,16 +314,16 @@ export default function SubcategoriasPage() {
       <div className="space-y-3">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-            Subcategorías de {category?.name || "..."}
+            Menús de {category?.name || "..."}
           </h1>
           <p className="text-sm text-muted-foreground">
-            Cargando subcategorías...
+            Cargando menús...
           </p>
         </div>
         <div className="flex items-center justify-center py-8">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Cargando subcategorías...</p>
+            <p className="text-muted-foreground">Cargando menús...</p>
           </div>
         </div>
       </div>
@@ -336,10 +336,10 @@ export default function SubcategoriasPage() {
       <div className="space-y-3">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-            Subcategorías de {category?.name || "..."}
+            Menús de {category?.name || "..."}
           </h1>
           <p className="text-sm text-muted-foreground">
-            Error al cargar subcategorías
+            Error al cargar menús
           </p>
         </div>
         <div className="flex items-center justify-center py-8">
@@ -360,10 +360,10 @@ export default function SubcategoriasPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-            Subcategorías de {category?.name}
+            Menús de {category?.name}
           </h1>
           <p className="text-sm text-muted-foreground">
-            Gestiona las subcategorías y series visibles de esta categoría
+            Gestiona los menús y series visibles de esta categoría
           </p>
         </div>
         <div className="flex gap-2">
@@ -410,22 +410,22 @@ export default function SubcategoriasPage() {
         <Dialog open={isEditDialogOpen} onOpenChange={handleEditModalOpenChange}>
           <DialogContent className="max-w-2xl [&>button]:cursor-pointer">
             <DialogHeader>
-              <DialogTitle>Editar Subcategoría</DialogTitle>
+              <DialogTitle>Editar Menú</DialogTitle>
               <DialogDescription>
-                Modifica los datos de la subcategoría seleccionada
+                Modifica los datos del menú seleccionado
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label htmlFor="edit-subcategory-name">Subcategoría de Productos</Label>
+                <Label htmlFor="edit-menu-name">Menú de Productos</Label>
                 <Input
-                  id="edit-subcategory-name"
-                  value={editSubcategoryName}
+                  id="edit-menu-name"
+                  value={editMenuName}
                   disabled={true}
                   className="bg-muted"
                 />
                 <p className="text-xs text-muted-foreground">
-                  El nombre de la subcategoría no es editable
+                  El nombre del menú no es editable
                 </p>
               </div>
 
@@ -436,7 +436,7 @@ export default function SubcategoriasPage() {
                   placeholder="Nombre que se mostrará en el sitio web"
                   value={editNombreVisible}
                   onChange={(e) => setEditNombreVisible(e.target.value)}
-                  disabled={updatingSubcategoryData}
+                  disabled={updatingMenuData}
                   required
                 />
                 <p className="text-xs text-muted-foreground">
@@ -448,15 +448,15 @@ export default function SubcategoriasPage() {
                 <Label htmlFor="edit-description">Descripción (opcional)</Label>
                 <Input
                   id="edit-description"
-                  placeholder="Descripción de la subcategoría para SEO"
+                  placeholder="Descripción del menú para SEO"
                   value={editDescription}
                   onChange={(e) => setEditDescription(e.target.value)}
-                  disabled={updatingSubcategoryData}
+                  disabled={updatingMenuData}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="edit-image">Imagen de la Subcategoría</Label>
+                <Label htmlFor="edit-image">Imagen del Menú</Label>
 
                 {/* Preview de la imagen */}
                 {imagePreviewUrl && !imageToDelete && (
@@ -476,7 +476,7 @@ export default function SubcategoriasPage() {
                           variant="destructive"
                           size="sm"
                           onClick={handleRemoveImage}
-                          disabled={updatingSubcategoryData}
+                          disabled={updatingMenuData}
                           className="cursor-pointer"
                         >
                           <X className="h-4 w-4 mr-1" />
@@ -491,7 +491,7 @@ export default function SubcategoriasPage() {
                 {imageToDelete && (
                   <div className="p-4 border rounded-lg bg-destructive/10 border-destructive/30">
                     <p className="text-sm text-destructive font-medium">
-                      La imagen se eliminará al presionar "Actualizar Subcategoría"
+                      La imagen se eliminará al presionar "Actualizar Menú"
                     </p>
                   </div>
                 )}
@@ -501,7 +501,7 @@ export default function SubcategoriasPage() {
                     id="edit-image"
                     type="file"
                     accept="image/*"
-                    disabled={updatingSubcategoryData}
+                    disabled={updatingMenuData}
                     onChange={handleImageFileChange}
                   />
                   {selectedImageFile && (
@@ -517,17 +517,17 @@ export default function SubcategoriasPage() {
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={handleCloseEditModal} disabled={updatingSubcategoryData} className="cursor-pointer">
+              <Button variant="outline" onClick={handleCloseEditModal} disabled={updatingMenuData} className="cursor-pointer">
                 Cancelar
               </Button>
-              <Button onClick={handleEditSubcategory} disabled={updatingSubcategoryData || !editSubcategoryName || !editNombreVisible} className="cursor-pointer">
-                {updatingSubcategoryData ? (
+              <Button onClick={handleEditMenu} disabled={updatingMenuData || !editMenuName || !editNombreVisible} className="cursor-pointer">
+                {updatingMenuData ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                     Actualizando...
                   </>
                 ) : (
-                  "Actualizar Subcategoría"
+                  "Actualizar Menú"
                 )}
               </Button>
             </DialogFooter>
@@ -539,12 +539,12 @@ export default function SubcategoriasPage() {
       <div className="grid gap-3 md:grid-cols-4">
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-medium">Total Subcategorías</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Menús</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{subcategories.length}</div>
+            <div className="text-2xl font-bold">{menus.length}</div>
             <p className="text-xs text-muted-foreground">
-              {subcategories.filter(s => s.isActive).length} activas
+              {menus.filter(m => m.isActive).length} activos
             </p>
           </CardContent>
         </Card>
@@ -555,7 +555,7 @@ export default function SubcategoriasPage() {
           <CardContent>
             <div className="text-2xl font-bold">0</div>
             <p className="text-xs text-muted-foreground">
-              En todas las subcategorías
+              En todos los menús
             </p>
           </CardContent>
         </Card>
@@ -565,10 +565,10 @@ export default function SubcategoriasPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {subcategories.reduce((acc, sub) => acc + (sub.productsCount || 0), 0)}
+              {menus.reduce((acc, menu) => acc + (menu.productsCount || 0), 0)}
             </div>
             <p className="text-xs text-muted-foreground">
-              Distribuidos en subcategorías
+              Distribuidos en menús
             </p>
           </CardContent>
         </Card>
@@ -578,21 +578,21 @@ export default function SubcategoriasPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {subcategories.filter(s => s.image).length}
+              {menus.filter(m => m.image).length}
             </div>
             <p className="text-xs text-muted-foreground">
-              Subcategorías con imagen asignada
+              Menús con imagen asignada
             </p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Subcategories Table */}
+      {/* Menus Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Subcategorías Configuradas de {category?.name}</CardTitle>
+          <CardTitle>Menús Configurados de {category?.name}</CardTitle>
           <CardDescription>
-            Arrastra para reordenar las subcategorías como aparecerán en tu sitio web
+            Arrastra para reordenar los menús como aparecerán en tu sitio web
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -600,7 +600,7 @@ export default function SubcategoriasPage() {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-12"></TableHead>
-                <TableHead>Subcategoría</TableHead>
+                <TableHead>Menú</TableHead>
                 <TableHead>Nombre visible</TableHead>
                 <TableHead>Series</TableHead>
                 <TableHead>Productos</TableHead>
@@ -610,16 +610,16 @@ export default function SubcategoriasPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {localSubcategories.map((subcategory) => (
+              {localMenus.map((menu) => (
                 <TableRow 
-                  key={subcategory.id}
+                  key={menu.id}
                   draggable
-                  onDragStart={(e) => handleDragStart(e, subcategory)}
+                  onDragStart={(e) => handleDragStart(e, menu)}
                   onDragOver={handleDragOver}
-                  onDrop={(e) => handleDrop(e, subcategory)}
+                  onDrop={(e) => handleDrop(e, menu)}
                   onDragEnd={handleDragEnd}
                   className={`cursor-move transition-all duration-200 ${
-                    draggedSubcategory?.id === subcategory.id ? 'opacity-50 scale-95' : ''
+                    draggedMenu?.id === menu.id ? 'opacity-50 scale-95' : ''
                   }`}
                 >
                   <TableCell>
@@ -629,16 +629,16 @@ export default function SubcategoriasPage() {
                   </TableCell>
                   <TableCell>
                     <div>
-                      <div className="font-medium">{subcategory.name}</div>
-                      {subcategory.description && (
+                      <div className="font-medium">{menu.name}</div>
+                      {menu.description && (
                         <div className="text-xs text-muted-foreground truncate max-w-xs">
-                          {subcategory.description}
+                          {menu.description}
                         </div>
                       )}
                     </div>
                   </TableCell>
                   <TableCell>
-                    <span>{subcategory.nombreVisible || '-'}</span>
+                    <span>{menu.nombreVisible || '-'}</span>
                   </TableCell>
                   <TableCell>
                     <Badge variant="outline">0 series</Badge>
@@ -646,11 +646,11 @@ export default function SubcategoriasPage() {
                   <TableCell>
                     <div className="flex items-center gap-1">
                       <Package className="h-3 w-3 text-muted-foreground" />
-                      <span>{subcategory.productsCount || 0}</span>
+                      <span>{menu.productsCount || 0}</span>
                     </div>
                   </TableCell>
                   <TableCell>
-                    {subcategory.image ? (
+                    {menu.image ? (
                       <Badge variant="secondary" className="gap-1">
                         <ImageIcon className="h-3 w-3" />
                         Asignada
@@ -664,16 +664,16 @@ export default function SubcategoriasPage() {
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <Switch
-                        checked={subcategory.isActive}
-                        onCheckedChange={() => handleToggleActive(subcategory.id)}
-                        disabled={updatingSubcategory === subcategory.id}
+                        checked={menu.isActive}
+                        onCheckedChange={() => handleToggleActive(menu.id)}
+                        disabled={updatingMenu === menu.id}
                         className="cursor-pointer"
                       />
                       {(() => {
-                        if (updatingSubcategory === subcategory.id) {
+                        if (updatingMenu === menu.id) {
                           return <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
                         }
-                        return subcategory.isActive ? (
+                        return menu.isActive ? (
                           <Eye className="h-4 w-4 text-green-600" />
                         ) : (
                           <EyeOff className="h-4 w-4 text-muted-foreground" />
@@ -686,7 +686,7 @@ export default function SubcategoriasPage() {
                       variant="ghost"
                       size="icon"
                       className="cursor-pointer"
-                      onClick={() => handleOpenEditModal(subcategory)}
+                      onClick={() => handleOpenEditModal(menu)}
                     >
                       <Edit className="h-4 w-4" />
                     </Button>

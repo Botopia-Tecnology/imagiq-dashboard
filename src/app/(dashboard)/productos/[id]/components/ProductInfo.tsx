@@ -117,10 +117,10 @@ export function ProductInfo({
               <span className="font-medium">{product.category}</span>
             </div>
           )}
-          {product.subcategory && (
+          {product.menu && (
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Subcategoría:</span>
-              <span className="font-medium">{product.subcategory}</span>
+              <span className="text-muted-foreground">Menú:</span>
+              <span className="font-medium">{product.menu}</span>
             </div>
           )}
           {(selectedColor?.capacity || product.capacity) && (

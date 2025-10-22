@@ -9,7 +9,7 @@ export interface Product {
   precioDescto: number[];
   stock: number; // stock[0]
   category: string; // categoria
-  subcategoria: string;
+  menu: string;
   color: string[];
   capacidad: string[];
   sku: string[];
@@ -32,12 +32,12 @@ export interface WebsiteCategory {
   order: number;
   isActive: boolean;
   productsCount?: number;
-  subcategories: WebsiteSubcategory[];
+  menus: WebsiteMenu[];
   createdAt: Date;
   updatedAt: Date;
 }
 
-export interface WebsiteSubcategory {
+export interface WebsiteMenu {
   id: string;
   categoryId: string;
   name: string;
@@ -261,11 +261,11 @@ export interface BackendCategory {
   activo: boolean;
   createdAt: string;
   updatedAt: string;
-  subcategorias: BackendSubcategory[];
+  menus: BackendMenu[];
   totalProducts: number;
 }
 
-export interface BackendSubcategory {
+export interface BackendMenu {
   uuid: string;
   nombre: string;
   nombreVisible?: string;
@@ -299,15 +299,15 @@ export interface CreateCategoryResponse {
   data?: BackendCategory;
 }
 
-// Types for creating subcategories
-export interface CreateSubcategoryRequest {
+// Types for creating menus
+export interface CreateMenuRequest {
   nombre: string;
   descripcion: string;
   imagen: string;
   activo: boolean;
 }
 
-export interface UpdateSubcategoryRequest {
+export interface UpdateMenuRequest {
   nombre: string;
   nombreVisible: string;
   descripcion: string;

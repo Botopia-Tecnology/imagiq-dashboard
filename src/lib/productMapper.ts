@@ -46,7 +46,7 @@ export interface ProductCardProps {
   brand?: string;
   model?: string;
   category?: string;
-  subcategory?: string;
+  menu?: string;
   capacity?: string | null;
   stock?: number;
   sku?: string | null;
@@ -124,7 +124,7 @@ export function mapApiProductToFrontend(apiProduct: ProductApiData): ProductCard
     brand: "Samsung", // Por defecto, se puede obtener de la API en el futuro
     model: apiProduct.modelo,
     category: apiProduct.categoria,
-    subcategory: apiProduct.subcategoria,
+    menu: apiProduct.menu,
     capacity: capacidadArray.length > 0 ? capacidadArray.join(', ') : null,
     stock: stockArray.reduce((sum, s) => sum + s, 0),
     sku: skuArray.length > 0 ? skuArray.join(', ') : null,
