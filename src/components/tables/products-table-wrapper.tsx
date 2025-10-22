@@ -64,23 +64,23 @@ export function ProductsTableWrapper() {
         sortOrder: direction,
       };
 
-      // Aplicar filtros de categoría/subcategoría
-      if (currentFilters.subcategory && currentFilters.subcategory.length > 0) {
-        const hasBuds = currentFilters.subcategory.includes("buds");
+      // Aplicar filtros de menú
+      if (currentFilters.menu && currentFilters.menu.length > 0) {
+        const hasBuds = currentFilters.menu.includes("buds");
 
         if (hasBuds) {
-          const budsValues = currentFilters.subcategory.filter(v => v === "buds");
-          const otherValues = currentFilters.subcategory.filter(v => v !== "buds");
+          const budsValues = currentFilters.menu.filter(v => v === "buds");
+          const otherValues = currentFilters.menu.filter(v => v !== "buds");
 
           if (budsValues.length > 0) {
             filters.name = budsValues.join(", ");
           }
 
           if (otherValues.length > 0) {
-            filters.subcategory = otherValues.join(", ");
+            filters.menu = otherValues.join(", ");
           }
         } else {
-          filters.subcategory = currentFilters.subcategory.join(", ");
+          filters.menu = currentFilters.menu.join(", ");
         }
       }
 
@@ -104,23 +104,23 @@ export function ProductsTableWrapper() {
         page: newPage,
       };
 
-      // Aplicar filtros de categoría/subcategoría (separados por comas)
-      if (currentFilters.subcategory && currentFilters.subcategory.length > 0) {
-        const hasBuds = currentFilters.subcategory.includes("buds");
+      // Aplicar filtros de menú (separados por comas)
+      if (currentFilters.menu && currentFilters.menu.length > 0) {
+        const hasBuds = currentFilters.menu.includes("buds");
 
         if (hasBuds) {
-          const budsValues = currentFilters.subcategory.filter(v => v === "buds");
-          const otherValues = currentFilters.subcategory.filter(v => v !== "buds");
+          const budsValues = currentFilters.menu.filter(v => v === "buds");
+          const otherValues = currentFilters.menu.filter(v => v !== "buds");
 
           if (budsValues.length > 0) {
             filters.name = budsValues.join(", ");
           }
 
           if (otherValues.length > 0) {
-            filters.subcategory = otherValues.join(", ");
+            filters.menu = otherValues.join(", ");
           }
         } else {
-          filters.subcategory = currentFilters.subcategory.join(", ");
+          filters.menu = currentFilters.menu.join(", ");
         }
       }
 
@@ -149,12 +149,12 @@ export function ProductsTableWrapper() {
         page: 1,
       };
 
-      if (currentFilters.subcategory && currentFilters.subcategory.length > 0) {
-        const hasBuds = currentFilters.subcategory.includes("buds");
+      if (currentFilters.menu && currentFilters.menu.length > 0) {
+        const hasBuds = currentFilters.menu.includes("buds");
 
         if (hasBuds) {
-          const budsValues = currentFilters.subcategory.filter(v => v === "buds");
-          const otherValues = currentFilters.subcategory.filter(v => v !== "buds");
+          const budsValues = currentFilters.menu.filter(v => v === "buds");
+          const otherValues = currentFilters.menu.filter(v => v !== "buds");
 
           // Combinar búsqueda con buds
           if (budsValues.length > 0) {
@@ -162,10 +162,10 @@ export function ProductsTableWrapper() {
           }
 
           if (otherValues.length > 0) {
-            filters.subcategory = otherValues.join(", ");
+            filters.menu = otherValues.join(", ");
           }
         } else {
-          filters.subcategory = currentFilters.subcategory.join(", ");
+          filters.menu = currentFilters.menu.join(", ");
         }
       }
 
@@ -207,12 +207,12 @@ export function ProductsTableWrapper() {
               : budsValues.join(", ");
           }
 
-          // Enviar otras categorías como subcategory
+          // Enviar otros menús como menu
           if (otherValues.length > 0) {
             filters[filterId] = otherValues.join(", ");
           }
         } else {
-          // Si no hay buds, enviar normalmente como subcategory
+          // Si no hay buds, enviar normalmente como menu
           filters[filterId] = value.join(", ");
         }
       }
@@ -236,8 +236,8 @@ export function ProductsTableWrapper() {
   const tableFilters = useMemo(
     () => [
       {
-        id: "subcategory",
-        title: "Categoría",
+        id: "menu",
+        title: "Menú",
         options: categories,
       },
       // {

@@ -164,6 +164,21 @@ export const createProductColumns = (
     },
   },
   {
+    accessorKey: "menu",
+    header: "Menú",
+    cell: ({ row }) => {
+      // Esta columna está oculta, solo existe para el filtro
+      return null
+    },
+    filterFn: (row, id, value) => {
+      const menuValue = row.getValue(id) as string
+      return value.includes(menuValue)
+    },
+    enableSorting: false,
+    enableHiding: false,
+    size: 0, // Tamaño 0 para que no ocupe espacio
+  },
+  {
     accessorKey: "price",
     header: ({ column }) => {
       return (
