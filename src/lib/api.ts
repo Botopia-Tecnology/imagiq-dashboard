@@ -300,6 +300,7 @@ export interface ProductFilterParams {
   precioMax?: number;
   conDescuento?: boolean;
   stockMinimo?: number;
+  stockMaximo?: number;
   color?: string;
   capacidad?: string;
   nombre?: string;

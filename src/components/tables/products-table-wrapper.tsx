@@ -92,6 +92,15 @@ export function ProductsTableWrapper() {
         filters.name = searchQuery;
       }
 
+      // Mantener filtro de estado
+       if (currentFilters.status) {
+        if (currentFilters.status.includes("active")) {
+          filters.minStock = 1;
+        } else if (currentFilters.status.includes("inactive")) {
+          filters.maxStock = 0;
+        }
+      }
+
       filterProducts(filters);
     },
     [filterProducts, currentFilters, searchQuery, pageSize]
@@ -138,6 +147,15 @@ export function ProductsTableWrapper() {
         filters.sortOrder = sortOrder;
       }
 
+      // Mantener filtro de estado
+       if (currentFilters.status) {
+        if (currentFilters.status.includes("active")) {
+          filters.minStock = 1;
+        } else if (currentFilters.status.includes("inactive")) {
+          filters.maxStock = 0;
+        }
+      }
+
       filterProducts(filters);
     },
     [filterProducts, currentFilters, searchQuery, sortBy, sortOrder]
@@ -178,6 +196,15 @@ export function ProductsTableWrapper() {
         filters.sortOrder = sortOrder;
       }
 
+      // Mantener filtro de estado
+       if (currentFilters.status) {
+        if (currentFilters.status.includes("active")) {
+          filters.minStock = 1;
+        } else if (currentFilters.status.includes("inactive")) {
+          filters.maxStock = 0;
+        }
+      }
+
       filterProducts(filters);
     },
     [filterProducts, pageSize, currentFilters, sortBy, sortOrder]
@@ -194,8 +221,17 @@ export function ProductsTableWrapper() {
         page: 1,
       };
 
+      // Manejar filtro de Estado
+      if (filterId === "status") {
+        if (value.includes("active")) {
+          filters.minStock = 1; // Productos activos: stock >= 1
+        } else if (value.includes("inactive")) {
+          filters.maxStock = 0; // Productos inactivos: stock = 0
+        }
+      }
+
       // Validar si alguno de los valores es "buds"
-      if (value.length > 0) {
+      if (filterId === "menu" && value.length > 0) {
         const hasBuds = value.includes("buds");
 
         if (hasBuds) {
@@ -231,8 +267,13 @@ export function ProductsTableWrapper() {
         filters.sortOrder = sortOrder;
       }
 
-      if(newFilters){
-
+      // Aplicar filtros de estado desde otros filtros guardados
+      if (filterId !== "status" && currentFilters.status) {
+        if (currentFilters.status.includes("active")) {
+          filters.minStock = 1;
+        } else if (currentFilters.status.includes("inactive")) {
+          filters.maxStock = 0;
+        }
       }
 
       filterProducts(filters);

@@ -76,6 +76,7 @@ export interface ProductFilters {
   name?: string;
   withDiscount?: boolean;
   minStock?: number;
+  maxStock?: number;
   stock?: number;
   descriptionKeyword?: string; // Nuevo filtro para palabras clave en descripción
   searchQuery?: string; // Query de búsqueda general para nombre Y desDetallada
@@ -153,6 +154,7 @@ export const useProducts = (
       if (filters.withDiscount !== undefined)
         params.conDescuento = filters.withDiscount;
       if (filters.minStock !== undefined) params.stockMinimo = filters.minStock;
+      if (filters.maxStock !== undefined) params.stockMaximo = filters.maxStock;
       if (filters.descriptionKeyword) {
         // Usar el campo desDetallada para buscar en la descripción detallada
         params.desDetallada = filters.descriptionKeyword;
