@@ -40,6 +40,7 @@ interface DataTableProps<TData, TValue> {
       value: string
       icon?: React.ComponentType<{ className?: string }>
     }>
+    singleSelect?: boolean
   }>
   // Paginación del servidor
   pageCount?: number

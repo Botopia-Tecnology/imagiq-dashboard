@@ -93,10 +93,10 @@ export function ProductsTableWrapper() {
       }
 
       // Mantener filtro de estado
-       if (currentFilters.status) {
-        if (currentFilters.status.includes("active")) {
+       if (currentFilters.status && currentFilters.status.length > 0) {
+        if (currentFilters.status[0] === "active") {
           filters.minStock = 1;
-        } else if (currentFilters.status.includes("inactive")) {
+        } else if (currentFilters.status[0] === "inactive") {
           filters.maxStock = 0;
         }
       }
@@ -148,10 +148,10 @@ export function ProductsTableWrapper() {
       }
 
       // Mantener filtro de estado
-       if (currentFilters.status) {
-        if (currentFilters.status.includes("active")) {
+       if (currentFilters.status && currentFilters.status.length > 0) {
+        if (currentFilters.status[0] === "active") {
           filters.minStock = 1;
-        } else if (currentFilters.status.includes("inactive")) {
+        } else if (currentFilters.status[0] === "inactive") {
           filters.maxStock = 0;
         }
       }
@@ -197,10 +197,10 @@ export function ProductsTableWrapper() {
       }
 
       // Mantener filtro de estado
-       if (currentFilters.status) {
-        if (currentFilters.status.includes("active")) {
+       if (currentFilters.status && currentFilters.status.length > 0) {
+        if (currentFilters.status[0] === "active") {
           filters.minStock = 1;
-        } else if (currentFilters.status.includes("inactive")) {
+        } else if (currentFilters.status[0] === "inactive") {
           filters.maxStock = 0;
         }
       }
@@ -222,10 +222,10 @@ export function ProductsTableWrapper() {
       };
 
       // Manejar filtro de Estado
-      if (filterId === "status") {
-        if (value.includes("active")) {
+      if (filterId === "status" && value.length > 0) {
+        if (value[0] === "active") {
           filters.minStock = 1; // Productos activos: stock >= 1
-        } else if (value.includes("inactive")) {
+        } else if (value[0] === "inactive") {
           filters.maxStock = 0; // Productos inactivos: stock = 0
         }
       }
@@ -268,10 +268,10 @@ export function ProductsTableWrapper() {
       }
 
       // Aplicar filtros de estado desde otros filtros guardados
-      if (filterId !== "status" && currentFilters.status) {
-        if (currentFilters.status.includes("active")) {
+      if (filterId !== "status" && currentFilters.status && currentFilters.status.length > 0) {
+        if (currentFilters.status[0] === "active") {
           filters.minStock = 1;
-        } else if (currentFilters.status.includes("inactive")) {
+        } else if (currentFilters.status[0] === "inactive") {
           filters.maxStock = 0;
         }
       }
@@ -292,6 +292,7 @@ export function ProductsTableWrapper() {
         id: "status",
         title: "Estado",
         options: statuses,
+        singleSelect: true,
       },
     ],
     [categories]
