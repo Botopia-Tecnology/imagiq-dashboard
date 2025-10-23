@@ -10,6 +10,7 @@ interface ProductInfoProps {
   currentOriginalPrice?: string
   currentStock: number
   currentStockEcommerce: number
+  currentStockTiendas: Record<string, number>
   onColorSelect: (color: ProductColor) => void
 }
 
@@ -20,6 +21,7 @@ export function ProductInfo({
   currentOriginalPrice,
   currentStock,
   currentStockEcommerce,
+  currentStockTiendas,
   onColorSelect,
 }: ProductInfoProps) {
   const getStockColor = (stock: number) => {
@@ -59,7 +61,7 @@ export function ProductInfo({
             {selectedColor?.stockTotal !== undefined && (
               <span className="text-sm text-muted-foreground">
                 {selectedColor.stockTotal > 0 ? (
-                  <span className="text-green-600">
+                  <span className={getStockColor(selectedColor.stockTotal)}>
                     {selectedColor.stockTotal} disponibles
                   </span>
                 ) : (
@@ -135,16 +137,6 @@ export function ProductInfo({
               </span>
             </div>
           )}
-          {currentStock !== undefined && (
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">
-                Stock total {selectedColor ? `(${selectedColor.label})` : ''}:
-              </span>
-              <span className={`font-medium ${getStockColor(currentStock)}`}>
-                {currentStock} unidades
-              </span>
-            </div>
-          )}
           {currentStockEcommerce!== undefined && (
             <div className="flex justify-between">
               <span className="text-muted-foreground">
@@ -152,6 +144,26 @@ export function ProductInfo({
               </span>
               <span className={`font-medium ${getStockColor(currentStockEcommerce)}`}>
                 {currentStockEcommerce} unidades
+              </span>
+            </div>
+          )}
+          {currentStockTiendas!== undefined && (
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">
+                Stock total en tiendas {selectedColor ? `(${selectedColor.label})` : ''}:
+              </span>
+              <span className={`font-medium ${getStockColor(Object.values(currentStockTiendas).reduce((sum, qty) => sum + qty, 0))}`}>
+                {Object.values(currentStockTiendas).reduce((sum, qty) => sum + qty, 0)} unidades
+              </span>
+            </div>
+          )}
+                    {currentStock !== undefined && (
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">
+                Stock total {selectedColor ? `(${selectedColor.label})` : ''}:
+              </span>
+              <span className={`font-medium ${getStockColor(currentStock)}`}>
+                {currentStock} unidades
               </span>
             </div>
           )}

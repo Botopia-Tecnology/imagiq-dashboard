@@ -12,6 +12,7 @@ import { ProductColor } from "@/features/products/useProducts"
 import { ProductMultimedia } from "./components/ProductMultimedia"
 import { ProductInfo } from "./components/ProductInfo"
 import { ProductDescription } from "./components/ProductDescription"
+import { StoreStockDisplay } from "./components/StoreStockDisplay"
 
 export default function ProductDetailPage() {
   const params = useParams()
@@ -88,6 +89,7 @@ export default function ProductDetailPage() {
             currentStockEcommerce={currentStockEcommerce}
             currentOriginalPrice={currentOriginalPrice}
             currentStock={currentStock}
+            currentStockTiendas={currentStockTiendas}
             onColorSelect={setSelectedColor}
           />
 
@@ -98,6 +100,9 @@ export default function ProductDetailPage() {
           />
         </div>
       </div>
+
+      {/* Componente de Stock por Tienda */}
+      <StoreStockDisplay stockTiendas={currentStockTiendas} />
     </div>
   )
 }
