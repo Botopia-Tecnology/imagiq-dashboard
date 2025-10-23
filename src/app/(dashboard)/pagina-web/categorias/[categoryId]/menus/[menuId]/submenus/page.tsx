@@ -126,40 +126,47 @@ export default function SubmenusPage() {
           const data = uploadResponse.data as { imageUrl?: string; url?: string } | undefined
           imageUrl = data?.imageUrl || data?.url || editImage
           toast.success("Imagen subida exitosamente")
+          
+          // Si solo se está subiendo imagen sin cambiar otros datos, cerrar el modal
+          if (!editSubmenuName && !editNombreVisible && !editDescription) {
+            await refreshSubmenus()
+            handleCloseEditModal()
+            return
+          }
         } else {
           toast.error(uploadResponse.message || "Error al subir la imagen")
           return
         }
       }
 
-      // 2. Luego actualizar los datos del submenú
-      const submenuData = {
-        nombre: editSubmenuName,
-        nombreVisible: editNombreVisible,
-        descripcion: editDescription,
-        imagen: imageUrl || "https://example.com/mock-image.jpg",
+      // 2. Actualizar los datos del submenú si hay cambios en los campos de texto
+      const hasTextChanges = editSubmenuName !== selectedSubmenu.name || 
+                            editNombreVisible !== selectedSubmenu.nombreVisible || 
+                            editDescription !== selectedSubmenu.description
+
+      if (hasTextChanges) {
+        const submenuData = {
+          nombre: editSubmenuName,
+          nombreVisible: editNombreVisible,
+          descripcion: editDescription,
+          imagen: imageUrl || "", // Usar cadena vacía en lugar de URL de ejemplo
+        }
+
+        const success = await updateSubmenu(selectedSubmenu.id, submenuData)
+
+        if (success) {
+          toast.success("Submenú actualizado correctamente")
+        } else {
+          toast.error("Error al actualizar el submenú")
+          return
+        }
       }
 
-      const success = await updateSubmenu(selectedSubmenu.id, submenuData)
+      // Refrescar los submenús para obtener los datos actualizados
+      await refreshSubmenus()
 
-      if (success) {
-        toast.success("Submenú actualizado correctamente")
-
-        // Refrescar los submenús para obtener la imagen actualizada
-        await refreshSubmenus()
-
-        setEditSubmenuName("")
-        setEditNombreVisible("")
-        setEditDescription("")
-        setEditImage("")
-        setSelectedImageFile(null)
-        setImagePreviewUrl("")
-        setHasExistingImage(false)
-        setSelectedSubmenu(null)
-        setIsEditDialogOpen(false)
-      } else {
-        toast.error("Error al actualizar el submenú")
-      }
+      // Cerrar el modal
+      handleCloseEditModal()
     } catch (error) {
       console.error("Error al actualizar submenú:", error)
       toast.error("Error inesperado al actualizar el submenú")
@@ -466,13 +473,13 @@ export default function SubmenusPage() {
                     <img
                       src={imagePreviewUrl}
                       alt="Preview"
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-contain"
                     />
                     <div className="absolute top-2 right-2 flex gap-2">
                       <Badge variant={hasExistingImage && !selectedImageFile ? "secondary" : "default"}>
                         {hasExistingImage && !selectedImageFile ? "Imagen actual" : "Nueva imagen"}
                       </Badge>
-                      {hasExistingImage && !selectedImageFile && (
+                      {imagePreviewUrl && (
                         <Button
                           type="button"
                           variant="destructive"
@@ -637,7 +644,7 @@ export default function SubmenusPage() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    {submenu.image ? (
+                    {submenu.image && submenu.image !== "https://example.com/mock-image.jpg" ? (
                       <Badge variant="secondary" className="gap-1">
                         <ImageIcon className="h-3 w-3" />
                         Asignada

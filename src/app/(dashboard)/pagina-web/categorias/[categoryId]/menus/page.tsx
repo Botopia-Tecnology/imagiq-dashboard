@@ -104,7 +104,7 @@ export default function MenusPage() {
         const deleteResponse = await multimediaEndpoints.deleteMenuImage(selectedMenu.id)
 
         if (deleteResponse.success) {
-          imageUrl = ""
+          imageUrl = "" // Usar cadena vacía en lugar de URL de ejemplo
           toast.success("Imagen eliminada exitosamente")
         } else {
           toast.error(deleteResponse.message || "Error al eliminar la imagen")
@@ -127,40 +127,47 @@ export default function MenusPage() {
           const data = uploadResponse.data as { imageUrl?: string; url?: string } | undefined
           imageUrl = data?.imageUrl || data?.url || editImage
           toast.success("Imagen subida exitosamente")
+          
+          // Si solo se está subiendo imagen sin cambiar otros datos, cerrar el modal
+          if (!editMenuName && !editNombreVisible && !editDescription) {
+            await refreshMenus()
+            handleCloseEditModal()
+            return
+          }
         } else {
           toast.error(uploadResponse.message || "Error al subir la imagen")
           return
         }
       }
 
-      // 2. Luego actualizar los datos del menú
-      const menuData = {
-        nombre: editMenuName,
-        nombreVisible: editNombreVisible,
-        descripcion: editDescription,
-        imagen: imageUrl || "https://example.com/mock-image.jpg",
+      // 3. Actualizar los datos del menú si hay cambios en los campos de texto
+      const hasTextChanges = editMenuName !== selectedMenu.name || 
+                            editNombreVisible !== selectedMenu.nombreVisible || 
+                            editDescription !== selectedMenu.description
+
+      if (hasTextChanges) {
+        const menuData = {
+          nombre: editMenuName,
+          nombreVisible: editNombreVisible,
+          descripcion: editDescription,
+          imagen: imageUrl || "", // Usar cadena vacía en lugar de URL de ejemplo
+        }
+
+        const success = await updateMenu(selectedMenu.id, menuData)
+
+        if (success) {
+          toast.success("Menú actualizado correctamente")
+        } else {
+          toast.error("Error al actualizar el menú")
+          return
+        }
       }
 
-      const success = await updateMenu(selectedMenu.id, menuData)
+      // Refrescar los menús para obtener los datos actualizados
+      await refreshMenus()
 
-      if (success) {
-        toast.success("Menú actualizado correctamente")
-
-        // Refrescar los menús para obtener la imagen actualizada
-        await refreshMenus()
-
-        setEditMenuName("")
-        setEditNombreVisible("")
-        setEditDescription("")
-        setEditImage("")
-        setSelectedImageFile(null)
-        setImagePreviewUrl("")
-        setHasExistingImage(false)
-        setSelectedMenu(null)
-        setIsEditDialogOpen(false)
-      } else {
-        toast.error("Error al actualizar el menú")
-      }
+      // Cerrar el modal
+      handleCloseEditModal()
     } catch (error) {
       console.error("Error al actualizar menú:", error)
       toast.error("Error inesperado al actualizar el menú")
@@ -467,7 +474,7 @@ export default function MenusPage() {
                     <img
                       src={imagePreviewUrl}
                       alt="Preview"
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-contain"
                     />
                     <div className="absolute top-2 right-2 flex gap-2">
                       <Badge variant={hasExistingImage && !selectedImageFile ? "secondary" : "default"}>
@@ -674,7 +681,7 @@ export default function MenusPage() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    {menu.image ? (
+                    {menu.image && menu.image !== "https://example.com/mock-image.jpg" ? (
                       <Badge variant="secondary" className="gap-1">
                         <ImageIcon className="h-3 w-3" />
                         Asignada
