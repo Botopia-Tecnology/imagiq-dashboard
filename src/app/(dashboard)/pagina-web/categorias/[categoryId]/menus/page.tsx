@@ -411,14 +411,14 @@ export default function MenusPage() {
 
         {/* Modal de Edición */}
         <Dialog open={isEditDialogOpen} onOpenChange={handleEditModalOpenChange}>
-          <DialogContent className="max-w-2xl [&>button]:cursor-pointer">
+          <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col [&>button]:cursor-pointer">
             <DialogHeader>
               <DialogTitle>Editar Menú</DialogTitle>
               <DialogDescription>
                 Modifica los datos del menú seleccionado
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-4 py-4">
+            <div className="space-y-4 py-4 overflow-y-auto">
               <div className="space-y-2">
                 <Label htmlFor="edit-menu-name">Menú de Productos</Label>
                 <Input
