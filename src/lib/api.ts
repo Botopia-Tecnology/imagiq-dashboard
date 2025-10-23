@@ -300,6 +300,7 @@ export interface ProductFilterParams {
   precioMax?: number;
   conDescuento?: boolean;
   stockMinimo?: number;
+  stockMaximo?: number;
   color?: string;
   capacidad?: string;
   nombre?: string;
@@ -308,6 +309,7 @@ export interface ProductFilterParams {
   codigoMarket?: string;
   filterMode?: string;
   page?: number;
+  stock?:number;
   limit?: number;
   sortBy?: string;
   sortOrder?:  "desc"  |"asc" ;
@@ -343,6 +345,7 @@ export interface ProductApiData {
   sku?: string[];
   desDetallada?: string[];
   stock?: number[];
+  stockTotal?: number[];
   imagePreviewUrl?: string[];
   imageDetailsUrls?: string[][]; // Array de arrays de URLs de imágenes detalladas
   urlImagenes?: string[];

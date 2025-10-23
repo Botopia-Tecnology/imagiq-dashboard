@@ -49,6 +49,7 @@ export interface ProductCardProps {
   menu?: string;
   capacity?: string | null;
   stock?: number;
+  stockTotal?: number;
   sku?: string | null;
   detailedDescription?: string | null;
   selectedColor?: ProductColor;
@@ -105,6 +106,7 @@ export function mapApiProductToFrontend(apiProduct: ProductApiData): ProductCard
   
   const capacidadArray = Array.isArray(apiProduct.capacidad) ? apiProduct.capacidad : [];
   const stockArray = Array.isArray(apiProduct.stock) ? apiProduct.stock : [];
+  const stockTotal = apiProduct.stockTotal?.[0] ?? 0;
   const skuArray = Array.isArray(apiProduct.sku) ? apiProduct.sku : [];
   const desDetalladaArray = Array.isArray(apiProduct.desDetallada) ? apiProduct.desDetallada : [];
 
@@ -127,6 +129,7 @@ export function mapApiProductToFrontend(apiProduct: ProductApiData): ProductCard
     menu: apiProduct.menu,
     capacity: capacidadArray.length > 0 ? capacidadArray.join(', ') : null,
     stock: stockArray.reduce((sum, s) => sum + s, 0),
+    stockTotal: stockTotal,
     sku: skuArray.length > 0 ? skuArray.join(', ') : null,
     detailedDescription: desDetalladaArray.length > 0 ? desDetalladaArray.join(' ') : null,
   };

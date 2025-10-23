@@ -20,6 +20,7 @@ interface DataTableToolbarProps<TData> {
       value: string;
       icon?: React.ComponentType<{ className?: string }>;
     }>;
+    singleSelect?: boolean;
   }>;
   onSearchChange?: (search: string) => void;
   onFilterChange?: (filterId: string, value: string[]) => void;
@@ -64,6 +65,7 @@ export function DataTableToolbar<TData>({
               column={column}
               title={filter.title}
               options={filter.options}
+              singleSelect={filter.singleSelect}
               onValueChange={
                 onFilterChange
                   ? (value) => onFilterChange(filter.id, value)

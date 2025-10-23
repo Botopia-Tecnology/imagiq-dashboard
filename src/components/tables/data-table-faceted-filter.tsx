@@ -30,6 +30,7 @@ interface DataTableFacetedFilterProps<TData, TValue> {
     icon?: React.ComponentType<{ className?: string }>
   }[]
   onValueChange?: (value: string[]) => void
+  singleSelect?: boolean
 }
 
 export function DataTableFacetedFilter<TData, TValue>({
@@ -37,6 +38,7 @@ export function DataTableFacetedFilter<TData, TValue>({
   title,
   options,
   onValueChange,
+  singleSelect = false,
 }: DataTableFacetedFilterProps<TData, TValue>) {
   const facets = column?.getFacetedUniqueValues()
   const [selectedValues, setSelectedValues] = React.useState<Set<string>>(
@@ -107,13 +109,20 @@ export function DataTableFacetedFilter<TData, TValue>({
                   <CommandItem
                     key={option.value}
                     onSelect={() => {
-                      if (isSelected) {
-                        selectedValues.delete(option.value)
+                      if (singleSelect) {
+                        // En modo de selección única, solo mantener el valor seleccionado
+                        const newValues = isSelected ? [] : [option.value]
+                        handleValueChange(newValues)
                       } else {
-                        selectedValues.add(option.value)
+                        // Modo multi-selección normal
+                        if (isSelected) {
+                          selectedValues.delete(option.value)
+                        } else {
+                          selectedValues.add(option.value)
+                        }
+                        const filterValues = Array.from(selectedValues)
+                        handleValueChange(filterValues)
                       }
-                      const filterValues = Array.from(selectedValues)
-                      handleValueChange(filterValues)
                     }}
                   >
                     <div

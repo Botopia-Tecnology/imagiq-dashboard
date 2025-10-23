@@ -1,34 +1,14 @@
 "use client";
 
-import { useMemo, useCallback, useState } from "react";
+import { useMemo, useCallback, useState, useEffect } from "react";
 import { DataTable } from "@/components/tables/data-table";
 import { createProductColumns } from "@/components/tables/columns/products-columns";
 import { useProducts } from "@/features/products/useProducts";
-
-const categories = [
-  { label: "Smartphones", value: "Celulares" },
-  { label: "Tablets", value: "Tablets" },
-  { label: "Relojes", value: "Wearables" },
-  { label: "Accesorios", value: "Accesorios" },
-  { label: "Galaxy buds falta buds", value: "buds" },
-
-  { label: "Televisores", value: "Televisores" },
-  { label: "Barras de sonido", value: "Barras de sonido" },
-  { label: "Sistemas de audio", value: "Sistemas de audio" },
-
-  { label: "Refrigeradores", value: "Neveras,Nevecon" },
-  { label: "Lavadora", value: "Lavadora,Secadora" },
-  { label: "Lavavajillas", value: "Lavavajillas" },
-  { label: "Aire acondicionado", value: "Aire Acondicionado" },
-  { label: "Microondas", value: "Microondas" },
-  { label: "Aspiradoras", value: "Aspiradoras" },
-  { label: "Hornos", value: "Hornos" },
-];
+import { categoryEndpoints } from "@/lib/api";
 
 const statuses = [
   { label: "Activo", value: "active" },
   { label: "Inactivo", value: "inactive" },
-  { label: "Borrador", value: "draft" },
 ];
 
 export function ProductsTableWrapper() {
@@ -39,6 +19,29 @@ export function ProductsTableWrapper() {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<string | undefined>();
   const [sortOrder, setSortOrder] = useState< "desc" | "asc" | undefined>();
+  const [categories, setCategories] = useState<{ label: string; value: string }[]>([]);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await categoryEndpoints.getVisible();
+        const categoryOptions = response.data.flatMap(category =>
+          category.menus
+            .filter(menu => menu.nombre) // Filtrar menús vacíos
+            .map(menu => ({
+              label: menu.nombre,
+              value: menu.nombre
+            }))
+        );
+        console.log(categoryOptions)
+        setCategories(categoryOptions);
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+      }
+    };
+ 
+    fetchCategories();
+  }, []);
 
   const initialFilters = useMemo(() => ({ limit: 10 }), []);
 
@@ -89,6 +92,15 @@ export function ProductsTableWrapper() {
         filters.name = searchQuery;
       }
 
+      // Mantener filtro de estado
+       if (currentFilters.status && currentFilters.status.length > 0) {
+        if (currentFilters.status[0] === "active") {
+          filters.minStock = 1;
+        } else if (currentFilters.status[0] === "inactive") {
+          filters.maxStock = 0;
+        }
+      }
+
       filterProducts(filters);
     },
     [filterProducts, currentFilters, searchQuery, pageSize]
@@ -135,6 +147,15 @@ export function ProductsTableWrapper() {
         filters.sortOrder = sortOrder;
       }
 
+      // Mantener filtro de estado
+       if (currentFilters.status && currentFilters.status.length > 0) {
+        if (currentFilters.status[0] === "active") {
+          filters.minStock = 1;
+        } else if (currentFilters.status[0] === "inactive") {
+          filters.maxStock = 0;
+        }
+      }
+
       filterProducts(filters);
     },
     [filterProducts, currentFilters, searchQuery, sortBy, sortOrder]
@@ -175,6 +196,15 @@ export function ProductsTableWrapper() {
         filters.sortOrder = sortOrder;
       }
 
+      // Mantener filtro de estado
+       if (currentFilters.status && currentFilters.status.length > 0) {
+        if (currentFilters.status[0] === "active") {
+          filters.minStock = 1;
+        } else if (currentFilters.status[0] === "inactive") {
+          filters.maxStock = 0;
+        }
+      }
+
       filterProducts(filters);
     },
     [filterProducts, pageSize, currentFilters, sortBy, sortOrder]
@@ -191,8 +221,17 @@ export function ProductsTableWrapper() {
         page: 1,
       };
 
+      // Manejar filtro de Estado
+      if (filterId === "status" && value.length > 0) {
+        if (value[0] === "active") {
+          filters.minStock = 1; // Productos activos: stock >= 1
+        } else if (value[0] === "inactive") {
+          filters.maxStock = 0; // Productos inactivos: stock = 0
+        }
+      }
+
       // Validar si alguno de los valores es "buds"
-      if (value.length > 0) {
+      if (filterId === "menu" && value.length > 0) {
         const hasBuds = value.includes("buds");
 
         if (hasBuds) {
@@ -228,6 +267,15 @@ export function ProductsTableWrapper() {
         filters.sortOrder = sortOrder;
       }
 
+      // Aplicar filtros de estado desde otros filtros guardados
+      if (filterId !== "status" && currentFilters.status && currentFilters.status.length > 0) {
+        if (currentFilters.status[0] === "active") {
+          filters.minStock = 1;
+        } else if (currentFilters.status[0] === "inactive") {
+          filters.maxStock = 0;
+        }
+      }
+
       filterProducts(filters);
     },
     [filterProducts, pageSize, searchQuery, currentFilters, sortBy, sortOrder]
@@ -240,13 +288,14 @@ export function ProductsTableWrapper() {
         title: "Menú",
         options: categories,
       },
-      // {
-      //   id: "status",
-      //   title: "Estado",
-      //   options: statuses,
-      // },
+      {
+        id: "status",
+        title: "Estado",
+        options: statuses,
+        singleSelect: true,
+      },
     ],
-    []
+    [categories]
   );
 
   const columns = useMemo(

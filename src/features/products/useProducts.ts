@@ -58,6 +58,7 @@ export interface ProductCardProps {
   menu?: string;
   capacity?: string | null;
   stock?: number;
+  stockTotal?: number;
   sku?: string | null;
   detailedDescription?: string | null;
   selectedColor?: ProductColor;
@@ -76,6 +77,8 @@ export interface ProductFilters {
   name?: string;
   withDiscount?: boolean;
   minStock?: number;
+  maxStock?: number;
+  stock?: number;
   descriptionKeyword?: string; // Nuevo filtro para palabras clave en descripción
   searchQuery?: string; // Query de búsqueda general para nombre Y desDetallada
   page?: number; // Página actual para paginación
@@ -148,9 +151,11 @@ export const useProducts = (
       if (filters.color) params.color = filters.color;
       if (filters.capacity) params.capacidad = filters.capacity;
       if (filters.name) params.nombre = filters.name;
+      if(filters.stock) params.stock = filters.stock;
       if (filters.withDiscount !== undefined)
         params.conDescuento = filters.withDiscount;
       if (filters.minStock !== undefined) params.stockMinimo = filters.minStock;
+      if (filters.maxStock !== undefined) params.stockMaximo = filters.maxStock;
       if (filters.descriptionKeyword) {
         // Usar el campo desDetallada para buscar en la descripción detallada
         params.desDetallada = filters.descriptionKeyword;
