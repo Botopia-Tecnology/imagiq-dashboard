@@ -345,6 +345,7 @@ export interface ProductApiData {
   sku?: string[];
   desDetallada?: string[];
   stock?: number[];
+  stockTiendas?: Record<string, number>[];
   stockTotal?: number[];
   imagePreviewUrl?: string[];
   imageDetailsUrls?: string[][]; // Array de arrays de URLs de imágenes detalladas
