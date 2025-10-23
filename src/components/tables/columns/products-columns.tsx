@@ -213,9 +213,11 @@ export const createProductColumns = (
           variant="ghost"
           onClick={() => {
             const currentSort = column.getIsSorted()
-            // Si no está ordenado, empezar con desc. Si es desc, cambiar a asc. Si es asc, cambiar a desc.
-            const newDirection = currentSort === "desc" ? "asc" : "desc"
-            column.toggleSorting(currentSort === "asc")
+            // Si está en desc, cambiar a asc. Si no está ordenado o está en asc, ir a desc
+            const isDesc = currentSort === "desc"
+            const newDirection = isDesc ? "asc" : "desc"
+            // toggleSorting(true) = desc, toggleSorting(false) = asc
+            column.toggleSorting(!isDesc)
             onSortChange?.("stock", newDirection)
           }}
         >

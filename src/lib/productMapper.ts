@@ -94,7 +94,6 @@ const colorMap: Record<string, { hex: string; label: string }> = {
  */
 export function mapApiProductToFrontend(apiProduct: ProductApiData): ProductCardProps {
 
-  console.log(apiProduct,'sii')
 
   // Determinar imagen basada en categoría/subcategoría
   const image = getProductImage(apiProduct);

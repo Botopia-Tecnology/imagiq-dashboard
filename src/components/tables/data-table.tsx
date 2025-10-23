@@ -111,6 +111,7 @@ export function DataTable<TData, TValue>({
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
     manualPagination: !!pageCount,
+    manualSorting: true, // Desactivar ordenamiento local, se ordena en el servidor
   })
 
   return (
