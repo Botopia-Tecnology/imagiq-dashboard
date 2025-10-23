@@ -18,7 +18,9 @@ export interface ProductColor {
   price?: string; // Precio específico para este color (opcional)
   originalPrice?: string; // Precio original antes de descuento (opcional)
   discount?: string; // Descuento específico para este color (opcional)
-  stock?: number; // Stock disponible para este color (opcional)
+  stock?: number; // Stock ecommerce disponible para este color (opcional)
+  stockTiendas?: Record<string, number>; // Stock por tienda para este color (opcional)
+  stockTotal?: number; // Stock total para este color (opcional)
   description?: string; // Descripción detallada de esta variante (opcional)
   capacity?: string; // Capacidad específica de esta variante (opcional)
   imageUrl?: string; // URL de la imagen específica de esta variante (opcional)
@@ -92,11 +94,14 @@ const colorMap: Record<string, { hex: string; label: string }> = {
  */
 export function mapApiProductToFrontend(apiProduct: ProductApiData): ProductCardProps {
 
+
   // Determinar imagen basada en categoría/subcategoría
   const image = getProductImage(apiProduct);
   
   // Crear colores del producto (ahora maneja arrays)
   const colors: ProductColor[] = createProductColorsFromArray(apiProduct);
+
+
   
   // Calcular precios y descuentos (usar el primer precio disponible)
   const { price, originalPrice, discount, isNew } = calculatePricingFromArray(apiProduct);
@@ -223,11 +228,20 @@ function createProductColorsFromArray(apiProduct: ProductApiData): ProductColor[
     // Usar el primer SKU disponible para este color
     const firstIndex = indices[0] ?? 0;
 
-    // Calcular el stock total para este color sumando todos los índices
+    // Obtener arrays de stock
     const stockArray = Array.isArray(apiProduct.stock) ? apiProduct.stock : [];
-    const stockTotal = indices.reduce((total, idx) => {
-      return total + (stockArray[idx] || 0);
-    }, 0);
+    const stockTiendasArray = Array.isArray(apiProduct.stockTiendas) ? apiProduct.stockTiendas : [];
+    const stockTotalArray = Array.isArray(apiProduct.stockTotal) ? apiProduct.stockTotal : [];
+
+    // Stock ecommerce para este color (primer índice)
+    const stockEcommerce = stockArray[firstIndex] || 0;
+
+    // Stock tiendas para este color (primer índice)
+    const stockTiendas = stockTiendasArray[firstIndex] || {};
+
+    // Stock total para este color (primer índice)
+    const stockTotalColor = stockTotalArray[firstIndex] || 0;
+
 
     // Obtener descripción detallada del primer índice
     const desDetalladaArray = Array.isArray(apiProduct.desDetallada) ? apiProduct.desDetallada : [];
@@ -269,7 +283,9 @@ function createProductColorsFromArray(apiProduct: ProductApiData): ProductColor[
       originalPrice,
       discount,
       sku: skuArray[firstIndex] || '',
-      stock: stockTotal,
+      stock: stockEcommerce,
+      stockTiendas: stockTiendas,
+      stockTotal: stockTotalColor,
       description,
       capacity,
       imageUrl,
