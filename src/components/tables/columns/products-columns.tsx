@@ -151,11 +151,11 @@ export const createProductColumns = (
           <Badge variant="outline" className="w-fit">
             {product.category || "Sin categoría"}
           </Badge>
-          {product.menu && (
+          {/* {product.menu && (
             <span className="text-xs text-muted-foreground">
               {product.menu}
             </span>
-          )}
+          )} */}
         </div>
       )
     },
@@ -167,8 +167,12 @@ export const createProductColumns = (
     accessorKey: "menu",
     header: "Menú",
     cell: ({ row }) => {
-      // Esta columna está oculta, solo existe para el filtro
-      return null
+      const product = row.original
+      return (
+        <div className="flex flex-col gap-1">
+          {product.menu }
+        </div>
+      )
     },
     filterFn: (row, id, value) => {
       const menuValue = row.getValue(id) as string
