@@ -24,7 +24,7 @@ export function ProductsTableWrapper() {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await categoryEndpoints.getVisible();
+        const response = await categoryEndpoints.getVisibleCompletas();
         const categoryOptions = response.data.flatMap(category =>
           category.menus
             .filter(menu => menu.nombre) // Filtrar menús vacíos
