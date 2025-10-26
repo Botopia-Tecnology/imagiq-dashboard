@@ -288,12 +288,12 @@ export function ProductsTableWrapper() {
         title: "Menú",
         options: categories,
       },
-      {
-        id: "status",
-        title: "Estado",
-        options: statuses,
-        singleSelect: true,
-      },
+      // {
+      //   id: "status",
+      //   title: "Estado",
+      //   options: statuses,
+      //   singleSelect: true,
+      // },
     ],
     [categories]
   );

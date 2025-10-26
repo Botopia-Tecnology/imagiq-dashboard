@@ -211,18 +211,18 @@ export const createProductColumns = (
       return (
         <Button
           variant="ghost"
-          onClick={() => {
-            const currentSort = column.getIsSorted()
-            // Si está en desc, cambiar a asc. Si no está ordenado o está en asc, ir a desc
-            const isDesc = currentSort === "desc"
-            const newDirection = isDesc ? "asc" : "desc"
-            // toggleSorting(true) = desc, toggleSorting(false) = asc
-            column.toggleSorting(!isDesc)
-            onSortChange?.("stock", newDirection)
-          }}
+          // onClick={() => {
+          //   const currentSort = column.getIsSorted()
+          //   // Si está en desc, cambiar a asc. Si no está ordenado o está en asc, ir a desc
+          //   const isDesc = currentSort === "desc"
+          //   const newDirection = isDesc ? "asc" : "desc"
+          //   // toggleSorting(true) = desc, toggleSorting(false) = asc
+          //   column.toggleSorting(!isDesc)
+          //   onSortChange?.("stock", newDirection)
+          // }}
         >
           Stock
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          {/* <ArrowUpDown className="ml-2 h-4 w-4" /> */}
         </Button>
       )
     },
