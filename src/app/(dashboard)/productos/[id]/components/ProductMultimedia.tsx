@@ -61,33 +61,52 @@ export function ProductMultimedia({
     setIsLoadingPremium(false)
   }, [isPremiumMode, selectedColor])
 
+  // Check if product has premium segment
+  const isPremiumProduct = product.segmento?.includes("Premium") || false;
+
   return (
     <Card className="h-fit">
       <CardContent className="p-6">
         {/* Botón de editar y switch premium */}
         <div className="flex justify-between items-center mb-4">
-          <div className="flex items-center gap-3">
-            <Switch
-              id="premium-mode"
-              checked={isPremiumMode}
-              onCheckedChange={setIsPremiumMode}
-            />
-            <Label htmlFor="premium-mode" className="text-sm font-medium cursor-pointer">
-              Contenido Premium
-            </Label>
-          </div>
-          <div className="flex gap-2">
-            {isPremiumMode ? (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsPremiumModalOpen(true)}
-                className="gap-2"
-              >
-                <Pencil className="h-4 w-4" />
-                Editar Premium
-              </Button>
-            ) : (
+          {isPremiumProduct ? (
+            <>
+              <div className="flex items-center gap-3">
+                <Switch
+                  id="premium-mode"
+                  checked={isPremiumMode}
+                  onCheckedChange={setIsPremiumMode}
+                />
+                <Label htmlFor="premium-mode" className="text-sm font-medium cursor-pointer">
+                  Contenido Premium
+                </Label>
+              </div>
+              <div className="flex gap-2">
+                {isPremiumMode ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsPremiumModalOpen(true)}
+                    className="gap-2"
+                  >
+                    <Pencil className="h-4 w-4" />
+                    Editar Premium
+                  </Button>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsModalOpen(true)}
+                    className="gap-2"
+                  >
+                    <Pencil className="h-4 w-4" />
+                    Editar imágenes
+                  </Button>
+                )}
+              </div>
+            </>
+          ) : (
+            <div className="flex justify-end w-full">
               <Button
                 variant="outline"
                 size="sm"
@@ -97,8 +116,8 @@ export function ProductMultimedia({
                 <Pencil className="h-4 w-4" />
                 Editar imágenes
               </Button>
-            )}
-          </div>
+            </div>
+          )}
         </div>
         {isLoadingPremium ? (
           <div className="flex items-center justify-center py-16">
@@ -196,9 +215,9 @@ export function ProductMultimedia({
             </div>
 
             {/* Imagen Premium del Dispositivo (última imagen) */}
-            {premiumImages.length > 0 && (
-              <div className="mt-6 space-y-2">
-                <h3 className="text-sm font-medium text-muted-foreground">Imagen Premium</h3>
+            <div className="mt-6 space-y-2">
+              <h3 className="text-sm font-medium text-muted-foreground">Imagen Premium</h3>
+              {premiumImages.length > 0 ? (
                 <div className="relative w-full h-64 overflow-hidden rounded-lg bg-muted">
                   <Image
                     src={premiumImages[premiumImages.length - 1]}
@@ -207,8 +226,12 @@ export function ProductMultimedia({
                     className="object-contain"
                   />
                 </div>
-              </div>
-            )}
+              ) : (
+                <div className="w-full h-64 flex items-center justify-center rounded-lg bg-muted">
+                  <p className="text-sm text-muted-foreground">No hay imagen premium disponible</p>
+                </div>
+              )}
+            </div>
           </>
         ) : (
           /* Contenido Normal */

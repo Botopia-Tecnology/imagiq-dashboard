@@ -403,6 +403,7 @@ export interface ProductApiData {
   fechaFinalVigencia?: string[];
   imagenPremium?: string[][]; // Array de arrays de URLs de imágenes premium
   videoPremium?: string[][]; // Array de arrays de URLs de videos premium
+  segmento?: string[]; // Array de segmentos del producto (ej: ["Premium"])
 }
 
 // Product media update interfaces
