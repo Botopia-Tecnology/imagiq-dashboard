@@ -56,7 +56,7 @@ export function ProductInfo({
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <label className="text-sm font-medium">
-              Color: {selectedColor?.label}
+              Color: {selectedColor?.hex} - {selectedColor?.label}
             </label>
             {selectedColor?.stockTotal !== undefined && (
               <span className="text-sm text-muted-foreground">
@@ -75,18 +75,20 @@ export function ProductInfo({
               <div key={color.sku} className="flex flex-col items-center gap-1">
                 <button
                   onClick={() => onColorSelect(color)}
-                  //disabled={!color.stockTotal || color.stockTotal === 0}
+                  disabled={!color.stockTotal || color.stockTotal === 0}
                   className={`h-10 w-10 rounded-full border-2 transition-all ${
                     selectedColor?.sku === color.sku
                       ? "border-primary ring-2 ring-primary ring-offset-2"
                       : "border-border hover:border-primary/50"
                   } ${
                     !color.stockTotal || color.stockTotal === 0
-                      ? ""
-                      : ""
+                      ? "opacity-50 cursor-not-allowed"
+                      : "hover:scale-105"
                   }`}
-                  style={{ backgroundColor: color.hex }}
-                  title={`${color.label} - ${color.stockTotal || 0} disponibles`}
+                  style={{ 
+                    backgroundColor: color.hex
+                  }}
+                  title={`${color.label} (${color.hex}) - ${color.stockTotal || 0} disponibles`}
                 />
                 {(!color.stockTotal || color.stockTotal === 0) && (
                   <span className="text-xs text-red-500">Agotado</span>
@@ -157,7 +159,7 @@ export function ProductInfo({
               </span>
             </div>
           )}
-                    {currentStock !== undefined && (
+          {currentStock !== undefined && (
             <div className="flex justify-between">
               <span className="text-muted-foreground">
                 Stock total {selectedColor ? `(${selectedColor.label})` : ''}:

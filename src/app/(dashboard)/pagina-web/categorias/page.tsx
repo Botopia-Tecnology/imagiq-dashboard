@@ -100,7 +100,7 @@ export default function CategoriasPage() {
         const deleteResponse = await multimediaEndpoints.deleteCategoryImage(selectedCategory.id)
 
         if (deleteResponse.success) {
-          imageUrl = ""
+          imageUrl = "" // Usar cadena vacía en lugar de URL de ejemplo
           toast.success("Imagen eliminada exitosamente")
         } else {
           toast.error(deleteResponse.message || "Error al eliminar la imagen")
@@ -134,7 +134,7 @@ export default function CategoriasPage() {
         nombre: editCategoryName,
         nombreVisible: editNombreVisible,
         descripcion: editDescription,
-        imagen: imageUrl || "https://example.com/mock-image.jpg",
+        imagen: imageUrl || "", // Usar cadena vacía en lugar de URL de ejemplo
       }
 
       const success = await updateCategory(selectedCategory.id, categoryData)
@@ -471,7 +471,7 @@ export default function CategoriasPage() {
                     <img
                       src={imagePreviewUrl}
                       alt="Preview"
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-contain"
                     />
                     <div className="absolute top-2 right-2 flex gap-2">
                       <Badge variant={hasExistingImage && !selectedImageFile ? "secondary" : "default"}>
@@ -678,7 +678,7 @@ export default function CategoriasPage() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    {category.image ? (
+                    {category.image && category.image !== "https://example.com/mock-image.jpg" ? (
                       <Badge variant="secondary" className="gap-1">
                         <ImageIcon className="h-3 w-3" />
                         Asignada

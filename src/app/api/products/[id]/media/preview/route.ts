@@ -57,7 +57,6 @@ export async function DELETE(
       data,
     });
   } catch (error) {
-    console.error("Error deleting preview image:", error);
     return NextResponse.json(
       {
         success: false,

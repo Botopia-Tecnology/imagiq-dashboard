@@ -25,6 +25,8 @@ export interface ProductColor {
   capacity?: string; // Capacidad específica de esta variante (opcional)
   imageUrl?: string; // URL de la imagen específica de esta variante (opcional)
   imageDetailsUrls?: string[]; // URLs de las imágenes detalladas de esta variante (opcional)
+  premiumImages?: string[]; // URLs de las imágenes premium de esta variante (opcional)
+  premiumVideos?: string[]; // URLs de los videos premium de esta variante (opcional)
 }
 
 
@@ -57,35 +59,40 @@ export interface ProductCardProps {
   selectedColor?: ProductColor;
   setSelectedColor?: (color: ProductColor) => void;
   puntos_q?: number; // Puntos Q acumulables por producto (valor fijo por ahora)
+  segmento?: string[]; // Array de segmentos del producto (ej: ["Premium"])
 }
 
 // Mapeo de colores de la API a colores del frontend
 const colorMap: Record<string, { hex: string; label: string }> = {
   'azul': { hex: '#1E40AF', label: 'Azul' },
+  'azul medianoche': { hex: '#1E40AF', label: 'Azul Medianoche' },
+  'azul claro': { hex: '#3C5B8A', label: 'Azul Claro' },
   'negro': { hex: '#000000', label: 'Negro' },
+  'negro titanio': { hex: '#1F2937', label: 'Negro Titanio' },
+  'negro medianoche': { hex: '#000000', label: 'Negro Medianoche' },
   'blanco': { hex: '#FFFFFF', label: 'Blanco' },
+  'blanco perla': { hex: '#FFFFFF', label: 'Blanco Perla' },
   'verde': { hex: '#10B981', label: 'Verde' },
+  'verde menta': { hex: '#10B981', label: 'Verde Menta' },
   'rosado': { hex: '#EC4899', label: 'Rosa' },
   'rosa': { hex: '#EC4899', label: 'Rosa' },
+  'coral': { hex: '#EE6779', label: 'Coral' },
+  'co': { hex: '#EE6779', label: 'Coral' },
   'gris': { hex: '#808080', label: 'Gris' },
   'gris titanio': { hex: '#4B5563', label: 'Gris Titanio' },
-  'negro titanio': { hex: '#1F2937', label: 'Negro Titanio' },
+  'gris grafito': { hex: '#4B5563', label: 'Gris Grafito' },
   'plateado': { hex: '#C0C0C0', label: 'Plateado' },
   'dorado': { hex: '#D4AF37', label: 'Dorado' },
+  'oro': { hex: '#D4AF37', label: 'Dorado' },
+  'oro rosa': { hex: '#E8B4B8', label: 'Oro Rosa' },
   'rojo': { hex: '#DC2626', label: 'Rojo' },
   'amarillo': { hex: '#F59E0B', label: 'Amarillo' },
   'morado': { hex: '#7C3AED', label: 'Morado' },
   'purpura': { hex: '#7C3AED', label: 'Morado' },
+  'morado lavanda': { hex: '#B19CD9', label: 'Morado Lavanda' },
   'beige': { hex: '#F5F5DC', label: 'Beige' },
   'marron': { hex: '#8B4513', label: 'Marrón' },
   'no aplica': { hex: '#F3F4F6', label: 'Estándar' },
-  // Variaciones comunes
-  'azul medianoche': { hex: '#1E40AF', label: 'Azul Medianoche' },
-  'negro medianoche': { hex: '#000000', label: 'Negro Medianoche' },
-  'blanco perla': { hex: '#FFFFFF', label: 'Blanco Perla' },
-  'gris grafito': { hex: '#4B5563', label: 'Gris Grafito' },
-  'oro rosa': { hex: '#E8B4B8', label: 'Oro Rosa' },
-  'morado lavanda': { hex: '#B19CD9', label: 'Morado Lavanda' }
 };
 
 /**
@@ -115,6 +122,8 @@ export function mapApiProductToFrontend(apiProduct: ProductApiData): ProductCard
   const skuArray = Array.isArray(apiProduct.sku) ? apiProduct.sku : [];
   const desDetalladaArray = Array.isArray(apiProduct.desDetallada) ? apiProduct.desDetallada : [];
 
+  const segmentoArray = Array.isArray(apiProduct.segmento) ? apiProduct.segmento : [];
+
   return {
     id,
     name: apiProduct.nombreMarket,
@@ -137,6 +146,7 @@ export function mapApiProductToFrontend(apiProduct: ProductApiData): ProductCard
     stockTotal: stockTotal,
     sku: skuArray.length > 0 ? skuArray.join(', ') : null,
     detailedDescription: desDetalladaArray.length > 0 ? desDetalladaArray.join(' ') : null,
+    segmento: segmentoArray,
   };
 }
 
@@ -200,7 +210,31 @@ function createProductColorsFromArray(apiProduct: ProductApiData): ProductColor[
   colorPriceMap.forEach(({ color, preciosNormales, preciosDescuento, indices }) => {
     // Normalizar el color para búsqueda consistente
     const normalizedColor = color.toLowerCase().trim();
-    const colorInfo = colorMap[normalizedColor] || { hex: '#808080', label: color };
+    
+    // Buscar en el colorMap (exacto, parcial o variaciones)
+    let colorInfo = colorMap[normalizedColor];
+    
+    // Si no se encuentra exacto, intentar búsqueda parcial
+    if (!colorInfo) {
+      for (const [key, value] of Object.entries(colorMap)) {
+        if (normalizedColor.includes(key) || key.includes(normalizedColor)) {
+          colorInfo = value;
+          break;
+        }
+      }
+    }
+    
+    // Si aún no se encuentra, usar valores por defecto inteligentes
+    if (!colorInfo) {
+      // Detectar si podría ser un código hexadecimal
+      if (/^#[0-9A-Fa-f]{6}$/.test(color)) {
+        colorInfo = { hex: color, label: color.substring(1).toUpperCase() };
+      } else {
+        // Usar gris como último recurso
+        colorInfo = { hex: '#808080', label: color.charAt(0).toUpperCase() + color.slice(1).toLowerCase() };
+      }
+    }
+    
     const formatPrice = (price: number) => `$ ${price.toLocaleString('es-CO')}`;
 
     // Encontrar el precio más bajo entre todas las variantes de este color
@@ -274,6 +308,18 @@ function createProductColorsFromArray(apiProduct: ProductApiData): ProductColor[
       imageDetailsUrls = [emptyImg.src];
     }
 
+    // Obtener las imágenes premium del primer índice
+    const imagenPremiumArray = Array.isArray(apiProduct.imagenPremium) ? apiProduct.imagenPremium : [];
+    const premiumImages = imagenPremiumArray[firstIndex] && Array.isArray(imagenPremiumArray[firstIndex])
+      ? imagenPremiumArray[firstIndex].filter(url => url && url.trim() !== '')
+      : undefined;
+
+    // Obtener los videos premium del primer índice
+    const videoPremiumArray = Array.isArray(apiProduct.videoPremium) ? apiProduct.videoPremium : [];
+    const premiumVideos = videoPremiumArray[firstIndex] && Array.isArray(videoPremiumArray[firstIndex])
+      ? videoPremiumArray[firstIndex].filter(url => url && url.trim() !== '')
+      : undefined;
+
     const skuArray = Array.isArray(apiProduct.sku) ? apiProduct.sku : [];
     colorsWithPrices.push({
       name: normalizedColor.replace(/\s+/g, '-'),
@@ -289,10 +335,12 @@ function createProductColorsFromArray(apiProduct: ProductApiData): ProductColor[
       description,
       capacity,
       imageUrl,
-      imageDetailsUrls
+      imageDetailsUrls,
+      premiumImages,
+      premiumVideos
     });
   });
-  
+
   return colorsWithPrices;
 }
 

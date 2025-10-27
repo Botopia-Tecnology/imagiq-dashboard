@@ -258,6 +258,52 @@ export const productEndpoints = {
     }));
   },
 
+  // Subir múltiples imágenes usando multiple_data (preview + detalles)
+  // Si previewFile es null, mantiene la preview existente
+  uploadMultipleData: (sku: string, previewFile: File | null, detailFiles: File[]) => {
+    const formData = new FormData();
+
+    // Agregar SKU
+    formData.append('sku', sku);
+
+    // Agregar preview (Blob vacío si no se modifica)
+    if (previewFile) {
+      formData.append('file', previewFile);
+    } else {
+      // Enviar un Blob vacío para indicar que no se modifica la preview
+      formData.append('file', new Blob(), '');
+    }
+
+    // Agregar imágenes de detalle
+    detailFiles.forEach((file) => {
+      formData.append('file', file);
+    });
+
+    return fetch(`${API_BASE_URL}/api/multimedia/producto/multiple_data`, {
+      method: "POST",
+      body: formData,
+    }).then(async (response) => {
+      const data = await response.json();
+      return {
+        data,
+        success: response.ok,
+        message: typeof data?.message === 'string' ? data.message : (data?.error || "Error desconocido"),
+      };
+    }).catch((error) => ({
+      data: {},
+      success: false,
+      message: error instanceof Error ? error.message : "Request failed",
+    }));
+  },
+
+  // Obtener videos premium
+  getPremiumVideos: (sku: string) =>
+    apiClient.get<{ videos: string[] }>(`/api/multimedia/producto/${sku}/premium-videos`),
+
+  // Obtener imágenes premium
+  getPremiumImages: (sku: string) =>
+    apiClient.get<{ images: string[] }>(`/api/multimedia/producto/${sku}/premium-images`),
+
   // Reordenar imágenes existentes
   reorderImages: (sku: string, imageUrls: string[]) => {
     return apiClient.put<{ success: boolean; message: string }>(
@@ -309,10 +355,10 @@ export interface ProductFilterParams {
   codigoMarket?: string;
   filterMode?: string;
   page?: number;
-  stock?:number;
+  stock?: number;
   limit?: number;
   sortBy?: string;
-  sortOrder?:  "desc"  |"asc" ;
+  sortOrder?: "desc" | "asc";
 }
 
 
@@ -355,6 +401,9 @@ export interface ProductApiData {
   precioDescto?: number[];
   fechaInicioVigencia?: string[];
   fechaFinalVigencia?: string[];
+  imagenPremium?: string[][]; // Array de arrays de URLs de imágenes premium
+  videoPremium?: string[][]; // Array de arrays de URLs de videos premium
+  segmento?: string[]; // Array de segmentos del producto (ej: ["Premium"])
 }
 
 // Product media update interfaces
@@ -465,12 +514,40 @@ export const multimediaEndpoints = {
       method: "POST",
       body: formData,
     }).then(async (response) => {
-      const data = await response.json();
-      return {
-        data: data as { success: boolean; message?: string; imageUrl?: string },
-        success: response.ok,
-        message: typeof data?.message === 'string' ? data.message : (data?.error || "Error desconocido"),
-      };
+      // Si la respuesta es exitosa (201 Created), considerar como éxito
+      if (response.ok) {
+        try {
+          const data = await response.json();
+          return {
+            data: data as { success: boolean; message?: string; imageUrl?: string },
+            success: true,
+            message: typeof data?.message === 'string' ? data.message : "Imagen subida exitosamente",
+          };
+        } catch (jsonError) {
+          // Si no se puede parsear JSON pero la respuesta es exitosa, considerar como éxito
+          return {
+            data: {} as { success: boolean; message?: string; imageUrl?: string },
+            success: true,
+            message: "Imagen subida exitosamente",
+          };
+        }
+      } else {
+        // Si la respuesta no es exitosa, intentar obtener el mensaje de error
+        try {
+          const data = await response.json();
+          return {
+            data: {} as { success: boolean; message?: string; imageUrl?: string },
+            success: false,
+            message: typeof data?.message === 'string' ? data.message : (data?.error || "Error al subir la imagen"),
+          };
+        } catch (jsonError) {
+          return {
+            data: {} as { success: boolean; message?: string; imageUrl?: string },
+            success: false,
+            message: `Error ${response.status}: ${response.statusText}`,
+          };
+        }
+      }
     }).catch((error) => ({
       data: {} as { success: boolean; message?: string; imageUrl?: string },
       success: false,
@@ -489,12 +566,40 @@ export const multimediaEndpoints = {
       method: "PUT",
       body: formData,
     }).then(async (response) => {
-      const data = await response.json();
-      return {
-        data: data as { success: boolean; message?: string; imageUrl?: string },
-        success: response.ok,
-        message: typeof data?.message === 'string' ? data.message : (data?.error || "Error desconocido"),
-      };
+      // Si la respuesta es exitosa (200 OK o 201 Created), considerar como éxito
+      if (response.ok) {
+        try {
+          const data = await response.json();
+          return {
+            data: data as { success: boolean; message?: string; imageUrl?: string },
+            success: true,
+            message: typeof data?.message === 'string' ? data.message : "Imagen actualizada exitosamente",
+          };
+        } catch (jsonError) {
+          // Si no se puede parsear JSON pero la respuesta es exitosa, considerar como éxito
+          return {
+            data: {} as { success: boolean; message?: string; imageUrl?: string },
+            success: true,
+            message: "Imagen actualizada exitosamente",
+          };
+        }
+      } else {
+        // Si la respuesta no es exitosa, intentar obtener el mensaje de error
+        try {
+          const data = await response.json();
+          return {
+            data: {} as { success: boolean; message?: string; imageUrl?: string },
+            success: false,
+            message: typeof data?.message === 'string' ? data.message : (data?.error || "Error al actualizar la imagen"),
+          };
+        } catch (jsonError) {
+          return {
+            data: {} as { success: boolean; message?: string; imageUrl?: string },
+            success: false,
+            message: `Error ${response.status}: ${response.statusText}`,
+          };
+        }
+      }
     }).catch((error) => ({
       data: {} as { success: boolean; message?: string; imageUrl?: string },
       success: false,
@@ -513,12 +618,40 @@ export const multimediaEndpoints = {
       method: "POST",
       body: formData,
     }).then(async (response) => {
-      const data = await response.json();
-      return {
-        data: data as { success: boolean; message?: string; imageUrl?: string },
-        success: response.ok,
-        message: typeof data?.message === 'string' ? data.message : (data?.error || "Error desconocido"),
-      };
+      // Si la respuesta es exitosa (201 Created), considerar como éxito
+      if (response.ok) {
+        try {
+          const data = await response.json();
+          return {
+            data: data as { success: boolean; message?: string; imageUrl?: string },
+            success: true,
+            message: typeof data?.message === 'string' ? data.message : "Imagen subida exitosamente",
+          };
+        } catch (jsonError) {
+          // Si no se puede parsear JSON pero la respuesta es exitosa, considerar como éxito
+          return {
+            data: {} as { success: boolean; message?: string; imageUrl?: string },
+            success: true,
+            message: "Imagen subida exitosamente",
+          };
+        }
+      } else {
+        // Si la respuesta no es exitosa, intentar obtener el mensaje de error
+        try {
+          const data = await response.json();
+          return {
+            data: {} as { success: boolean; message?: string; imageUrl?: string },
+            success: false,
+            message: typeof data?.message === 'string' ? data.message : (data?.error || "Error al subir la imagen"),
+          };
+        } catch (jsonError) {
+          return {
+            data: {} as { success: boolean; message?: string; imageUrl?: string },
+            success: false,
+            message: `Error ${response.status}: ${response.statusText}`,
+          };
+        }
+      }
     }).catch((error) => ({
       data: {} as { success: boolean; message?: string; imageUrl?: string },
       success: false,
@@ -537,12 +670,40 @@ export const multimediaEndpoints = {
       method: "PUT",
       body: formData,
     }).then(async (response) => {
-      const data = await response.json();
-      return {
-        data: data as { success: boolean; message?: string; imageUrl?: string },
-        success: response.ok,
-        message: typeof data?.message === 'string' ? data.message : (data?.error || "Error desconocido"),
-      };
+      // Si la respuesta es exitosa (200 OK o 201 Created), considerar como éxito
+      if (response.ok) {
+        try {
+          const data = await response.json();
+          return {
+            data: data as { success: boolean; message?: string; imageUrl?: string },
+            success: true,
+            message: typeof data?.message === 'string' ? data.message : "Imagen actualizada exitosamente",
+          };
+        } catch (jsonError) {
+          // Si no se puede parsear JSON pero la respuesta es exitosa, considerar como éxito
+          return {
+            data: {} as { success: boolean; message?: string; imageUrl?: string },
+            success: true,
+            message: "Imagen actualizada exitosamente",
+          };
+        }
+      } else {
+        // Si la respuesta no es exitosa, intentar obtener el mensaje de error
+        try {
+          const data = await response.json();
+          return {
+            data: {} as { success: boolean; message?: string; imageUrl?: string },
+            success: false,
+            message: typeof data?.message === 'string' ? data.message : (data?.error || "Error al actualizar la imagen"),
+          };
+        } catch (jsonError) {
+          return {
+            data: {} as { success: boolean; message?: string; imageUrl?: string },
+            success: false,
+            message: `Error ${response.status}: ${response.statusText}`,
+          };
+        }
+      }
     }).catch((error) => ({
       data: {} as { success: boolean; message?: string; imageUrl?: string },
       success: false,
@@ -575,12 +736,40 @@ export const multimediaEndpoints = {
       method: "POST",
       body: formData,
     }).then(async (response) => {
-      const data = await response.json();
-      return {
-        data: data as { success: boolean; message?: string; imageUrl?: string },
-        success: response.ok,
-        message: typeof data?.message === 'string' ? data.message : (data?.error || "Error desconocido"),
-      };
+      // Si la respuesta es exitosa (201 Created), considerar como éxito
+      if (response.ok) {
+        try {
+          const data = await response.json();
+          return {
+            data: data as { success: boolean; message?: string; imageUrl?: string },
+            success: true,
+            message: typeof data?.message === 'string' ? data.message : "Imagen subida exitosamente",
+          };
+        } catch (jsonError) {
+          // Si no se puede parsear JSON pero la respuesta es exitosa, considerar como éxito
+          return {
+            data: {} as { success: boolean; message?: string; imageUrl?: string },
+            success: true,
+            message: "Imagen subida exitosamente",
+          };
+        }
+      } else {
+        // Si la respuesta no es exitosa, intentar obtener el mensaje de error
+        try {
+          const data = await response.json();
+          return {
+            data: {} as { success: boolean; message?: string; imageUrl?: string },
+            success: false,
+            message: typeof data?.message === 'string' ? data.message : (data?.error || "Error al subir la imagen"),
+          };
+        } catch (jsonError) {
+          return {
+            data: {} as { success: boolean; message?: string; imageUrl?: string },
+            success: false,
+            message: `Error ${response.status}: ${response.statusText}`,
+          };
+        }
+      }
     }).catch((error) => ({
       data: {} as { success: boolean; message?: string; imageUrl?: string },
       success: false,
@@ -599,12 +788,40 @@ export const multimediaEndpoints = {
       method: "PUT",
       body: formData,
     }).then(async (response) => {
-      const data = await response.json();
-      return {
-        data: data as { success: boolean; message?: string; imageUrl?: string },
-        success: response.ok,
-        message: typeof data?.message === 'string' ? data.message : (data?.error || "Error desconocido"),
-      };
+      // Si la respuesta es exitosa (200 OK o 201 Created), considerar como éxito
+      if (response.ok) {
+        try {
+          const data = await response.json();
+          return {
+            data: data as { success: boolean; message?: string; imageUrl?: string },
+            success: true,
+            message: typeof data?.message === 'string' ? data.message : "Imagen actualizada exitosamente",
+          };
+        } catch (jsonError) {
+          // Si no se puede parsear JSON pero la respuesta es exitosa, considerar como éxito
+          return {
+            data: {} as { success: boolean; message?: string; imageUrl?: string },
+            success: true,
+            message: "Imagen actualizada exitosamente",
+          };
+        }
+      } else {
+        // Si la respuesta no es exitosa, intentar obtener el mensaje de error
+        try {
+          const data = await response.json();
+          return {
+            data: {} as { success: boolean; message?: string; imageUrl?: string },
+            success: false,
+            message: typeof data?.message === 'string' ? data.message : (data?.error || "Error al actualizar la imagen"),
+          };
+        } catch (jsonError) {
+          return {
+            data: {} as { success: boolean; message?: string; imageUrl?: string },
+            success: false,
+            message: `Error ${response.status}: ${response.statusText}`,
+          };
+        }
+      }
     }).catch((error) => ({
       data: {} as { success: boolean; message?: string; imageUrl?: string },
       success: false,
