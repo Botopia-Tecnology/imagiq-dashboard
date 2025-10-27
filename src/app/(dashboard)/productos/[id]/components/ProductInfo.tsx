@@ -75,17 +75,18 @@ export function ProductInfo({
               <div key={color.sku} className="flex flex-col items-center gap-1">
                 <button
                   onClick={() => onColorSelect(color)}
+                  disabled={!color.stockTotal || color.stockTotal === 0}
                   className={`h-10 w-10 rounded-full border-2 transition-all ${
                     selectedColor?.sku === color.sku
                       ? "border-primary ring-2 ring-primary ring-offset-2"
-                      : color.stockTotal && color.stockTotal > 0
-                      ? "border-border hover:border-primary/50"
-                      : "border-gray-300"
+                      : "border-border hover:border-primary/50"
+                  } ${
+                    !color.stockTotal || color.stockTotal === 0
+                      ? "opacity-50 cursor-not-allowed"
+                      : "hover:scale-105"
                   }`}
                   style={{ 
-                    backgroundColor: color.hex,
-                    opacity: (!color.stockTotal || color.stockTotal === 0) ? 0.5 : 1,
-                    cursor: 'pointer'
+                    backgroundColor: color.hex
                   }}
                   title={`${color.label} (${color.hex}) - ${color.stockTotal || 0} disponibles`}
                 />
