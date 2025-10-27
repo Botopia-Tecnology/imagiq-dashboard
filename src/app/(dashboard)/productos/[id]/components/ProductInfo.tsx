@@ -75,14 +75,14 @@ export function ProductInfo({
               <div key={color.sku} className="flex flex-col items-center gap-1">
                 <button
                   onClick={() => onColorSelect(color)}
-                  disabled={!color.stockTotal || color.stockTotal === 0}
+                  //disabled={!color.stockTotal || color.stockTotal === 0}
                   className={`h-10 w-10 rounded-full border-2 transition-all ${
                     selectedColor?.sku === color.sku
                       ? "border-primary ring-2 ring-primary ring-offset-2"
                       : "border-border hover:border-primary/50"
                   } ${
                     !color.stockTotal || color.stockTotal === 0
-                      ? "opacity-50 cursor-not-allowed"
+                      ? ""
                       : ""
                   }`}
                   style={{ backgroundColor: color.hex }}
