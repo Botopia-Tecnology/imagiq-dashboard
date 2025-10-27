@@ -423,40 +423,25 @@ export function EditImagesModal({
               uploadedUrlsMap.set(newFilesWithIndex[0].index, response.data.url)
             }
           } else {
-            // Varias imágenes nuevas - usar multiple_data
+            // Varias imágenes nuevas - usar addMultipleImages
             toast.info(`Subiendo ${newFiles.length} imagen(es) de detalle...`)
-            
-            // Si hay preview existente y no se modificó, enviar null como preview
-            const previewFileToSend = previewImageFile || null
-            
-            const response = await productEndpoints.uploadMultipleData(
+
+            const response = await productEndpoints.addMultipleImages(
               selectedColor.sku,
-              previewFileToSend,
               newFiles
             )
 
             if (!response.success) {
               toast.error(response.message || "Error al subir imágenes")
               uploadErrors = true
-            } else if (response.data?.uploadedUrls && Array.isArray(response.data.uploadedUrls)) {
-              // La respuesta incluye todas las URLs (preview + detalles)
-              // uploadedUrls[0] = preview (o null si no se modificó)
-              // uploadedUrls[1..n] = imágenes de detalle
-              const urls = response.data.uploadedUrls
-              
-              // Determinar el índice inicial de las URLs de detalle
-              // Si se subió preview, las URLs de detalle empiezan en índice 1
-              // Si no se subió preview (null), las URLs de detalle empiezan en índice 0
-              const detailStartIndex = previewFileToSend ? 1 : 0
-              
-              // Mapear cada URL de detalle a su índice original
+            } else if (response.data?.urls && Array.isArray(response.data.urls)) {
+              // Mapear cada URL subida a su índice original
               newFilesWithIndex.forEach((item, idx) => {
-                const urlIndex = detailStartIndex + idx
-                if (urls[urlIndex]) {
-                  uploadedUrlsMap.set(item.index, urls[urlIndex])
+                if (response.data.urls[idx]) {
+                  uploadedUrlsMap.set(item.index, response.data.urls[idx])
                 }
               })
-              
+
               toast.success(`${newFiles.length} imagen(es) subida(s) exitosamente`)
             }
           }
@@ -484,14 +469,9 @@ export function EditImagesModal({
         // El orden cambió si las URLs existentes están en diferente orden
         const orderChanged = JSON.stringify(remainingOriginalUrls) !== JSON.stringify(remainingCurrentUrls)
 
-        // Hay imágenes nuevas que se subieron
-        const hasNewImages = newFilesWithIndex.length > 0
-
-        // Reordenar si:
-        // 1. Hay imágenes nuevas (para que queden en el orden correcto), O
-        // 2. El usuario cambió el orden de las imágenes existentes
-        // NO reordenar si SOLO se eliminaron imágenes
-        if (orderChanged || hasNewImages) {
+        // SOLO reordenar si el usuario cambió manualmente el orden de imágenes EXISTENTES
+        // NO reordenar cuando solo se agregan o eliminan imágenes
+        if (orderChanged) {
           // Construir el array final en el orden correcto
           const finalImageUrls: string[] = []
 
