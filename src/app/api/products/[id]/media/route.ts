@@ -57,7 +57,6 @@ export async function PUT(
       data,
     });
   } catch (error) {
-    console.error("Error updating product media:", error);
     return NextResponse.json(
       {
         success: false,

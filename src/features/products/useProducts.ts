@@ -68,6 +68,7 @@ export interface ProductCardProps {
   selectedColor?: ProductColor;
   setSelectedColor?: (color: ProductColor) => void;
   puntos_q?: number; // Puntos Q acumulables por producto (valor fijo por ahora)
+  segmento?: string[]; // Array de segmentos del producto (ej: ["Premium"])
 }
 
 

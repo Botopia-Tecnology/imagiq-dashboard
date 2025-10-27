@@ -68,7 +68,6 @@ export async function DELETE(
       data,
     });
   } catch (error) {
-    console.error("Error deleting detail images:", error);
     return NextResponse.json(
       {
         success: false,
