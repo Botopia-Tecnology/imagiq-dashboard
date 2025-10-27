@@ -25,6 +25,8 @@ export interface ProductColor {
   capacity?: string; // Capacidad específica de esta variante (opcional)
   imageUrl?: string; // URL de la imagen específica de esta variante (opcional)
   imageDetailsUrls?: string[]; // URLs de las imágenes detalladas de esta variante (opcional)
+  premiumImages?: string[]; // URLs de las imágenes premium de esta variante (opcional)
+  premiumVideos?: string[]; // URLs de los videos premium de esta variante (opcional)
 }
 
 
@@ -274,6 +276,18 @@ function createProductColorsFromArray(apiProduct: ProductApiData): ProductColor[
       imageDetailsUrls = [emptyImg.src];
     }
 
+    // Obtener las imágenes premium del primer índice
+    const imagenPremiumArray = Array.isArray(apiProduct.imagenPremium) ? apiProduct.imagenPremium : [];
+    const premiumImages = imagenPremiumArray[firstIndex] && Array.isArray(imagenPremiumArray[firstIndex])
+      ? imagenPremiumArray[firstIndex].filter(url => url && url.trim() !== '')
+      : undefined;
+
+    // Obtener los videos premium del primer índice
+    const videoPremiumArray = Array.isArray(apiProduct.videoPremium) ? apiProduct.videoPremium : [];
+    const premiumVideos = videoPremiumArray[firstIndex] && Array.isArray(videoPremiumArray[firstIndex])
+      ? videoPremiumArray[firstIndex].filter(url => url && url.trim() !== '')
+      : undefined;
+
     const skuArray = Array.isArray(apiProduct.sku) ? apiProduct.sku : [];
     colorsWithPrices.push({
       name: normalizedColor.replace(/\s+/g, '-'),
@@ -289,10 +303,12 @@ function createProductColorsFromArray(apiProduct: ProductApiData): ProductColor[
       description,
       capacity,
       imageUrl,
-      imageDetailsUrls
+      imageDetailsUrls,
+      premiumImages,
+      premiumVideos
     });
   });
-  
+
   return colorsWithPrices;
 }
 

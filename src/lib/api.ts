@@ -258,6 +258,52 @@ export const productEndpoints = {
     }));
   },
 
+  // Subir múltiples imágenes usando multiple_data (preview + detalles)
+  // Si previewFile es null, mantiene la preview existente
+  uploadMultipleData: (sku: string, previewFile: File | null, detailFiles: File[]) => {
+    const formData = new FormData();
+
+    // Agregar SKU
+    formData.append('sku', sku);
+
+    // Agregar preview (Blob vacío si no se modifica)
+    if (previewFile) {
+      formData.append('file', previewFile);
+    } else {
+      // Enviar un Blob vacío para indicar que no se modifica la preview
+      formData.append('file', new Blob(), '');
+    }
+
+    // Agregar imágenes de detalle
+    detailFiles.forEach((file) => {
+      formData.append('file', file);
+    });
+
+    return fetch(`${API_BASE_URL}/api/multimedia/producto/multiple_data`, {
+      method: "POST",
+      body: formData,
+    }).then(async (response) => {
+      const data = await response.json();
+      return {
+        data,
+        success: response.ok,
+        message: typeof data?.message === 'string' ? data.message : (data?.error || "Error desconocido"),
+      };
+    }).catch((error) => ({
+      data: {},
+      success: false,
+      message: error instanceof Error ? error.message : "Request failed",
+    }));
+  },
+
+  // Obtener videos premium
+  getPremiumVideos: (sku: string) =>
+    apiClient.get<{ videos: string[] }>(`/api/multimedia/producto/${sku}/premium-videos`),
+
+  // Obtener imágenes premium
+  getPremiumImages: (sku: string) =>
+    apiClient.get<{ images: string[] }>(`/api/multimedia/producto/${sku}/premium-images`),
+
   // Reordenar imágenes existentes
   reorderImages: (sku: string, imageUrls: string[]) => {
     return apiClient.put<{ success: boolean; message: string }>(
@@ -309,10 +355,10 @@ export interface ProductFilterParams {
   codigoMarket?: string;
   filterMode?: string;
   page?: number;
-  stock?:number;
+  stock?: number;
   limit?: number;
   sortBy?: string;
-  sortOrder?:  "desc"  |"asc" ;
+  sortOrder?: "desc" | "asc";
 }
 
 
@@ -355,6 +401,8 @@ export interface ProductApiData {
   precioDescto?: number[];
   fechaInicioVigencia?: string[];
   fechaFinalVigencia?: string[];
+  imagenPremium?: string[][]; // Array de arrays de URLs de imágenes premium
+  videoPremium?: string[][]; // Array de arrays de URLs de videos premium
 }
 
 // Product media update interfaces
