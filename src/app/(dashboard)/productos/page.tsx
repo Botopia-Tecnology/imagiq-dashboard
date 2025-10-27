@@ -53,7 +53,7 @@ export default function ProductosPage() {
 
     const fetchMenusCount = async () => {
       try {
-        const response = await categoryEndpoints.getVisible()
+        const response = await categoryEndpoints.getVisibleCompletas()
         const totalMenus = response.data.reduce((total, category) => {
           return total + category.menus.filter(menu => menu.nombre).length
         }, 0)
