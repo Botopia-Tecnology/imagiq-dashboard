@@ -159,7 +159,7 @@ export function ProductInfo({
               </span>
             </div>
           )}
-                    {currentStock !== undefined && (
+          {currentStock !== undefined && (
             <div className="flex justify-between">
               <span className="text-muted-foreground">
                 Stock total {selectedColor ? `(${selectedColor.label})` : ''}:
