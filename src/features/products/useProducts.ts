@@ -220,6 +220,12 @@ export const useProducts = (
           setCurrentPage(paginationData.page);
           setHasNextPage(paginationData.hasNextPage);
           setHasPreviousPage(paginationData.hasPreviousPage);
+
+          // Si no hay resultados y estamos en una página > 1, no hacer nada más
+          // El reset de página debe ser manual, no automático
+          if (mappedProducts.length === 0 && paginationData.page > 1) {
+            console.warn("Empty results on page > 1, but not auto-resetting to avoid infinite loop");
+          }
         } else {
           setError(response.message || "Error al cargar productos");
         }

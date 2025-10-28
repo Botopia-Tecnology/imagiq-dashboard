@@ -117,6 +117,7 @@ export function DataTable<TData, TValue>({
     manualPagination: !!pageCount,
     manualSorting: true, // Desactivar ordenamiento local, se ordena en el servidor
     manualFiltering: true, // Desactivar filtrado local, se filtra en el servido
+    autoResetPageIndex: false, // FIX: Evitar reset automático que causa ciclos infinitos con resultados vacíos
   })
 
   return (

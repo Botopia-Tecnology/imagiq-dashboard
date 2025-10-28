@@ -10,6 +10,14 @@
 
 import { BackendCategory, BackendMenu, BackendSubmenu, CreateCategoryRequest, UpdateCategoryRequest, CreateMenuRequest, UpdateMenuRequest, CreateSubmenuRequest, UpdateSubmenuRequest } from "@/types";
 
+// Declaraciones globales para debugging
+declare global {
+  interface Window {
+    __getFilteredSearchCallCount?: number;
+    __getFilteredSearchLastReset?: number;
+  }
+}
+
 // API Client configuration
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
@@ -169,6 +177,43 @@ export const productEndpoints = {
     return apiClient.get<ProductApiResponse>(url);
   },
   getFilteredSearch: (params: ProductFilterParams) => {
+    // DEBUG: Logs para detectar ciclos infinitos
+    const callId = Math.random().toString(36).substring(7);
+    const timestamp = new Date().toISOString();
+
+    console.group(`🔍 [getFilteredSearch] Call #${callId} - ${timestamp}`);
+    console.log("📋 Parameters:", JSON.stringify(params, null, 2));
+
+    // Stack trace para ver desde dónde se llama
+    console.log("📍 Call stack:");
+    console.trace();
+
+    // Contador de llamadas para detectar ciclos
+    if (!window.__getFilteredSearchCallCount) {
+      window.__getFilteredSearchCallCount = 0;
+      window.__getFilteredSearchLastReset = Date.now();
+    }
+
+    window.__getFilteredSearchCallCount++;
+    const timeSinceReset = Date.now() - (window.__getFilteredSearchLastReset || Date.now());
+
+    // Resetear contador cada 5 segundos
+    if (timeSinceReset > 5000) {
+      console.log(`🔄 Resetting counter. Previous count: ${window.__getFilteredSearchCallCount} in ${timeSinceReset}ms`);
+      window.__getFilteredSearchCallCount = 1;
+      window.__getFilteredSearchLastReset = Date.now();
+    }
+
+    console.log(`📊 Total calls in last ${Math.round(timeSinceReset / 1000)}s: ${window.__getFilteredSearchCallCount}`);
+
+    // Advertencia si hay demasiadas llamadas
+    if (window.__getFilteredSearchCallCount > 10) {
+      console.error(`⚠️ POTENTIAL INFINITE LOOP DETECTED! ${window.__getFilteredSearchCallCount} calls in ${timeSinceReset}ms`);
+      console.error("🛑 Consider adding debouncing or checking for redundant re-renders");
+    }
+
+    console.groupEnd();
+
     const searchParams = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined && value !== null && value !== "") {
@@ -176,7 +221,36 @@ export const productEndpoints = {
       }
     });
     const url = `/api/products/search/grouped?${searchParams.toString()}`;
-    return apiClient.get<ProductApiResponse>(url);
+
+    // Interceptar la respuesta para loguear resultados vacíos
+    const originalPromise = apiClient.get<ProductApiResponse>(url);
+
+    originalPromise.then((response) => {
+      const data = response?.data?.data as any; // Usar any porque el backend puede devolver diferentes estructuras
+      const isEmpty = data?.products?.length === 0 ||
+                     data?.totalItems === 0 ||
+                     data?.total === 0;
+
+      if (isEmpty) {
+        console.warn(`⚠️ [getFilteredSearch #${callId}] EMPTY RESULT RETURNED`);
+        console.warn("📦 Response:", {
+          totalItems: data?.totalItems,
+          total: data?.total,
+          totalPages: data?.totalPages,
+          currentPage: data?.currentPage || data?.page,
+          productsLength: data?.products?.length,
+          message: data?.message || response?.message,
+        });
+        console.warn("🔍 Search params were:", params);
+        console.warn("⚠️ This empty result might trigger a re-fetch loop in the component!");
+      } else {
+        console.log(`✅ [getFilteredSearch #${callId}] Returned ${data?.products?.length} products`);
+      }
+    }).catch((error) => {
+      console.error(`❌ [getFilteredSearch #${callId}] REQUEST FAILED:`, error);
+    });
+
+    return originalPromise;
   },
   getById: (id: string) =>
     apiClient.get<ProductApiResponse>(`/api/products/${id}`),
