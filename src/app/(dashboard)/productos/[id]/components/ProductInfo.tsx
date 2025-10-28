@@ -30,6 +30,122 @@ export function ProductInfo({
     return 'text-green-600'
   }
 
+  // Obtener colores únicos del producto
+  const getUniqueColors = () => {
+    const colorMap = new Map<string, { hex: string; label: string; hasStock: boolean }>();
+
+    product.colors.forEach((variant) => {
+      if (!colorMap.has(variant.hex)) {
+        colorMap.set(variant.hex, {
+          hex: variant.hex,
+          label: variant.label,
+          hasStock: false
+        });
+      }
+
+      // Si alguna variante de este color tiene stock, marcarlo como disponible
+      if (variant.stockTotal && variant.stockTotal > 0) {
+        const colorData = colorMap.get(variant.hex)!;
+        colorData.hasStock = true;
+      }
+    });
+
+    return Array.from(colorMap.values());
+  };
+
+  // Obtener opciones de capacidad disponibles según el color seleccionado
+  const getCapacityOptions = () => {
+    if (!selectedColor?.hex) return [];
+
+    const capacities = new Set<string>();
+    product.colors.forEach((variant) => {
+      if (variant.hex === selectedColor.hex && variant.capacity) {
+        capacities.add(variant.capacity);
+      }
+    });
+
+    return Array.from(capacities).sort();
+  };
+
+  // Obtener opciones de RAM disponibles según el color y capacidad seleccionados
+  const getRamOptions = () => {
+    if (!selectedColor?.hex) return [];
+
+    const rams = new Set<string>();
+    product.colors.forEach((variant) => {
+      if (variant.hex === selectedColor.hex && variant.ram) {
+        // Si hay capacidad seleccionada, filtrar por ella también
+        if (selectedColor.capacity) {
+          if (variant.capacity === selectedColor.capacity) {
+            rams.add(variant.ram);
+          }
+        } else {
+          rams.add(variant.ram);
+        }
+      }
+    });
+
+    return Array.from(rams).sort();
+  };
+
+  // Verificar si una variante específica está disponible
+  const isVariantAvailable = (hex?: string, capacity?: string, ram?: string) => {
+    return product.colors.some((variant) => {
+      const matchesHex = !hex || variant.hex === hex;
+      const matchesCapacity = !capacity || variant.capacity === capacity;
+      const matchesRam = !ram || variant.ram === ram;
+      //const hasStock = variant.stockTotal && variant.stockTotal > 0;
+
+      return matchesHex && matchesCapacity && matchesRam //&& hasStock;
+    });
+  };
+
+  // Encontrar la variante exacta que coincida con los parámetros
+  const findVariant = (hex: string, capacity?: string, ram?: string) => {
+    return product.colors.find((variant) => {
+      const matchesHex = variant.hex === hex;
+      const matchesCapacity = !capacity || variant.capacity === capacity;
+      const matchesRam = !ram || variant.ram === ram;
+
+      return matchesHex && matchesCapacity && matchesRam;
+    });
+  };
+
+  // Manejar cambio de color
+  const handleColorChange = (hex: string) => {
+    // Buscar la primera variante con este color que tenga stock
+    let variant = product.colors.find((v) => v.hex === hex && v.stockTotal && v.stockTotal > 0);
+
+    // Si no hay variante con stock, tomar la primera con ese color
+    if (!variant) {
+      variant = product.colors.find((v) => v.hex === hex);
+    }
+
+    if (variant) {
+      onColorSelect(variant);
+    }
+  };
+
+  // Manejar cambio de capacidad
+  const handleCapacityChange = (capacity: string) => {
+    if (!selectedColor) return;
+
+    const variant = findVariant(selectedColor.hex, capacity, selectedColor.ram);
+    if (variant) {
+      onColorSelect(variant);
+    }
+  };
+
+  // Manejar cambio de RAM
+  const handleRamChange = (ram: string) => {
+    if (!selectedColor) return;
+
+    const variant = findVariant(selectedColor.hex, selectedColor.capacity, ram);
+    if (variant) {
+      onColorSelect(variant);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -51,50 +167,111 @@ export function ProductInfo({
         )}
       </div>
 
-      {/* Selector de colores */}
+      {/* Selectores de variantes */}
       {product.colors.length > 0 && (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <label className="text-sm font-medium">
-              Color: {selectedColor?.hex} - {selectedColor?.label}
-            </label>
-            {selectedColor?.stockTotal !== undefined && (
-              <span className="text-sm text-muted-foreground">
-                {selectedColor.stockTotal > 0 ? (
-                  <span className={getStockColor(selectedColor.stockTotal)}>
-                    {selectedColor.stockTotal} disponibles
-                  </span>
-                ) : (
-                  <span className="text-red-600">Sin stockTotal</span>
-                )}
-              </span>
-            )}
+        <div className="space-y-4">
+          {/* Selector de Color */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium">
+                Color: {selectedColor?.label || 'Selecciona un color'}
+              </label>
+              {selectedColor?.stockTotal !== undefined && (
+                <span className="text-sm text-muted-foreground">
+                  {selectedColor.stockTotal > 0 ? (
+                    <span className={getStockColor(selectedColor.stockTotal)}>
+                      {selectedColor.stockTotal} disponibles
+                    </span>
+                  ) : (
+                    <span className="text-red-600">Sin stock</span>
+                  )}
+                </span>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-3">
+              {getUniqueColors().map((colorGroup) => (
+                <div key={colorGroup.hex} className="flex flex-col items-center gap-1">
+                  <button
+                    onClick={() => handleColorChange(colorGroup.hex)}
+                    className={`h-10 w-10 rounded-full border-2 transition-all cursor-pointer ${
+                      selectedColor?.hex === colorGroup.hex
+                        ? "border-primary ring-2 ring-primary ring-offset-2"
+                        : "border-border hover:border-primary/50"
+                    } ${
+                      !colorGroup.hasStock
+                        ? "opacity-50"
+                        : "hover:scale-105"
+                    }`}
+                    style={{
+                      backgroundColor: colorGroup.hex
+                    }}
+                    title={`${colorGroup.label} - ${colorGroup.hasStock ? 'Disponible' : 'Agotado'}`}
+                  />
+                  {!colorGroup.hasStock && (
+                    <span className="text-xs text-red-500">Agotado</span>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
-          <div className="flex flex-wrap gap-3">
-            {product.colors.map((color) => (
-              <div key={color.sku} className="flex flex-col items-center gap-1">
-                <button
-                  onClick={() => onColorSelect(color)}
-                  className={`h-10 w-10 rounded-full border-2 transition-all cursor-pointer ${
-                    selectedColor?.sku === color.sku
-                      ? "border-primary ring-2 ring-primary ring-offset-2"
-                      : "border-border hover:border-primary/50"
-                  } ${
-                    !color.stockTotal || color.stockTotal === 0
-                      ? "opacity-50"
-                      : "hover:scale-105"
-                  }`}
-                  style={{ 
-                    backgroundColor: color.hex
-                  }}
-                  title={`${color.label} (${color.hex}) - ${color.stockTotal || 0} disponibles`}
-                />
-                {(!color.stockTotal || color.stockTotal === 0) && (
-                  <span className="text-xs text-red-500">Agotado</span>
-                )}
+
+          {/* Selector de Capacidad (si aplica) */}
+          {getCapacityOptions().length > 1 && (
+            <div className="space-y-3">
+              <label className="text-sm font-medium">
+                Capacidad: {selectedColor?.capacity || 'Selecciona una capacidad'}
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {getCapacityOptions().map((capacity) => (
+                  <button
+                    key={capacity}
+                    onClick={() => handleCapacityChange(capacity)}
+                    className={`px-4 py-2 rounded-md border-2 text-sm font-medium transition-all ${
+                      selectedColor?.capacity === capacity
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border hover:border-primary/50"
+                    } ${
+                      !isVariantAvailable(selectedColor?.hex, capacity, selectedColor?.ram)
+                        ? "opacity-50 cursor-not-allowed"
+                        : "cursor-pointer"
+                    }`}
+                    //disabled={!isVariantAvailable(selectedColor?.hex, capacity, selectedColor?.ram)}
+                  >
+                    {capacity}
+                  </button>
+                ))}
               </div>
-            ))}
-          </div>
+            </div>
+          )}
+
+          {/* Selector de RAM (si aplica) */}
+          {getRamOptions().length > 1 && (
+            <div className="space-y-3">
+              <label className="text-sm font-medium">
+                RAM: {selectedColor?.ram || 'Selecciona la RAM'}
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {getRamOptions().map((ram) => (
+                  <button
+                    key={ram}
+                    onClick={() => handleRamChange(ram)}
+                    className={`px-4 py-2 rounded-md border-2 text-sm font-medium transition-all ${
+                      selectedColor?.ram === ram
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border hover:border-primary/50"
+                    } ${
+                      !isVariantAvailable(selectedColor?.hex, selectedColor?.capacity, ram)
+                        ? "opacity-50 cursor-not-allowed"
+                        : "cursor-pointer"
+                    }`}
+                    //disabled={!isVariantAvailable(selectedColor?.hex, selectedColor?.capacity, ram)}
+                  >
+                    {ram}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -135,6 +312,16 @@ export function ProductInfo({
               </span>
               <span className="font-medium">
                 {selectedColor?.capacity || product.capacity}
+              </span>
+            </div>
+          )}
+          {selectedColor?.ram && (
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">
+                Memoria RAM {selectedColor ? `(${selectedColor.label})` : ''}:
+              </span>
+              <span className="font-medium">
+                {selectedColor.ram}
               </span>
             </div>
           )}

@@ -387,6 +387,7 @@ export interface ProductApiData {
   modelo: string;
   color?: string[];
   capacidad?: string[];
+  memoriaram?: string[]; // Memoria RAM del producto (ej: ["12GB", "16GB"])
   descGeneral?: string | null;
   sku?: string[];
   desDetallada?: string[];

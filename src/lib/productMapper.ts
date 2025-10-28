@@ -14,15 +14,16 @@ export interface ProductColor {
   name: string; // Nombre técnico del color (ej: "black", "white")
   hex: string; // Código hexadecimal del color (ej: "#000000")
   label: string; // Nombre mostrado al usuario (ej: "Negro Medianoche")
-  sku: string; // SKU específico para esta variante de color
-  price?: string; // Precio específico para este color (opcional)
+  sku: string; // SKU específico para esta variante
+  price?: string; // Precio específico para esta variante (opcional)
   originalPrice?: string; // Precio original antes de descuento (opcional)
-  discount?: string; // Descuento específico para este color (opcional)
-  stock?: number; // Stock ecommerce disponible para este color (opcional)
-  stockTiendas?: Record<string, number>; // Stock por tienda para este color (opcional)
-  stockTotal?: number; // Stock total para este color (opcional)
+  discount?: string; // Descuento específico para esta variante (opcional)
+  stock?: number; // Stock ecommerce disponible para esta variante (opcional)
+  stockTiendas?: Record<string, number>; // Stock por tienda para esta variante (opcional)
+  stockTotal?: number; // Stock total para esta variante (opcional)
   description?: string; // Descripción detallada de esta variante (opcional)
-  capacity?: string; // Capacidad específica de esta variante (opcional)
+  capacity?: string; // Capacidad específica de esta variante (256GB, 512GB, 1TB, etc.)
+  ram?: string; // Memoria RAM específica de esta variante (12GB, 16GB, etc.)
   imageUrl?: string; // URL de la imagen específica de esta variante (opcional)
   imageDetailsUrls?: string[]; // URLs de las imágenes detalladas de esta variante (opcional)
   premiumImages?: string[]; // URLs de las imágenes premium de esta variante (opcional)
@@ -100,6 +101,7 @@ const colorMap: Record<string, { hex: string; label: string }> = {
  * Ahora agrupa por codigoMarket y maneja múltiples variantes de color
  */
 export function mapApiProductToFrontend(apiProduct: ProductApiData): ProductCardProps {
+  console.log("Mapping API product:", apiProduct);
 
 
   // Determinar imagen basada en categoría/subcategoría
@@ -166,174 +168,171 @@ function getProductImage(apiProduct: ProductApiData): string | StaticImageData {
 }
 
 /**
- * Crea el array de colores para el producto desde el array de colores de la API
- * Incluye información de precios específica por variante de color
+ * Crea el array de variantes del producto agrupando por color + capacidad + RAM
+ * Cada variante única tendrá su propio precio, stock, SKU e imágenes
  */
 function createProductColorsFromArray(apiProduct: ProductApiData): ProductColor[] {
-  const colorsWithPrices: ProductColor[] = [];
-  
-  // Crear un mapa de colores únicos con sus precios correspondientes
-  const colorPriceMap = new Map<string, { 
-    color: string; 
-    preciosNormales: number[]; 
-    preciosDescuento: number[]; 
-    indices: number[] 
-  }>();
-  
-  // Agrupar precios por color
+  const variants: ProductColor[] = [];
+
+  // Crear una clave única para cada combinación de color + capacidad + RAM
+  interface VariantData {
+    color: string;
+    capacity?: string;
+    ram?: string;
+    precioNormal: number;
+    precioDescto: number;
+    index: number;
+  }
+
+  const variantMap = new Map<string, VariantData>();
+
+  // Arrays de datos
   const colorsArray = Array.isArray(apiProduct.color) ? apiProduct.color : [];
+  const capacidadArray = Array.isArray(apiProduct.capacidad) ? apiProduct.capacidad : [];
+  const ramArray = Array.isArray(apiProduct.memoriaram) ? apiProduct.memoriaram : [];
+  const preciosNormales = Array.isArray(apiProduct.precioNormal) ? apiProduct.precioNormal : [];
+  const preciosDescto = Array.isArray(apiProduct.precioDescto) ? apiProduct.precioDescto : [];
+
+  console.log(`[ProductMapper] Creando variantes para ${apiProduct.nombreMarket}:`);
+  console.log(`  - Colores: ${colorsArray.length} items`);
+  console.log(`  - Capacidades: ${capacidadArray.length} items`);
+  console.log(`  - RAM: ${ramArray.length} items`);
+  console.log(`  - Primeras 3 capacidades:`, capacidadArray.slice(0, 3));
+  console.log(`  - Primeras 3 RAM:`, ramArray.slice(0, 3));
+
+  // Iterar sobre todos los índices para agrupar por características (color+capacidad+RAM)
+  // Múltiples SKUs con mismas características se combinarán (sumando stocks)
   colorsArray.forEach((color, index) => {
-    const precioNormal = Array.isArray(apiProduct.precioNormal) ? (apiProduct.precioNormal[index] || 0) : 0;
-    const precioDescto = Array.isArray(apiProduct.precioDescto) ? (apiProduct.precioDescto[index] || 0) : 0;
-    
-    // Solo incluir colores con precios válidos (mayores a 0)
+    const precioNormal = preciosNormales[index] || 0;
+    const precioDescto = preciosDescto[index] || 0;
+
+    // Solo incluir variantes con precios válidos
     if (precioNormal > 0 || precioDescto > 0) {
-      const key = color.toLowerCase();
-      
-      if (!colorPriceMap.has(key)) {
-        colorPriceMap.set(key, { 
-          color, 
-          preciosNormales: [], 
-          preciosDescuento: [], 
-          indices: [] 
+      const capacity = capacidadArray[index] || undefined;
+      const ram = ramArray[index] || undefined;
+
+      // Crear clave única basada en color + capacidad + RAM
+      // Normalizar el color para que variaciones sean tratadas como el mismo color
+      const normalizedColor = normalizeColorValue(color);
+      const key = `${normalizedColor}|${capacity || 'NA'}|${ram || 'NA'}`;
+
+      // Si ya existe esta combinación, solo actualizar si el nuevo tiene mejor precio
+      // o mayor stock. Esto maneja el caso de múltiples SKUs para la misma variante
+      if (variantMap.has(key)) {
+        const existing = variantMap.get(key)!;
+        // Preferir el que tenga stock o el precio más bajo
+        const currentStock = Array.isArray(apiProduct.stockTotal) ? (apiProduct.stockTotal[index] || 0) : 0;
+        const existingStock = Array.isArray(apiProduct.stockTotal) ? (apiProduct.stockTotal[existing.index] || 0) : 0;
+
+        // Si el nuevo tiene más stock o mismo stock pero mejor precio, reemplazarlo
+        if (currentStock > existingStock ||
+            (currentStock === existingStock && precioDescto > 0 && precioDescto < existing.precioDescto)) {
+          variantMap.set(key, {
+            color: normalizedColor,
+            capacity,
+            ram,
+            precioNormal,
+            precioDescto,
+            index
+          });
+        }
+      } else {
+        // Primera vez que vemos esta combinación
+        variantMap.set(key, {
+          color: normalizedColor,
+          capacity,
+          ram,
+          precioNormal,
+          precioDescto,
+          index
         });
       }
-      
-      const colorData = colorPriceMap.get(key)!;
-      colorData.preciosNormales.push(precioNormal);
-      colorData.preciosDescuento.push(precioDescto);
-      colorData.indices.push(index);
     }
   });
-  
+
   // Convertir el mapa a array de ProductColor
-  colorPriceMap.forEach(({ color, preciosNormales, preciosDescuento, indices }) => {
-    // Normalizar el color para búsqueda consistente
-    const normalizedColor = color.toLowerCase().trim();
-    
-    // Buscar en el colorMap (exacto, parcial o variaciones)
-    let colorInfo = colorMap[normalizedColor];
-    
-    // Si no se encuentra exacto, intentar búsqueda parcial
-    if (!colorInfo) {
-      for (const [key, value] of Object.entries(colorMap)) {
-        if (normalizedColor.includes(key) || key.includes(normalizedColor)) {
-          colorInfo = value;
-          break;
-        }
-      }
-    }
-    
-    // Si aún no se encuentra, usar valores por defecto inteligentes
-    if (!colorInfo) {
-      // Detectar si podría ser un código hexadecimal
-      if (/^#[0-9A-Fa-f]{6}$/.test(color)) {
-        colorInfo = { hex: color, label: color.substring(1).toUpperCase() };
-      } else {
-        // Usar gris como último recurso
-        colorInfo = { hex: '#808080', label: color.charAt(0).toUpperCase() + color.slice(1).toLowerCase() };
-      }
-    }
-    
+  variantMap.forEach((variantData) => {
+    const { color, capacity, ram, precioNormal, precioDescto, index } = variantData;
+
+    // Obtener información del color (hex y label)
+    const colorInfo = getColorInfo(color);
+
+    // Formatear precios
     const formatPrice = (price: number) => `$ ${price.toLocaleString('es-CO')}`;
 
-    // Encontrar el precio más bajo entre todas las variantes de este color
-    const preciosNormalesValidos = preciosNormales.filter(p => p > 0);
-    const preciosDescuentoValidos = preciosDescuento.filter(p => p > 0);
+    const precioFinal = precioDescto > 0 ? precioDescto : precioNormal;
+    const price = formatPrice(precioFinal);
 
-    const precioNormalMin = preciosNormalesValidos.length > 0
-      ? Math.min(...preciosNormalesValidos)
-      : 0;
-    const precioDesctoMin = preciosDescuentoValidos.length > 0
-      ? Math.min(...preciosDescuentoValidos)
-      : precioNormalMin;
-
-    const price = formatPrice(precioDesctoMin);
     let originalPrice: string | undefined;
     let discount: string | undefined;
 
     // Si hay descuento real
-    if (precioDesctoMin > 0 && precioDesctoMin < precioNormalMin && precioNormalMin > 0) {
-      originalPrice = formatPrice(precioNormalMin);
-      const discountPercent = Math.round(((precioNormalMin - precioDesctoMin) / precioNormalMin) * 100);
+    if (precioDescto > 0 && precioDescto < precioNormal && precioNormal > 0) {
+      originalPrice = formatPrice(precioNormal);
+      const discountPercent = Math.round(((precioNormal - precioDescto) / precioNormal) * 100);
       discount = `-${discountPercent}%`;
     }
 
-    // Usar el primer SKU disponible para este color
-    const firstIndex = indices[0] ?? 0;
-
-    // Obtener arrays de stock
+    // Obtener información específica de esta variante
+    const skuArray = Array.isArray(apiProduct.sku) ? apiProduct.sku : [];
     const stockArray = Array.isArray(apiProduct.stock) ? apiProduct.stock : [];
     const stockTiendasArray = Array.isArray(apiProduct.stockTiendas) ? apiProduct.stockTiendas : [];
     const stockTotalArray = Array.isArray(apiProduct.stockTotal) ? apiProduct.stockTotal : [];
-
-    // Stock ecommerce para este color (primer índice)
-    const stockEcommerce = stockArray[firstIndex] || 0;
-
-    // Stock tiendas para este color (primer índice)
-    const stockTiendas = stockTiendasArray[firstIndex] || {};
-
-    // Stock total para este color (primer índice)
-    const stockTotalColor = stockTotalArray[firstIndex] || 0;
-
-
-    // Obtener descripción detallada del primer índice
     const desDetalladaArray = Array.isArray(apiProduct.desDetallada) ? apiProduct.desDetallada : [];
-    const description = desDetalladaArray[firstIndex] || '';
-
-    // Obtener capacidad del primer índice (o combinar todas si son diferentes)
-    const capacidadArray = Array.isArray(apiProduct.capacidad) ? apiProduct.capacidad : [];
-    const capacidades = [...new Set(indices.map(idx => capacidadArray[idx]).filter(Boolean))];
-    const capacity = capacidades.length > 0 ? capacidades.join(', ') : undefined;
-
-    // Obtener la URL de la imagen del primer índice
     const imagePreviewArray = Array.isArray(apiProduct.imagePreviewUrl) ? apiProduct.imagePreviewUrl : [];
-    const imageUrl = imagePreviewArray[firstIndex] && imagePreviewArray[firstIndex].trim() !== ''
-      ? imagePreviewArray[firstIndex]
-      : undefined;
-
-    // Obtener las URLs de imágenes detalladas del primer índice
-    // Primero intentar usar imageDetailsUrls si existe, sino usar urlImagenes
-    let imageDetailsUrls: string[] | undefined;
     const imageDetailsArray = Array.isArray(apiProduct.imageDetailsUrls) ? apiProduct.imageDetailsUrls : [];
     const urlImagenesArray = Array.isArray(apiProduct.urlImagenes) ? apiProduct.urlImagenes : [];
+    const imagenPremiumArray = Array.isArray(apiProduct.imagenPremium) ? apiProduct.imagenPremium : [];
+    const videoPremiumArray = Array.isArray(apiProduct.videoPremium) ? apiProduct.videoPremium : [];
 
-    if (imageDetailsArray[firstIndex]) {
-      const filteredUrls = imageDetailsArray[firstIndex].filter(url => url && url.trim() !== '');
+    // Datos específicos de este índice
+    const sku = skuArray[index] || '';
+    const stockEcommerce = stockArray[index] || 0;
+    const stockTiendas = stockTiendasArray[index] || {};
+    const stockTotalVariant = stockTotalArray[index] || 0;
+    const description = desDetalladaArray[index] || '';
+
+    // Imagen preview
+    const imageUrl = imagePreviewArray[index] && imagePreviewArray[index].trim() !== ''
+      ? imagePreviewArray[index]
+      : undefined;
+
+    // Imágenes detalladas
+    let imageDetailsUrls: string[] | undefined;
+    if (imageDetailsArray[index]) {
+      const filteredUrls = imageDetailsArray[index].filter(url => url && url.trim() !== '');
       imageDetailsUrls = filteredUrls.length > 0 ? filteredUrls : [emptyImg.src];
-    } else if (urlImagenesArray[firstIndex]) {
-      const filteredUrls = urlImagenesArray[firstIndex].split(',').map(url => url.trim()).filter(url => url !== '');
+    } else if (urlImagenesArray[index]) {
+      const filteredUrls = urlImagenesArray[index].split(',').map(url => url.trim()).filter(url => url !== '');
       imageDetailsUrls = filteredUrls.length > 0 ? filteredUrls : [emptyImg.src];
     } else {
       imageDetailsUrls = [emptyImg.src];
     }
 
-    // Obtener las imágenes premium del primer índice
-    const imagenPremiumArray = Array.isArray(apiProduct.imagenPremium) ? apiProduct.imagenPremium : [];
-    const premiumImages = imagenPremiumArray[firstIndex] && Array.isArray(imagenPremiumArray[firstIndex])
-      ? imagenPremiumArray[firstIndex].filter(url => url && url.trim() !== '')
+    // Imágenes premium
+    const premiumImages = imagenPremiumArray[index] && Array.isArray(imagenPremiumArray[index])
+      ? imagenPremiumArray[index].filter(url => url && url.trim() !== '')
       : undefined;
 
-    // Obtener los videos premium del primer índice
-    const videoPremiumArray = Array.isArray(apiProduct.videoPremium) ? apiProduct.videoPremium : [];
-    const premiumVideos = videoPremiumArray[firstIndex] && Array.isArray(videoPremiumArray[firstIndex])
-      ? videoPremiumArray[firstIndex].filter(url => url && url.trim() !== '')
+    // Videos premium
+    const premiumVideos = videoPremiumArray[index] && Array.isArray(videoPremiumArray[index])
+      ? videoPremiumArray[index].filter(url => url && url.trim() !== '')
       : undefined;
 
-    const skuArray = Array.isArray(apiProduct.sku) ? apiProduct.sku : [];
-    colorsWithPrices.push({
-      name: normalizedColor.replace(/\s+/g, '-'),
+    variants.push({
+      name: color.toLowerCase().replace(/\s+/g, '-'),
       hex: colorInfo.hex,
       label: colorInfo.label,
+      sku,
       price,
       originalPrice,
       discount,
-      sku: skuArray[firstIndex] || '',
       stock: stockEcommerce,
-      stockTiendas: stockTiendas,
-      stockTotal: stockTotalColor,
+      stockTiendas,
+      stockTotal: stockTotalVariant,
       description,
       capacity,
+      ram,
       imageUrl,
       imageDetailsUrls,
       premiumImages,
@@ -341,7 +340,87 @@ function createProductColorsFromArray(apiProduct: ProductApiData): ProductColor[
     });
   });
 
-  return colorsWithPrices;
+  console.log(`[ProductMapper] Total de variantes creadas: ${variants.length}`);
+  console.log(`[ProductMapper] Primeras 3 variantes:`, variants.slice(0, 3).map(v => ({
+    hex: v.hex,
+    label: v.label,
+    capacity: v.capacity,
+    ram: v.ram,
+    sku: v.sku,
+    stockTotal: v.stockTotal
+  })));
+
+  return variants;
+}
+
+/**
+ * Normaliza el valor del color para agrupar variaciones
+ * Por ejemplo: "#000000" y "Negro" deberían ser tratados como el mismo color
+ */
+function normalizeColorValue(color: string): string {
+  // Si es un código hex, devolverlo tal cual
+  if (/^#[0-9A-Fa-f]{6}$/.test(color)) {
+    return color.toLowerCase();
+  }
+
+  // Para nombres de colores, normalizar y buscar en el colorMap
+  const normalized = color.toLowerCase().trim();
+
+  // Buscar en el colorMap para obtener el hex correspondiente
+  let colorInfo = colorMap[normalized];
+
+  if (!colorInfo) {
+    for (const [key, value] of Object.entries(colorMap)) {
+      if (normalized.includes(key) || key.includes(normalized)) {
+        colorInfo = value;
+        break;
+      }
+    }
+  }
+
+  // Si encontramos el color en el mapa, usar su hex como identificador
+  if (colorInfo) {
+    return colorInfo.hex.toLowerCase();
+  }
+
+  // Si no se encuentra, usar el nombre normalizado
+  return normalized;
+}
+
+/**
+ * Obtiene la información del color (hex y label) desde un valor normalizado
+ */
+function getColorInfo(normalizedColor: string): { hex: string; label: string } {
+  // Si es un código hex directo
+  if (/^#[0-9A-Fa-f]{6}$/i.test(normalizedColor)) {
+    // Buscar en el colorMap por el hex
+    for (const [key, value] of Object.entries(colorMap)) {
+      if (value.hex.toLowerCase() === normalizedColor.toLowerCase()) {
+        return value;
+      }
+    }
+    // Si no se encuentra, usar el hex tal cual
+    return { hex: normalizedColor, label: normalizedColor.substring(1).toUpperCase() };
+  }
+
+  // Buscar por nombre
+  let colorInfo = colorMap[normalizedColor];
+
+  if (!colorInfo) {
+    for (const [key, value] of Object.entries(colorMap)) {
+      if (normalizedColor.includes(key) || key.includes(normalizedColor)) {
+        colorInfo = value;
+        break;
+      }
+    }
+  }
+
+  if (colorInfo) {
+    return colorInfo;
+  }
+
+  // Valor por defecto
+  return { hex: '#808080', label: normalizedColor.charAt(0).toUpperCase() + normalizedColor.slice(1) };
 }
 
 /**
