@@ -36,6 +36,7 @@ export function EditPremiumModal({
 
   // Estados para imágenes de carrusel (todas excepto la última)
   const [carouselImages, setCarouselImages] = useState<(string | File)[]>([])
+  const [deletedCarouselImages, setDeletedCarouselImages] = useState<string[]>([])
 
   // Estado para imagen premium del dispositivo (última imagen)
   const [deviceImage, setDeviceImage] = useState<string | null>(null)
@@ -71,6 +72,7 @@ export function EditPremiumModal({
 
     setDeviceImageFile(null)
     setCarouselVideoFiles([])
+    setDeletedCarouselImages([])
   }, [isOpen, selectedColor])
 
   // Manejadores para videos de carrusel
@@ -154,30 +156,12 @@ export function EditPremiumModal({
   const removeCarouselImage = async (index: number) => {
     const imageItem = carouselImages[index]
 
-    // Si es una URL existente (no un archivo nuevo), eliminar del backend
+    // Si es una URL existente (no un archivo nuevo), agregar a la lista de eliminadas
     if (typeof imageItem === 'string' && imageItem.startsWith('http')) {
-      const skus = getAllSkus()
-
-      try {
-        const result = await multimediaApi.deleteCarouselImage(skus, imageItem)
-
-        // El backend valida automáticamente si se puede eliminar esta imagen
-        // - Permite eliminar si array.length === 1 (quedará vacío)
-        // - Bloquea si es la última posición y array.length > 1 (debe mantener imagen de dispositivo)
-        if (!result.success) {
-          toast.error(result.message || 'Error al eliminar imagen')
-          return
-        }
-
-        toast.success('Imagen eliminada de todos los SKUs')
-      } catch (error) {
-        console.error('Error deleting image:', error)
-        toast.error(error instanceof Error ? error.message : 'Error al eliminar imagen')
-        return
-      }
+      setDeletedCarouselImages((prev) => [...prev, imageItem])
     }
 
-    // Eliminar del estado local
+    // Eliminar del estado local (el DELETE real se hará al guardar)
     setCarouselImages((prev) => prev.filter((_, i) => i !== index))
   }
 
@@ -368,22 +352,47 @@ export function EditPremiumModal({
 
     try {
       let hasErrors = false
+      const skus = getAllSkus()
 
-      // 1. Subir videos de carrusel (nuevos)
+      // PASO 1: Eliminar imágenes de carrusel que el usuario borró
+      if (deletedCarouselImages.length > 0) {
+        for (const imageUrl of deletedCarouselImages) {
+          try {
+            const result = await multimediaApi.deleteCarouselImage(skus, imageUrl)
+            if (!result.success) {
+              toast.error(`Error al eliminar imagen: ${result.message}`)
+              hasErrors = true
+            }
+          } catch (error) {
+            console.error('Error deleting image:', error)
+            toast.error('Error al eliminar imagen')
+            hasErrors = true
+          }
+        }
+      }
+
+      // PASO 2: Subir videos de carrusel (nuevos)
       const newVideoFiles = carouselVideoFiles.filter(file => file instanceof File)
       if (newVideoFiles.length > 0) {
         const success = await uploadCarouselVideos(newVideoFiles)
         if (!success) hasErrors = true
       }
 
-      // 2. Subir imágenes de carrusel (nuevas)
+      // PASO 3: Subir imágenes de carrusel (nuevas)
       const newImageFiles = carouselImages.filter(img => img instanceof File) as File[]
       if (newImageFiles.length > 0) {
         const success = await uploadCarouselImages(newImageFiles)
         if (!success) hasErrors = true
       }
 
-      // 3. Reordenar imágenes de carrusel si cambió el orden
+      // PASO 4: Subir imagen del dispositivo (si es nueva)
+      if (deviceImageFile) {
+        const success = await uploadDeviceImage(deviceImageFile)
+        if (!success) hasErrors = true
+      }
+
+      // PASO 5: Reordenar imágenes de carrusel si cambió el orden
+      // Nota: Solo enviar URLs existentes (no archivos nuevos que ya se subieron)
       const existingImageUrls = carouselImages.filter(img => typeof img === 'string') as string[]
       const originalImageUrls = selectedColor.premiumImages?.slice(0, -1) || []
 
@@ -394,14 +403,14 @@ export function EditPremiumModal({
         if (!success) hasErrors = true
       }
 
-      // 4. Subir imagen del dispositivo (si es nueva)
-      if (deviceImageFile) {
-        const success = await uploadDeviceImage(deviceImageFile)
-        if (!success) hasErrors = true
-      }
-
       if (!hasErrors) {
         toast.success("Contenido premium guardado exitosamente")
+
+        // Asegurar que el modo premium esté activado en localStorage antes de recargar
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('isPremiumMode', 'true')
+        }
+
         onClose()
         // Recargar la página para ver los cambios
         setTimeout(() => {
