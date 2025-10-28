@@ -24,6 +24,7 @@ interface DataTableToolbarProps<TData> {
   }>;
   onSearchChange?: (search: string) => void;
   onFilterChange?: (filterId: string, value: string[]) => void;
+  initialFilterValues?: Record<string, string[]>;
 }
 
 export function DataTableToolbar<TData>({
@@ -32,6 +33,7 @@ export function DataTableToolbar<TData>({
   filters,
   onSearchChange,
   onFilterChange,
+  initialFilterValues,
 }: DataTableToolbarProps<TData>) {
 
   const [input, setInput] = useState("");
@@ -71,6 +73,7 @@ export function DataTableToolbar<TData>({
                   ? (value) => onFilterChange(filter.id, value)
                   : undefined
               }
+              initialValues={initialFilterValues?.[filter.id]}
             />
           ) : null;
         })}

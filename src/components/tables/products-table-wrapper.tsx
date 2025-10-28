@@ -15,7 +15,21 @@ export function ProductsTableWrapper() {
   const [pageSize, setPageSize] = useState(10);
   const [currentFilters, setCurrentFilters] = useState<
     Record<string, string[]>
-  >({});
+  >(() => {
+    // Cargar filtros guardados desde localStorage
+    if (typeof window !== 'undefined') {
+      const savedMenuFilter = localStorage.getItem('productsMenuFilter');
+      if (savedMenuFilter) {
+        try {
+          const parsedFilter = JSON.parse(savedMenuFilter);
+          return { menu: parsedFilter };
+        } catch (error) {
+          console.error('Error parsing saved menu filter:', error);
+        }
+      }
+    }
+    return {};
+  });
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<string | undefined>();
   const [sortOrder, setSortOrder] = useState< "desc" | "asc" | undefined>();
@@ -39,9 +53,36 @@ export function ProductsTableWrapper() {
         console.error("Error fetching categories:", error);
       }
     };
- 
+
     fetchCategories();
   }, []);
+
+  // Aplicar filtro guardado al cargar la página
+  useEffect(() => {
+    if (categories.length > 0 && currentFilters.menu && currentFilters.menu.length > 0) {
+      const filters: Record<string, any> = {
+        limit: pageSize,
+        page: 1,
+      };
+
+      const hasBuds = currentFilters.menu.includes("buds");
+      if (hasBuds) {
+        const budsValues = currentFilters.menu.filter(v => v === "buds");
+        const otherValues = currentFilters.menu.filter(v => v !== "buds");
+
+        if (budsValues.length > 0) {
+          filters.name = budsValues.join(", ");
+        }
+        if (otherValues.length > 0) {
+          filters.menu = otherValues.join(", ");
+        }
+      } else {
+        filters.menu = currentFilters.menu.join(", ");
+      }
+
+      filterProducts(filters);
+    }
+  }, [categories]); // Solo ejecutar cuando categories esté disponible
 
   const initialFilters = useMemo(() => ({ limit: 10 }), []);
 
@@ -216,6 +257,15 @@ export function ProductsTableWrapper() {
       console.log(newFilters);
       setCurrentFilters(newFilters);
 
+      // Guardar filtro de menú en localStorage
+      if (filterId === "menu") {
+        if (value.length > 0) {
+          localStorage.setItem('productsMenuFilter', JSON.stringify(value));
+        } else {
+          localStorage.removeItem('productsMenuFilter');
+        }
+      }
+
       const filters: Record<string, any> = {
         limit: pageSize,
         page: 1,
@@ -324,6 +374,7 @@ export function ProductsTableWrapper() {
       onPaginationChange={handlePaginationChange}
       onSearchChange={handleSearchChange}
       onFilterChange={handleFilterChange}
+      initialFilterValues={currentFilters}
       loading={loading}
     />
   );
