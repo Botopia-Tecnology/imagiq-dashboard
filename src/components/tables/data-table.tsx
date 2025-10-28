@@ -52,6 +52,7 @@ interface DataTableProps<TData, TValue> {
   onSearchChange?: (search: string) => void
   onFilterChange?: (filterId: string, value: string[]) => void
   initialFilterValues?: Record<string, string[]>
+  initialSearchValue?: string
   // Estado de carga
   loading?: boolean
   // Visibilidad inicial de columnas
@@ -71,6 +72,7 @@ export function DataTable<TData, TValue>({
   onSearchChange,
   onFilterChange,
   initialFilterValues,
+  initialSearchValue,
   loading = false,
   initialColumnVisibility,
 }: DataTableProps<TData, TValue>) {
@@ -125,6 +127,7 @@ export function DataTable<TData, TValue>({
         onSearchChange={onSearchChange}
         onFilterChange={onFilterChange}
         initialFilterValues={initialFilterValues}
+        initialSearchValue={initialSearchValue}
       />
       {loading ? (
         <div className="space-y-4">

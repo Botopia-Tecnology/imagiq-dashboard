@@ -30,7 +30,14 @@ export function ProductsTableWrapper() {
     }
     return {};
   });
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(() => {
+    // Cargar búsqueda guardada desde localStorage
+    if (typeof window !== 'undefined') {
+      const savedSearch = localStorage.getItem('productsSearchQuery');
+      return savedSearch || "";
+    }
+    return "";
+  });
   const [sortBy, setSortBy] = useState<string | undefined>();
   const [sortOrder, setSortOrder] = useState< "desc" | "asc" | undefined>();
   const [categories, setCategories] = useState<{ label: string; value: string }[]>([]);
@@ -57,30 +64,45 @@ export function ProductsTableWrapper() {
     fetchCategories();
   }, []);
 
-  // Aplicar filtro guardado al cargar la página
+  // Aplicar filtros guardados al cargar la página
   useEffect(() => {
-    if (categories.length > 0 && currentFilters.menu && currentFilters.menu.length > 0) {
-      const filters: Record<string, any> = {
-        limit: pageSize,
-        page: 1,
-      };
+    if (categories.length > 0) {
+      const hasMenuFilter = currentFilters.menu && currentFilters.menu.length > 0;
+      const hasSearchQuery = searchQuery && searchQuery.trim() !== "";
 
-      const hasBuds = currentFilters.menu.includes("buds");
-      if (hasBuds) {
-        const budsValues = currentFilters.menu.filter(v => v === "buds");
-        const otherValues = currentFilters.menu.filter(v => v !== "buds");
+      if (hasMenuFilter || hasSearchQuery) {
+        const filters: Record<string, any> = {
+          limit: pageSize,
+          page: 1,
+        };
 
-        if (budsValues.length > 0) {
-          filters.name = budsValues.join(", ");
+        // Aplicar filtro de menú
+        if (hasMenuFilter && currentFilters.menu) {
+          const hasBuds = currentFilters.menu.includes("buds");
+          if (hasBuds) {
+            const budsValues = currentFilters.menu.filter(v => v === "buds");
+            const otherValues = currentFilters.menu.filter(v => v !== "buds");
+
+            if (budsValues.length > 0) {
+              filters.name = hasSearchQuery
+                ? `${searchQuery}, ${budsValues.join(", ")}`
+                : budsValues.join(", ");
+            }
+            if (otherValues.length > 0) {
+              filters.menu = otherValues.join(", ");
+            }
+          } else {
+            filters.menu = currentFilters.menu.join(", ");
+          }
         }
-        if (otherValues.length > 0) {
-          filters.menu = otherValues.join(", ");
+
+        // Aplicar búsqueda si no se sobrescribió con buds
+        if (hasSearchQuery && !filters.name) {
+          filters.name = searchQuery;
         }
-      } else {
-        filters.menu = currentFilters.menu.join(", ");
+
+        filterProducts(filters);
       }
-
-      filterProducts(filters);
     }
   }, [categories]); // Solo ejecutar cuando categories esté disponible
 
@@ -205,6 +227,14 @@ export function ProductsTableWrapper() {
   const handleSearchChange = useCallback(
     (search: string) => {
       setSearchQuery(search);
+
+      // Guardar búsqueda en localStorage
+      if (search) {
+        localStorage.setItem('productsSearchQuery', search);
+      } else {
+        localStorage.removeItem('productsSearchQuery');
+      }
+
       const filters: Record<string, any> = {
         name: search,
         limit: pageSize,
@@ -375,6 +405,7 @@ export function ProductsTableWrapper() {
       onSearchChange={handleSearchChange}
       onFilterChange={handleFilterChange}
       initialFilterValues={currentFilters}
+      initialSearchValue={searchQuery}
       loading={loading}
     />
   );
