@@ -155,7 +155,7 @@ export const useProducts = (
 
       if (filters.color) params.color = filters.color;
       if (filters.capacity) params.capacidad = filters.capacity;
-      if (filters.name) params.nombre = filters.name;
+      if (filters.name) params.query = filters.name;
       if(filters.stock) params.stock = filters.stock;
       if (filters.withDiscount !== undefined)
         params.conDescuento = filters.withDiscount;
@@ -202,10 +202,10 @@ export const useProducts = (
 
       try {
         const apiParams = convertFiltersToApiParams(filters);
-        const response = await productEndpoints.getFiltered(apiParams);
+        const response = await productEndpoints.getFilteredSearch(apiParams);
 
-        if (response.success && response.data) {
-          const apiData = response.data as ProductApiResponse;
+        if (response.success && response.data.data) {
+          const apiData = response.data.data as ProductApiResponse;
           const mappedProducts = mapApiProductsToFrontend(apiData.products);
 
           if (append) {
