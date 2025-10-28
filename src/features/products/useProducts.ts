@@ -155,7 +155,7 @@ export const useProducts = (
 
       if (filters.color) params.color = filters.color;
       if (filters.capacity) params.capacidad = filters.capacity;
-      if (filters.name) params.nombre = filters.name;
+      if (filters.name) params.query = filters.name;
       if(filters.stock) params.stock = filters.stock;
       if (filters.withDiscount !== undefined)
         params.conDescuento = filters.withDiscount;
@@ -202,11 +202,11 @@ export const useProducts = (
 
       try {
         const apiParams = convertFiltersToApiParams(filters);
-        const response = await productEndpoints.getFiltered(apiParams);
+        const response = await productEndpoints.getFilteredSearch(apiParams);
 
-        if (response.success && response.data) {
-          const apiData = response.data as ProductApiResponse;
-          const mappedProducts = mapApiProductsToFrontend(apiData.products);
+        if (response.success && response.data && response.data.data) {
+          const paginationData = response.data.data;
+          const mappedProducts = mapApiProductsToFrontend(paginationData.products);
 
           if (append) {
             setProducts((prev) => [...prev, ...mappedProducts]);
@@ -215,11 +215,11 @@ export const useProducts = (
             setGroupedProducts(groupProductsByCategory(mappedProducts));
           }
 
-          setTotalItems(apiData.totalItems);
-          setTotalPages(apiData.totalPages);
-          setCurrentPage(apiData.currentPage);
-          setHasNextPage(apiData.hasNextPage);
-          setHasPreviousPage(apiData.hasPreviousPage);
+          setTotalItems(paginationData.total);
+          setTotalPages(paginationData.totalPages);
+          setCurrentPage(paginationData.page);
+          setHasNextPage(paginationData.hasNextPage);
+          setHasPreviousPage(paginationData.hasPreviousPage);
         } else {
           setError(response.message || "Error al cargar productos");
         }
@@ -332,9 +332,9 @@ export const useProduct = (productId: string) => {
         // Usar el endpoint específico para buscar por codigoMarketBase
         const response = await productEndpoints.getByCodigoMarket(codigoMarketBase);
 
-        if (response.success && response.data) {
-          const apiData = response.data as ProductApiResponse;
-          const mappedProducts = mapApiProductsToFrontend(apiData.products);
+        if (response.success && response.data && response.data.data) {
+          const paginationData = response.data.data;
+          const mappedProducts = mapApiProductsToFrontend(paginationData.products);
 
           if (mappedProducts.length > 0) {
             const foundProduct = mappedProducts[0]; // Tomar el primer producto encontrado

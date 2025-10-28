@@ -168,6 +168,16 @@ export const productEndpoints = {
     const url = `/api/products/filtered?${searchParams.toString()}`;
     return apiClient.get<ProductApiResponse>(url);
   },
+  getFilteredSearch: (params: ProductFilterParams) => {
+    const searchParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== "") {
+        searchParams.append(key, String(value));
+      }
+    });
+    const url = `/api/products/search/grouped?${searchParams.toString()}`;
+    return apiClient.get<ProductApiResponse>(url);
+  },
   getById: (id: string) =>
     apiClient.get<ProductApiResponse>(`/api/products/${id}`),
   getByCategory: (category: string) =>
@@ -350,6 +360,7 @@ export interface ProductFilterParams {
   color?: string;
   capacidad?: string;
   nombre?: string;
+  query?: string;
   modelo?: string;
   desDetallada?: string;
   codigoMarket?: string;
@@ -363,13 +374,21 @@ export interface ProductFilterParams {
 
 
 // API Response types
-export interface ProductApiResponse {
+export interface ProductPaginationData {
   products: ProductApiData[];
-  totalItems: number;
+  total: number; // Total de productos encontrados
+  page: number; // Página actual
+  limit: number; // Límite de productos por página
   totalPages: number;
-  currentPage: number;
   hasNextPage: boolean;
   hasPreviousPage: boolean;
+  message?: string; // Mensaje opcional del backend
+}
+
+export interface ProductApiResponse {
+  data: ProductPaginationData; // El backend envuelve los datos en un campo "data"
+  success?: boolean;
+  message?: string;
 }
 
 export interface ProductSummary {
