@@ -338,8 +338,8 @@ export const useProduct = (productId: string) => {
         // Usar el endpoint específico para buscar por codigoMarketBase
         const response = await productEndpoints.getByCodigoMarket(codigoMarketBase);
 
-        if (response.success && response.data && response.data.data) {
-          const paginationData = response.data.data;
+        if (response.success && response.data) {
+          const paginationData = response.data;
           const mappedProducts = mapApiProductsToFrontend(paginationData.products);
 
           if (mappedProducts.length > 0) {
