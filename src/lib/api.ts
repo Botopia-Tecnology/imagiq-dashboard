@@ -437,7 +437,6 @@ export interface ProductMultimediaData {
 
 // Categories API endpoints
 export const categoryEndpoints = {
-  getVisible: () => apiClient.get<BackendCategory[]>("/api/categorias/visibles"),
   getVisibleCompletas: () => apiClient.get<BackendCategory[]>("/api/categorias/visibles/completas"),
   getDistinct: () => apiClient.get<string[]>("/api/categorias/distinct"),
   create: (data: CreateCategoryRequest) =>
