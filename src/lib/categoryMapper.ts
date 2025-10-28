@@ -42,7 +42,7 @@ export const mapBackendMenuToFrontend = (
     slug: backendMenu.nombre.toLowerCase().replace(/\s+/g, '-'),
     description: backendMenu.descripcion,
     image: backendMenu.imagen, // Usar imagen del backend
-    order: 1, // Mock order por ahora
+    order: backendMenu.orden,
     isActive: backendMenu.activo,
     productsCount: backendMenu.totalProducts || 0, // Usar totalProducts del backend
     submenus: backendMenu.submenus?.map(submenu =>

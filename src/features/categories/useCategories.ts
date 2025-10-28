@@ -45,7 +45,7 @@ export const useCategories = (): UseCategoriesReturn => {
     setError(null);
 
     try {
-      const response = await categoryEndpoints.getVisible();
+      const response = await categoryEndpoints.getVisibleCompletas();
 
       if (response.success && response.data) {
         const mappedCategories = mapBackendCategoriesToFrontend(response.data);
