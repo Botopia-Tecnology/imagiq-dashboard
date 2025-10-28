@@ -112,6 +112,7 @@ export function DataTable<TData, TValue>({
     getFacetedUniqueValues: getFacetedUniqueValues(),
     manualPagination: !!pageCount,
     manualSorting: true, // Desactivar ordenamiento local, se ordena en el servidor
+    manualFiltering: true, // Desactivar filtrado local, se filtra en el servido
   })
 
   return (

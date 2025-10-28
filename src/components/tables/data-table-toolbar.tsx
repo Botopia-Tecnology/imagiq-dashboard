@@ -42,7 +42,8 @@ export function DataTableToolbar<TData>({
 
   const handleKey = () => {
     if (onSearchChange) {
-      table.getColumn(searchKey)?.setFilterValue(input);
+       // NO establecer filtro local porque el filtrado se hace en el servidor
+      // table.getColumn(searchKey)?.setFilterValue(input);
       onSearchChange(input);
     }
   };

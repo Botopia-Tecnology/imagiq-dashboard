@@ -175,7 +175,7 @@ export const productEndpoints = {
         searchParams.append(key, String(value));
       }
     });
-    const url = `/api/products/search?${searchParams.toString()}`;
+    const url = `/api/products/search/grouped?${searchParams.toString()}`;
     return apiClient.get<ProductApiResponse>(url);
   },
   getById: (id: string) =>
