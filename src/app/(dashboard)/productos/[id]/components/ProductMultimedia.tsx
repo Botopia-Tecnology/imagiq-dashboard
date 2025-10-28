@@ -32,12 +32,26 @@ export function ProductMultimedia({
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isPremiumModalOpen, setIsPremiumModalOpen] = useState(false)
-  const [isPremiumMode, setIsPremiumMode] = useState(false)
+  const [isPremiumMode, setIsPremiumMode] = useState(() => {
+    // Cargar el estado desde localStorage al inicializar
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('isPremiumMode')
+      return saved === 'true'
+    }
+    return false
+  })
   const [premiumVideos, setPremiumVideos] = useState<string[]>([])
   const [premiumImages, setPremiumImages] = useState<string[]>([])
   const [isLoadingPremium, setIsLoadingPremium] = useState(false)
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0)
   const [currentPremiumImageIndex, setCurrentPremiumImageIndex] = useState(0)
+
+  // Guardar el estado de isPremiumMode en localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('isPremiumMode', String(isPremiumMode))
+    }
+  }, [isPremiumMode])
 
   // Reiniciar el índice de imagen cuando cambie el color
   useEffect(() => {
