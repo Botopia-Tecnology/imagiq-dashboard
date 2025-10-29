@@ -51,6 +51,8 @@ interface DataTableProps<TData, TValue> {
   // Filtros del servidor
   onSearchChange?: (search: string) => void
   onFilterChange?: (filterId: string, value: string[]) => void
+  initialFilterValues?: Record<string, string[]>
+  initialSearchValue?: string
   // Estado de carga
   loading?: boolean
   // Visibilidad inicial de columnas
@@ -69,6 +71,8 @@ export function DataTable<TData, TValue>({
   totalItems,
   onSearchChange,
   onFilterChange,
+  initialFilterValues,
+  initialSearchValue,
   loading = false,
   initialColumnVisibility,
 }: DataTableProps<TData, TValue>) {
@@ -112,6 +116,8 @@ export function DataTable<TData, TValue>({
     getFacetedUniqueValues: getFacetedUniqueValues(),
     manualPagination: !!pageCount,
     manualSorting: true, // Desactivar ordenamiento local, se ordena en el servidor
+    manualFiltering: true, // Desactivar filtrado local, se filtra en el servido
+    autoResetPageIndex: false, // FIX: Evitar reset automático que causa ciclos infinitos con resultados vacíos
   })
 
   return (
@@ -122,6 +128,8 @@ export function DataTable<TData, TValue>({
         filters={filters}
         onSearchChange={onSearchChange}
         onFilterChange={onFilterChange}
+        initialFilterValues={initialFilterValues}
+        initialSearchValue={initialSearchValue}
       />
       {loading ? (
         <div className="space-y-4">

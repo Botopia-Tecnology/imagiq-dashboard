@@ -31,6 +31,7 @@ interface DataTableFacetedFilterProps<TData, TValue> {
   }[]
   onValueChange?: (value: string[]) => void
   singleSelect?: boolean
+  initialValues?: string[]
 }
 
 export function DataTableFacetedFilter<TData, TValue>({
@@ -39,11 +40,23 @@ export function DataTableFacetedFilter<TData, TValue>({
   options,
   onValueChange,
   singleSelect = false,
+  initialValues,
 }: DataTableFacetedFilterProps<TData, TValue>) {
   const facets = column?.getFacetedUniqueValues()
-  const [selectedValues, setSelectedValues] = React.useState<Set<string>>(
-    new Set(column?.getFilterValue() as string[])
-  )
+  const [selectedValues, setSelectedValues] = React.useState<Set<string>>(() => {
+    // Priorizar initialValues si está disponible
+    if (initialValues && initialValues.length > 0) {
+      return new Set(initialValues)
+    }
+    return new Set(column?.getFilterValue() as string[])
+  })
+
+  // Sincronizar el estado cuando cambien los initialValues
+  React.useEffect(() => {
+    if (initialValues) {
+      setSelectedValues(new Set(initialValues))
+    }
+  }, [initialValues])
 
   const handleValueChange = (filterValues: string[]) => {
     const newSelectedValues = new Set(filterValues)

@@ -10,6 +10,7 @@
 
 import { BackendCategory, BackendMenu, BackendSubmenu, CreateCategoryRequest, UpdateCategoryRequest, CreateMenuRequest, UpdateMenuRequest, CreateSubmenuRequest, UpdateSubmenuRequest } from "@/types";
 
+
 // API Client configuration
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
@@ -168,6 +169,16 @@ export const productEndpoints = {
     const url = `/api/products/filtered?${searchParams.toString()}`;
     return apiClient.get<ProductApiResponse>(url);
   },
+  getFilteredSearch: (params: ProductFilterParams) => {
+    const searchParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== "") {
+        searchParams.append(key, String(value));
+      }
+    });
+    const url = `/api/products/search/grouped?${searchParams.toString()}`;
+    return apiClient.get<ProductApiResponse>(url);
+  },
   getById: (id: string) =>
     apiClient.get<ProductApiResponse>(`/api/products/${id}`),
   getByCategory: (category: string) =>
@@ -179,7 +190,7 @@ export const productEndpoints = {
       `/api/products/filtered?menu=${menu}`
     ),
   getByCodigoMarket: (codigoMarket: string) =>
-    apiClient.get<ProductApiResponse>(
+    apiClient.get<ProductApiResponse2>(
       `/api/products/filtered?codigoMarket=${codigoMarket}`
     ),
   search: (query: string) =>
@@ -350,6 +361,7 @@ export interface ProductFilterParams {
   color?: string;
   capacidad?: string;
   nombre?: string;
+  query?: string;
   modelo?: string;
   desDetallada?: string;
   codigoMarket?: string;
@@ -363,13 +375,32 @@ export interface ProductFilterParams {
 
 
 // API Response types
-export interface ProductApiResponse {
+export interface ProductPaginationData {
   products: ProductApiData[];
-  totalItems: number;
+  total: number; // Total de productos encontrados
+  page: number; // Página actual
+  limit: number; // Límite de productos por página
   totalPages: number;
-  currentPage: number;
   hasNextPage: boolean;
   hasPreviousPage: boolean;
+  message?: string; // Mensaje opcional del backend
+}
+
+export interface ProductApiResponse {
+  data: ProductPaginationData; // El backend envuelve los datos en un campo "data"
+  success?: boolean;
+  message?: string;
+}
+
+export interface ProductApiResponse2 {
+   products: ProductApiData[];
+  total: number; // Total de productos encontrados
+  page: number; // Página actual
+  limit: number; // Límite de productos por página
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+  message?: string; // Mensaje opcional del backend
 }
 
 export interface ProductSummary {

@@ -13,10 +13,37 @@ const statuses = [
 
 export function ProductsTableWrapper() {
   const [pageSize, setPageSize] = useState(10);
+
+  // Cargar filtros guardados desde localStorage (antes de cualquier petición)
+  const getInitialFilters = (): Record<string, string[]> => {
+    if (typeof window !== 'undefined') {
+      const savedMenuFilter = localStorage.getItem('productsMenuFilter');
+      if (savedMenuFilter) {
+        try {
+          const parsedFilter = JSON.parse(savedMenuFilter);
+          if (Array.isArray(parsedFilter) && parsedFilter.length > 0) {
+            return { menu: parsedFilter };
+          }
+        } catch (error) {
+          console.error('Error parsing saved menu filter:', error);
+        }
+      }
+    }
+    return {};
+  };
+
   const [currentFilters, setCurrentFilters] = useState<
     Record<string, string[]>
-  >({});
-  const [searchQuery, setSearchQuery] = useState("");
+  >(getInitialFilters);
+
+  const [searchQuery, setSearchQuery] = useState(() => {
+    // Cargar búsqueda guardada desde localStorage
+    if (typeof window !== 'undefined') {
+      const savedSearch = localStorage.getItem('productsSearchQuery');
+      return savedSearch || "";
+    }
+    return "";
+  });
   const [sortBy, setSortBy] = useState<string | undefined>();
   const [sortOrder, setSortOrder] = useState< "desc" | "asc" | undefined>();
   const [categories, setCategories] = useState<{ label: string; value: string }[]>([]);
@@ -39,11 +66,43 @@ export function ProductsTableWrapper() {
         console.error("Error fetching categories:", error);
       }
     };
- 
+
     fetchCategories();
   }, []);
 
-  const initialFilters = useMemo(() => ({ limit: 10 }), []);
+  const initialFilters = useMemo(() => {
+    const filters: Record<string, any> = { limit: 10, page: 1 };
+
+    // Aplicar filtros guardados desde el inicio
+    const savedFilters = getInitialFilters();
+    const savedSearch = typeof window !== 'undefined' ? localStorage.getItem('productsSearchQuery') : null;
+
+    if (savedFilters.menu && savedFilters.menu.length > 0) {
+      const hasBuds = savedFilters.menu.includes("buds");
+
+      if (hasBuds) {
+        const budsValues = savedFilters.menu.filter(v => v === "buds");
+        const otherValues = savedFilters.menu.filter(v => v !== "buds");
+
+        if (budsValues.length > 0) {
+          filters.name = savedSearch
+            ? `${savedSearch}, ${budsValues.join(", ")}`
+            : budsValues.join(", ");
+        }
+        if (otherValues.length > 0) {
+          filters.menu = otherValues.join(", ");
+        }
+      } else {
+        filters.menu = savedFilters.menu.join(", ");
+      }
+    }
+
+    if (savedSearch && !filters.name) {
+      filters.name = savedSearch;
+    }
+
+    return filters;
+  }, []);
 
   const {
     products,
@@ -164,6 +223,14 @@ export function ProductsTableWrapper() {
   const handleSearchChange = useCallback(
     (search: string) => {
       setSearchQuery(search);
+
+      // Guardar búsqueda en localStorage
+      if (search) {
+        localStorage.setItem('productsSearchQuery', search);
+      } else {
+        localStorage.removeItem('productsSearchQuery');
+      }
+
       const filters: Record<string, any> = {
         name: search,
         limit: pageSize,
@@ -215,6 +282,15 @@ export function ProductsTableWrapper() {
       const newFilters = { ...currentFilters, [filterId]: value };
       console.log(newFilters);
       setCurrentFilters(newFilters);
+
+      // Guardar filtro de menú en localStorage
+      if (filterId === "menu") {
+        if (value.length > 0) {
+          localStorage.setItem('productsMenuFilter', JSON.stringify(value));
+        } else {
+          localStorage.removeItem('productsMenuFilter');
+        }
+      }
 
       const filters: Record<string, any> = {
         limit: pageSize,
@@ -324,6 +400,8 @@ export function ProductsTableWrapper() {
       onPaginationChange={handlePaginationChange}
       onSearchChange={handleSearchChange}
       onFilterChange={handleFilterChange}
+      initialFilterValues={currentFilters}
+      initialSearchValue={searchQuery}
       loading={loading}
     />
   );
