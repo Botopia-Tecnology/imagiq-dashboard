@@ -25,17 +25,25 @@ export function UserProfile() {
     router.push('/login');
   };
 
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
+  const getInitials = (name?: string) => {
+    const source = (name ?? '').trim();
+    if (!source) return 'US';
+    const initials = source
+      .split(/\s+/)
       .map(word => word.charAt(0))
       .join('')
       .toUpperCase()
       .slice(0, 2);
+    return initials || 'US';
   };
 
-  const getRoleColor = (role: string) => {
-    switch (role.toLowerCase()) {
+  const getRoleColor = (role: unknown) => {
+    const normalized = typeof role === 'string'
+      ? role
+      : Array.isArray(role)
+        ? role.join(',')
+        : String(role ?? '');
+    switch (normalized.toLowerCase()) {
       case 'admin':
         return 'text-red-600 dark:text-red-400';
       case 'user':
@@ -51,7 +59,7 @@ export function UserProfile() {
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-8 w-8">
             <AvatarFallback className="text-xs">
-              {getInitials(user.name)}
+              {getInitials(user.name || user.email)}
             </AvatarFallback>
           </Avatar>
         </Button>
@@ -66,7 +74,7 @@ export function UserProfile() {
             <div className="flex items-center gap-1 mt-1">
               <Shield className="h-3 w-3" />
               <span className={`text-xs font-medium ${getRoleColor(user.role)}`}>
-                {user.role}
+                {String(user.role ?? 'User')}
               </span>
             </div>
           </div>
