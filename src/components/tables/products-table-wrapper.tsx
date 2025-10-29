@@ -15,21 +15,7 @@ export function ProductsTableWrapper() {
   const [pageSize, setPageSize] = useState(10);
   const [currentFilters, setCurrentFilters] = useState<
     Record<string, string[]>
-  >(() => {
-    // Cargar filtros guardados desde localStorage
-    if (typeof window !== 'undefined') {
-      const savedMenuFilter = localStorage.getItem('productsMenuFilter');
-      if (savedMenuFilter) {
-        try {
-          const parsedFilter = JSON.parse(savedMenuFilter);
-          return { menu: parsedFilter };
-        } catch (error) {
-          console.error('Error parsing saved menu filter:', error);
-        }
-      }
-    }
-    return {};
-  });
+  >({});
   const [searchQuery, setSearchQuery] = useState(() => {
     // Cargar búsqueda guardada desde localStorage
     if (typeof window !== 'undefined') {
@@ -41,6 +27,23 @@ export function ProductsTableWrapper() {
   const [sortBy, setSortBy] = useState<string | undefined>();
   const [sortOrder, setSortOrder] = useState< "desc" | "asc" | undefined>();
   const [categories, setCategories] = useState<{ label: string; value: string }[]>([]);
+
+  // Cargar filtros guardados desde localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedMenuFilter = localStorage.getItem('productsMenuFilter');
+      if (savedMenuFilter) {
+        try {
+          const parsedFilter = JSON.parse(savedMenuFilter);
+          if (Array.isArray(parsedFilter)) {
+            setCurrentFilters({ menu: parsedFilter });
+          }
+        } catch (error) {
+          console.error('Error parsing saved menu filter:', error);
+        }
+      }
+    }
+  }, []);
 
   useEffect(() => {
     const fetchCategories = async () => {
