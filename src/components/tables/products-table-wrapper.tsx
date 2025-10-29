@@ -13,9 +13,29 @@ const statuses = [
 
 export function ProductsTableWrapper() {
   const [pageSize, setPageSize] = useState(10);
+
+  // Cargar filtros guardados desde localStorage (antes de cualquier petición)
+  const getInitialFilters = (): Record<string, string[]> => {
+    if (typeof window !== 'undefined') {
+      const savedMenuFilter = localStorage.getItem('productsMenuFilter');
+      if (savedMenuFilter) {
+        try {
+          const parsedFilter = JSON.parse(savedMenuFilter);
+          if (Array.isArray(parsedFilter) && parsedFilter.length > 0) {
+            return { menu: parsedFilter };
+          }
+        } catch (error) {
+          console.error('Error parsing saved menu filter:', error);
+        }
+      }
+    }
+    return {};
+  };
+
   const [currentFilters, setCurrentFilters] = useState<
     Record<string, string[]>
-  >({});
+  >(getInitialFilters);
+
   const [searchQuery, setSearchQuery] = useState(() => {
     // Cargar búsqueda guardada desde localStorage
     if (typeof window !== 'undefined') {
@@ -27,23 +47,6 @@ export function ProductsTableWrapper() {
   const [sortBy, setSortBy] = useState<string | undefined>();
   const [sortOrder, setSortOrder] = useState< "desc" | "asc" | undefined>();
   const [categories, setCategories] = useState<{ label: string; value: string }[]>([]);
-
-  // Cargar filtros guardados desde localStorage
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const savedMenuFilter = localStorage.getItem('productsMenuFilter');
-      if (savedMenuFilter) {
-        try {
-          const parsedFilter = JSON.parse(savedMenuFilter);
-          if (Array.isArray(parsedFilter)) {
-            setCurrentFilters({ menu: parsedFilter });
-          }
-        } catch (error) {
-          console.error('Error parsing saved menu filter:', error);
-        }
-      }
-    }
-  }, []);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -67,49 +70,39 @@ export function ProductsTableWrapper() {
     fetchCategories();
   }, []);
 
-  // Aplicar filtros guardados al cargar la página
-  useEffect(() => {
-    if (categories.length > 0) {
-      const hasMenuFilter = currentFilters.menu && currentFilters.menu.length > 0;
-      const hasSearchQuery = searchQuery && searchQuery.trim() !== "";
+  const initialFilters = useMemo(() => {
+    const filters: Record<string, any> = { limit: 10, page: 1 };
 
-      if (hasMenuFilter || hasSearchQuery) {
-        const filters: Record<string, any> = {
-          limit: pageSize,
-          page: 1,
-        };
+    // Aplicar filtros guardados desde el inicio
+    const savedFilters = getInitialFilters();
+    const savedSearch = typeof window !== 'undefined' ? localStorage.getItem('productsSearchQuery') : null;
 
-        // Aplicar filtro de menú
-        if (hasMenuFilter && currentFilters.menu) {
-          const hasBuds = currentFilters.menu.includes("buds");
-          if (hasBuds) {
-            const budsValues = currentFilters.menu.filter(v => v === "buds");
-            const otherValues = currentFilters.menu.filter(v => v !== "buds");
+    if (savedFilters.menu && savedFilters.menu.length > 0) {
+      const hasBuds = savedFilters.menu.includes("buds");
 
-            if (budsValues.length > 0) {
-              filters.name = hasSearchQuery
-                ? `${searchQuery}, ${budsValues.join(", ")}`
-                : budsValues.join(", ");
-            }
-            if (otherValues.length > 0) {
-              filters.menu = otherValues.join(", ");
-            }
-          } else {
-            filters.menu = currentFilters.menu.join(", ");
-          }
+      if (hasBuds) {
+        const budsValues = savedFilters.menu.filter(v => v === "buds");
+        const otherValues = savedFilters.menu.filter(v => v !== "buds");
+
+        if (budsValues.length > 0) {
+          filters.name = savedSearch
+            ? `${savedSearch}, ${budsValues.join(", ")}`
+            : budsValues.join(", ");
         }
-
-        // Aplicar búsqueda si no se sobrescribió con buds
-        if (hasSearchQuery && !filters.name) {
-          filters.name = searchQuery;
+        if (otherValues.length > 0) {
+          filters.menu = otherValues.join(", ");
         }
-
-        filterProducts(filters);
+      } else {
+        filters.menu = savedFilters.menu.join(", ");
       }
     }
-  }, [categories]); // Solo ejecutar cuando categories esté disponible
 
-  const initialFilters = useMemo(() => ({ limit: 10 }), []);
+    if (savedSearch && !filters.name) {
+      filters.name = savedSearch;
+    }
+
+    return filters;
+  }, []);
 
   const {
     products,
