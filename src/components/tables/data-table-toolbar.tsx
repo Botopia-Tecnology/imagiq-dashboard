@@ -24,6 +24,8 @@ interface DataTableToolbarProps<TData> {
   }>;
   onSearchChange?: (search: string) => void;
   onFilterChange?: (filterId: string, value: string[]) => void;
+  initialFilterValues?: Record<string, string[]>;
+  initialSearchValue?: string;
 }
 
 export function DataTableToolbar<TData>({
@@ -32,9 +34,11 @@ export function DataTableToolbar<TData>({
   filters,
   onSearchChange,
   onFilterChange,
+  initialFilterValues,
+  initialSearchValue,
 }: DataTableToolbarProps<TData>) {
 
-  const [input, setInput] = useState("");
+  const [input, setInput] = useState(initialSearchValue || "");
 
   const handleSearchChange = (value: string) => {
     setInput(value);
@@ -42,7 +46,8 @@ export function DataTableToolbar<TData>({
 
   const handleKey = () => {
     if (onSearchChange) {
-      table.getColumn(searchKey)?.setFilterValue(input);
+       // NO establecer filtro local porque el filtrado se hace en el servidor
+      // table.getColumn(searchKey)?.setFilterValue(input);
       onSearchChange(input);
     }
   };
@@ -71,6 +76,7 @@ export function DataTableToolbar<TData>({
                   ? (value) => onFilterChange(filter.id, value)
                   : undefined
               }
+              initialValues={initialFilterValues?.[filter.id]}
             />
           ) : null;
         })}

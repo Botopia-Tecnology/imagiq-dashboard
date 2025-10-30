@@ -10,8 +10,12 @@
 
 import { BackendCategory, BackendMenu, BackendSubmenu, CreateCategoryRequest, UpdateCategoryRequest, CreateMenuRequest, UpdateMenuRequest, CreateSubmenuRequest, UpdateSubmenuRequest } from "@/types";
 
+
 // API Client configuration
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+
+// Helper: encode SKU for safe URL usage (replace '/' with '_')
+const encodeSkuForPath = (sku: string) => sku.replace(/\//g, "_");
 
 // Generic API response type
 interface ApiResponse<T> {
@@ -168,6 +172,16 @@ export const productEndpoints = {
     const url = `/api/products/filtered?${searchParams.toString()}`;
     return apiClient.get<ProductApiResponse>(url);
   },
+  getFilteredSearch: (params: ProductFilterParams) => {
+    const searchParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== "") {
+        searchParams.append(key, String(value));
+      }
+    });
+    const url = `/api/products/search/grouped?${searchParams.toString()}`;
+    return apiClient.get<ProductApiResponse>(url);
+  },
   getById: (id: string) =>
     apiClient.get<ProductApiResponse>(`/api/products/${id}`),
   getByCategory: (category: string) =>
@@ -179,7 +193,7 @@ export const productEndpoints = {
       `/api/products/filtered?menu=${menu}`
     ),
   getByCodigoMarket: (codigoMarket: string) =>
-    apiClient.get<ProductApiResponse>(
+    apiClient.get<ProductApiResponse2>(
       `/api/products/filtered?codigoMarket=${codigoMarket}`
     ),
   search: (query: string) =>
@@ -188,14 +202,15 @@ export const productEndpoints = {
   updateMedia: (id: string, data: ProductMediaUpdateData) =>
     apiClient.put<ProductMediaUpdateResponse>(`/api/products/${id}/media`, data),
   getMultimedia: (sku: string) =>
-    apiClient.get<ProductMultimediaData>(`/api/multimedia/producto/${sku}`),
+    apiClient.get<ProductMultimediaData>(`/api/multimedia/producto/${encodeSkuForPath(sku)}`),
 
   // Modificar imagen en posición específica
   updateImageAtPosition: (sku: string, numero: number, imageFile: File) => {
     const formData = new FormData();
     formData.append('file', imageFile);
 
-    return fetch(`${API_BASE_URL}/api/multimedia/producto/${sku}/imagen/${numero}`, {
+    const safeSku = encodeSkuForPath(sku);
+    return fetch(`${API_BASE_URL}/api/multimedia/producto/${safeSku}/imagen/${numero}`, {
       method: "PUT",
       body: formData,
     }).then(async (response) => {
@@ -217,7 +232,8 @@ export const productEndpoints = {
     const formData = new FormData();
     formData.append('file', imageFile);
 
-    return fetch(`${API_BASE_URL}/api/multimedia/producto/${sku}/imagen/agregar`, {
+    const safeSku = encodeSkuForPath(sku);
+    return fetch(`${API_BASE_URL}/api/multimedia/producto/${safeSku}/imagen/agregar`, {
       method: "POST",
       body: formData,
     }).then(async (response) => {
@@ -241,7 +257,8 @@ export const productEndpoints = {
       formData.append('files', file);
     });
 
-    return fetch(`${API_BASE_URL}/api/multimedia/producto/${sku}/imagenes/agregar-multiples`, {
+    const safeSku = encodeSkuForPath(sku);
+    return fetch(`${API_BASE_URL}/api/multimedia/producto/${safeSku}/imagenes/agregar-multiples`, {
       method: "POST",
       body: formData,
     }).then(async (response) => {
@@ -306,10 +323,11 @@ export const productEndpoints = {
 
   // Reordenar imágenes existentes
   reorderImages: (sku: string, imageUrls: string[]) => {
+    const safeSku = encodeSkuForPath(sku);
     return apiClient.put<{ success: boolean; message: string }>(
-      `/api/multimedia/producto/${sku}/reordenar`,
+      `/api/multimedia/producto/${safeSku}/reordenar`,
       {
-        sku,
+        sku: safeSku,
         imageUrls
       }
     );
@@ -317,12 +335,32 @@ export const productEndpoints = {
 
   // Eliminar una o varias imágenes de detalle
   deleteDetailImages: (sku: string, numeros: number[]) => {
-    return fetch(`${API_BASE_URL}/api/multimedia/producto/${sku}/imagenes-detalle`, {
+    const safeSku = encodeSkuForPath(sku);
+    return fetch(`${API_BASE_URL}/api/multimedia/producto/${safeSku}/imagenes-detalle`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ numeros }),
+    }).then(async (response) => {
+      const data = await response.json();
+      return {
+        data,
+        success: response.ok,
+        message: typeof data?.message === 'string' ? data.message : (data?.error || "Error desconocido"),
+      };
+    }).catch((error) => ({
+      data: {},
+      success: false,
+      message: error instanceof Error ? error.message : "Request failed",
+    }));
+  },
+
+  // Eliminar imagen preview
+  deletePreviewImage: (sku: string) => {
+    const safeSku = encodeSkuForPath(sku);
+    return fetch(`${API_BASE_URL}/api/multimedia/producto/${safeSku}/preview`, {
+      method: "DELETE",
     }).then(async (response) => {
       const data = await response.json();
       return {
@@ -350,6 +388,7 @@ export interface ProductFilterParams {
   color?: string;
   capacidad?: string;
   nombre?: string;
+  query?: string;
   modelo?: string;
   desDetallada?: string;
   codigoMarket?: string;
@@ -363,13 +402,32 @@ export interface ProductFilterParams {
 
 
 // API Response types
-export interface ProductApiResponse {
+export interface ProductPaginationData {
   products: ProductApiData[];
-  totalItems: number;
+  total: number; // Total de productos encontrados
+  page: number; // Página actual
+  limit: number; // Límite de productos por página
   totalPages: number;
-  currentPage: number;
   hasNextPage: boolean;
   hasPreviousPage: boolean;
+  message?: string; // Mensaje opcional del backend
+}
+
+export interface ProductApiResponse {
+  data: ProductPaginationData; // El backend envuelve los datos en un campo "data"
+  success?: boolean;
+  message?: string;
+}
+
+export interface ProductApiResponse2 {
+   products: ProductApiData[];
+  total: number; // Total de productos encontrados
+  page: number; // Página actual
+  limit: number; // Límite de productos por página
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+  message?: string; // Mensaje opcional del backend
 }
 
 export interface ProductSummary {
@@ -438,7 +496,6 @@ export interface ProductMultimediaData {
 
 // Categories API endpoints
 export const categoryEndpoints = {
-  getVisible: () => apiClient.get<BackendCategory[]>("/api/categorias/visibles"),
   getVisibleCompletas: () => apiClient.get<BackendCategory[]>("/api/categorias/visibles/completas"),
   getDistinct: () => apiClient.get<string[]>("/api/categorias/distinct"),
   create: (data: CreateCategoryRequest) =>

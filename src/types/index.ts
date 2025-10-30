@@ -288,6 +288,7 @@ export interface BackendMenu {
   descripcion: string;
   imagen: string;
   activo: boolean;
+  orden: number;
   categoriasVisiblesId: string;
   createdAt: string;
   updatedAt: string;

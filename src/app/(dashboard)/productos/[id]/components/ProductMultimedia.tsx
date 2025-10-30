@@ -46,21 +46,25 @@ export function ProductMultimedia({
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0)
   const [currentPremiumImageIndex, setCurrentPremiumImageIndex] = useState(0)
 
-  // Guardar el estado de isPremiumMode en localStorage
+  // Guardar el estado de isPremiumMode en localStorage (solo para productos premium)
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('isPremiumMode', String(isPremiumMode))
+    if (typeof window === 'undefined') return
+    // Evitar que el modo premium "se pegue" a productos no premium
+    if (!product.segmento?.includes("Premium")) {
+      localStorage.setItem('isPremiumMode', 'false')
+      return
     }
-  }, [isPremiumMode])
+    localStorage.setItem('isPremiumMode', String(isPremiumMode))
+  }, [isPremiumMode, product.segmento])
 
   // Reiniciar el índice de imagen cuando cambie el color
   useEffect(() => {
     setCurrentImageIndex(0)
   }, [selectedColor])
 
-  // Cargar contenido premium cuando se activa el switch
+  // Cargar contenido premium cuando se activa el switch (solo si el producto es premium)
   useEffect(() => {
-    if (!isPremiumMode || !selectedColor) return
+    if (!isPremiumMode || !selectedColor || !(product.segmento?.includes("Premium"))) return
 
     setIsLoadingPremium(true)
     console.log("Selected Color Premium Data:", {
@@ -77,6 +81,13 @@ export function ProductMultimedia({
 
   // Check if product has premium segment
   const isPremiumProduct = product.segmento?.includes("Premium") || false;
+
+  // Si no es premium, forzamos el modo premium a apagado para evitar render incorrecto
+  useEffect(() => {
+    if (!isPremiumProduct && isPremiumMode) {
+      setIsPremiumMode(false)
+    }
+  }, [isPremiumProduct])
 
   return (
     <Card className="h-fit">
@@ -140,7 +151,7 @@ export function ProductMultimedia({
               <p className="text-sm text-muted-foreground">Cargando contenido premium...</p>
             </div>
           </div>
-        ) : isPremiumMode ? (
+        ) : (isPremiumMode && isPremiumProduct) ? (
           /* Contenido Premium */
           <>
             {/* Carrusel Premium (Videos + Imágenes excepto la última) */}
