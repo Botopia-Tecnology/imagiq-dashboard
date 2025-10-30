@@ -15,6 +15,7 @@ import {
   productEndpoints,
   ProductFilterParams,
   ProductApiResponse,
+  ProductApiResponse2,
 } from "@/lib/api";
 
 import {mapApiProductsToFrontend ,groupProductsByCategory} from "@/lib/productMapper";
@@ -340,7 +341,7 @@ export const useProduct = (productId: string) => {
         const response = await productEndpoints.getByCodigoMarket(codigoMarketBase);
 
         if (response.success && response.data) {
-          const apiData = response.data as ProductApiResponse;
+          const apiData = response.data as ProductApiResponse2;
           console.log("Fetched product data:", apiData);
           const mappedProducts = mapApiProductsToFrontend(apiData.products);
 

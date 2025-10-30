@@ -47,7 +47,7 @@ export function ProductInfo({
       if (variant.stockTotal && variant.stockTotal > 0) {
         const colorData = colorMap.get(variant.hex)!;
         colorData.hasStock = true;
-      }
+       }
     });
 
     return Array.from(colorMap.values());
@@ -88,18 +88,6 @@ export function ProductInfo({
     return Array.from(rams).sort();
   };
 
-  // Verificar si una variante específica está disponible
-  const isVariantAvailable = (hex?: string, capacity?: string, ram?: string) => {
-    return product.colors.some((variant) => {
-      const matchesHex = !hex || variant.hex === hex;
-      const matchesCapacity = !capacity || variant.capacity === capacity;
-      const matchesRam = !ram || variant.ram === ram;
-      //const hasStock = variant.stockTotal && variant.stockTotal > 0;
-
-      return matchesHex && matchesCapacity && matchesRam //&& hasStock;
-    });
-  };
-
   // Encontrar la variante exacta que coincida con los parámetros
   const findVariant = (hex: string, capacity?: string, ram?: string) => {
     return product.colors.find((variant) => {
@@ -113,13 +101,8 @@ export function ProductInfo({
 
   // Manejar cambio de color
   const handleColorChange = (hex: string) => {
-    // Buscar la primera variante con este color que tenga stock
-    let variant = product.colors.find((v) => v.hex === hex && v.stockTotal && v.stockTotal > 0);
-
-    // Si no hay variante con stock, tomar la primera con ese color
-    if (!variant) {
-      variant = product.colors.find((v) => v.hex === hex);
-    }
+    // Buscar la primera variante con este color
+    const variant = product.colors.find((v) => v.hex === hex);
 
     if (variant) {
       onColorSelect(variant);
@@ -130,7 +113,8 @@ export function ProductInfo({
   const handleCapacityChange = (capacity: string) => {
     if (!selectedColor) return;
 
-    const variant = findVariant(selectedColor.hex, capacity, selectedColor.ram);
+    // Buscar la primera variante con este color y capacidad (sin importar la RAM)
+    const variant = findVariant(selectedColor.hex, capacity);
     if (variant) {
       onColorSelect(variant);
     }
@@ -193,22 +177,18 @@ export function ProductInfo({
                 <div key={colorGroup.hex} className="flex flex-col items-center gap-1">
                   <button
                     onClick={() => handleColorChange(colorGroup.hex)}
-                    className={`h-10 w-10 rounded-full border-2 transition-all cursor-pointer ${
+                    className={`h-10 w-10 rounded-full border-2 transition-all cursor-pointer hover:scale-105 ${
                       selectedColor?.hex === colorGroup.hex
                         ? "border-primary ring-2 ring-primary ring-offset-2"
                         : "border-border hover:border-primary/50"
-                    } ${
-                      !colorGroup.hasStock
-                        ? "opacity-50"
-                        : "hover:scale-105"
                     }`}
                     style={{
                       backgroundColor: colorGroup.hex
                     }}
-                    title={`${colorGroup.label} - ${colorGroup.hasStock ? 'Disponible' : 'Agotado'}`}
+                    title={`${colorGroup.label} - ${colorGroup.hasStock ? 'Disponible' : 'Sin stock'}`}
                   />
                   {!colorGroup.hasStock && (
-                    <span className="text-xs text-red-500">Agotado</span>
+                    <span className="text-xs text-muted-foreground">Sin stock</span>
                   )}
                 </div>
               ))}
@@ -226,16 +206,11 @@ export function ProductInfo({
                   <button
                     key={capacity}
                     onClick={() => handleCapacityChange(capacity)}
-                    className={`px-4 py-2 rounded-md border-2 text-sm font-medium transition-all ${
+                    className={`px-4 py-2 rounded-md border-2 text-sm font-medium transition-all cursor-pointer hover:border-primary/50 ${
                       selectedColor?.capacity === capacity
                         ? "border-primary bg-primary text-primary-foreground"
-                        : "border-border hover:border-primary/50"
-                    } ${
-                      !isVariantAvailable(selectedColor?.hex, capacity, selectedColor?.ram)
-                        ? "opacity-50 cursor-not-allowed"
-                        : "cursor-pointer"
+                        : "border-border"
                     }`}
-                    //disabled={!isVariantAvailable(selectedColor?.hex, capacity, selectedColor?.ram)}
                   >
                     {capacity}
                   </button>
@@ -255,16 +230,11 @@ export function ProductInfo({
                   <button
                     key={ram}
                     onClick={() => handleRamChange(ram)}
-                    className={`px-4 py-2 rounded-md border-2 text-sm font-medium transition-all ${
+                    className={`px-4 py-2 rounded-md border-2 text-sm font-medium transition-all cursor-pointer hover:border-primary/50 ${
                       selectedColor?.ram === ram
                         ? "border-primary bg-primary text-primary-foreground"
-                        : "border-border hover:border-primary/50"
-                    } ${
-                      !isVariantAvailable(selectedColor?.hex, selectedColor?.capacity, ram)
-                        ? "opacity-50 cursor-not-allowed"
-                        : "cursor-pointer"
+                        : "border-border"
                     }`}
-                    //disabled={!isVariantAvailable(selectedColor?.hex, selectedColor?.capacity, ram)}
                   >
                     {ram}
                   </button>
