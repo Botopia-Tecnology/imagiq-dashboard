@@ -43,7 +43,7 @@ function InWebPreviewComponent({
           {/* Modal centrado solo si hay contenido */}
           {hasContent && (
             <div className="absolute inset-0 flex items-center justify-center z-10 p-8">
-              <div className="relative bg-white border border-gray-200 rounded-lg shadow-2xl p-4 max-w-md max-h-[calc(100%-4rem)]">
+              <div className="relative   max-w-md max-h-[calc(100%-4rem)]">
                 {/* Botón de cerrar fuera del modal */}
                 <button className="absolute -top-8 right-0 rounded-full p-1.5 hover:opacity-80 transition-opacity">
                   <X className="h-4 w-4 text-gray-800" />
@@ -140,7 +140,7 @@ function InWebPreviewComponent({
           {/* Modal centrado solo si hay contenido */}
           {hasContent && (
             <div className="absolute inset-0 flex items-center justify-center z-10 p-8">
-              <div className="relative bg-white border border-gray-200 rounded-lg shadow-2xl p-4 max-w-[280px] max-h-[calc(100%-4rem)]">
+              <div className="relative  max-w-[280px] max-h-[calc(100%-4rem)]">
                 {/* Botón de cerrar fuera del modal */}
                 <button className="absolute -top-5 right-0 rounded-full p-1 hover:opacity-80 transition-opacity">
                   <X className="h-3.5 w-3.5 text-gray-800" />
