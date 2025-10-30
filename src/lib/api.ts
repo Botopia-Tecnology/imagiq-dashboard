@@ -355,6 +355,25 @@ export const productEndpoints = {
       message: error instanceof Error ? error.message : "Request failed",
     }));
   },
+
+  // Eliminar imagen preview
+  deletePreviewImage: (sku: string) => {
+    const safeSku = encodeSkuForPath(sku);
+    return fetch(`${API_BASE_URL}/api/multimedia/producto/${safeSku}/preview`, {
+      method: "DELETE",
+    }).then(async (response) => {
+      const data = await response.json();
+      return {
+        data,
+        success: response.ok,
+        message: typeof data?.message === 'string' ? data.message : (data?.error || "Error desconocido"),
+      };
+    }).catch((error) => ({
+      data: {},
+      success: false,
+      message: error instanceof Error ? error.message : "Request failed",
+    }));
+  },
 };
 
 // Product filter parameters interface

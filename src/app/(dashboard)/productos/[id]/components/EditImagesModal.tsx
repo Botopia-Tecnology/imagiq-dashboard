@@ -17,6 +17,8 @@ import { ProductCardProps, ProductColor } from "@/features/products/useProducts"
 import { productEndpoints } from "@/lib/api"
 import { toast } from "sonner"
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"
+
 interface EditImagesModalProps {
   isOpen: boolean
   onClose: () => void
@@ -332,7 +334,8 @@ export function EditImagesModal({
         // Si había una imagen preview original pero ahora está null, eliminarla del backend
         if (originalPreviewUrl && !previewImage && !previewImageFile) {
           toast.info("Eliminando imagen preview...")
-          const deleteResponse = await fetch(`/api/products/${product.id}/media/preview`, {
+          const safeSku = selectedColor.sku.replace(/\//g, "_")
+          const deleteResponse = await fetch(`${API_BASE_URL}/api/products/${safeSku}/media/preview`, {
             method: "DELETE",
             headers: {
               "Content-Type": "application/json",
@@ -340,9 +343,8 @@ export function EditImagesModal({
             body: JSON.stringify({ sku: selectedColor.sku }),
           })
 
-          const deleteData = await deleteResponse.json()
-
-          if (!deleteResponse.ok || !deleteData.success) {
+          if (!deleteResponse.ok) {
+            const deleteData = await deleteResponse.json()
             toast.error(deleteData.message || "Error al eliminar imagen preview")
             uploadErrors = true
           } else {
