@@ -18,7 +18,7 @@ function InWebPreviewComponent({
   htmlContent = "",
   mode = "desktop",
 }: InWebPreviewProps) {
-  const iframeUrl = previewUrl || "https://imagiq-frontend.vercel.app/productos/dispositivos-moviles?seccion=smartphones";
+  const iframeUrl = previewUrl || "https://imagiq-frontend.vercel.app/";
   // Chrome Desktop Notification - Pop-up (bloqueante)
   const ChromeNotificationPopup = () => {
     const hasContent = (contentType === "html" && htmlContent) || image;
@@ -32,9 +32,9 @@ function InWebPreviewComponent({
             className="w-full h-full border-0"
             title="Desktop Preview"
             style={{
-              width: '166.67%',
-              height: '166.67%',
-              transform: 'scale(0.6)',
+              width: '200%',
+              height: '200%',
+              transform: 'scale(0.5)',
               transformOrigin: 'top left',
             }}
           />
@@ -81,15 +81,18 @@ function InWebPreviewComponent({
           className="w-full h-full border-0"
           title="Desktop Preview"
           style={{
-            width: '133.33%',
-            height: '133.33%',
-            transform: 'scale(0.75)',
-            transformOrigin: 'top left',
-          }}
+              width: '200%',
+              height: '200%',
+              transform: 'scale(0.5)',
+              transformOrigin: 'top left',
+            }}
         />
         {/* Modal centrado en la parte superior */}
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 max-w-sm max-h-[calc(100%-2rem)]">
-          <div className="relative bg-white border border-gray-200 rounded-lg shadow-2xl p-4">
+        <div className="absolute top-6 left-1/2 -translate-x-1/2 z-10 max-w-sm max-h-[calc(100%-2rem)]">
+          <div className="relative ">
+            <button className="absolute -top-7 right-0 rounded-full p-1.5 hover:opacity-80 transition-opacity">
+                  <X className="h-4 w-4 text-gray-800" />
+                </button>
             {contentType === "html" && htmlContent ? (
               <div
                 className="rounded-lg [&>*]:max-w-full [&_img]:max-w-full [&_img]:h-auto"
@@ -176,7 +179,7 @@ function InWebPreviewComponent({
         />
         {/* Modal en la parte superior, ajustado a los márgenes del celular */}
         <div className="absolute top-[8%] left-[12%] right-[12%] z-10 max-h-[calc(100%-10%)]">
-          <div className="relative bg-white border border-gray-200 rounded-lg shadow-2xl p-3">
+          <div className="relative">
             {contentType === "html" && htmlContent ? (
               <div
                 className="rounded [&>*]:max-w-full [&_img]:max-w-full [&_img]:h-auto"

@@ -237,6 +237,7 @@ export default function CrearCampaignInWebPage() {
               htmlContent: inWebData.htmlContent,
             }}
             onChange={handleNotificationContentChange}
+            displayStyle={inWebData.displayStyle}
           />
 
           {/* Scheduling */}

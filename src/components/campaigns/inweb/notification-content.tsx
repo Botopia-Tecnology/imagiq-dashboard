@@ -1,11 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Globe, Upload } from "lucide-react";
+import { Globe, Upload, AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export interface NotificationContentData {
   contentType: "image" | "html";
@@ -18,9 +20,43 @@ export interface NotificationContentData {
 interface NotificationContentProps {
   data: NotificationContentData;
   onChange: (data: NotificationContentData) => void;
+  displayStyle?: "popup" | "slider";
 }
 
-export function NotificationContent({ data, onChange }: NotificationContentProps) {
+export function NotificationContent({ data, onChange, displayStyle }: NotificationContentProps) {
+  const [imageError, setImageError] = useState<string | null>(null);
+
+  const validateImageDimensions = (file: File): Promise<boolean> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      const reader = new FileReader();
+
+      reader.onload = (e) => {
+        img.onload = () => {
+          // Solo validar dimensiones si es slider
+          if (displayStyle === "slider") {
+            const isValid = img.width === 1480 && img.height === 392;
+            if (!isValid) {
+              setImageError(
+                `Para slider, la imagen debe tener dimensiones de 1480x392 píxeles. La imagen seleccionada tiene ${img.width}x${img.height} píxeles.`
+              );
+              resolve(false);
+            } else {
+              setImageError(null);
+              resolve(true);
+            }
+          } else {
+            setImageError(null);
+            resolve(true);
+          }
+        };
+        img.src = e.target?.result as string;
+      };
+
+      reader.readAsDataURL(file);
+    });
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -51,29 +87,49 @@ export function NotificationContent({ data, onChange }: NotificationContentProps
         {data.contentType === "image" ? (
           <>
             <div className="space-y-2">
-              <Label htmlFor="imageUpload">Subir Imagen</Label>
+              <Label htmlFor="imageUpload">
+                Subir Imagen
+                {displayStyle === "slider" && (
+                  <span className="text-xs text-muted-foreground ml-2">
+                    (Dimensiones requeridas: 1480x392 px)
+                  </span>
+                )}
+              </Label>
               <div className="flex items-center gap-2">
                 <Input
                   id="imageUpload"
                   type="file"
                   accept="image/*"
-                  onChange={(e) => {
+                  onChange={async (e) => {
                     const file = e.target.files?.[0];
                     if (file) {
-                      const reader = new FileReader();
-                      reader.onloadend = () => {
-                        onChange({
-                          ...data,
-                          image: reader.result as string,
-                        });
-                      };
-                      reader.readAsDataURL(file);
+                      const isValid = await validateImageDimensions(file);
+
+                      if (isValid) {
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                          onChange({
+                            ...data,
+                            image: reader.result as string,
+                          });
+                        };
+                        reader.readAsDataURL(file);
+                      } else {
+                        // Limpiar el input si la imagen no es válida
+                        e.target.value = '';
+                      }
                     }
                   }}
                   className="flex-1"
                 />
                 <Upload className="h-4 w-4 text-muted-foreground" />
               </div>
+              {imageError && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{imageError}</AlertDescription>
+                </Alert>
+              )}
             </div>
 
             <div className="space-y-2">
