@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,6 +25,7 @@ interface NotificationContentProps {
 
 export function NotificationContent({ data, onChange, displayStyle }: NotificationContentProps) {
   const [imageError, setImageError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const validateImageDimensions = (file: File): Promise<boolean> => {
     return new Promise((resolve) => {
@@ -56,6 +57,21 @@ export function NotificationContent({ data, onChange, displayStyle }: Notificati
       reader.readAsDataURL(file);
     });
   };
+
+  // Limpiar la imagen cuando cambia el displayStyle
+  useEffect(() => {
+    if (data.image && data.contentType === "image") {
+      onChange({
+        ...data,
+        image: "",
+      });
+      setImageError(null);
+      // Limpiar el input de archivo
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  }, [displayStyle]); // Solo ejecutar cuando cambie displayStyle
 
   return (
     <Card>
@@ -97,6 +113,7 @@ export function NotificationContent({ data, onChange, displayStyle }: Notificati
               </Label>
               <div className="flex items-center gap-2">
                 <Input
+                  ref={fileInputRef}
                   id="imageUpload"
                   type="file"
                   accept="image/*"

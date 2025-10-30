@@ -89,10 +89,11 @@ function InWebPreviewComponent({
         />
         {/* Modal centrado en la parte superior */}
         <div className="absolute top-6 left-1/2 -translate-x-1/2 z-10 max-w-sm max-h-[calc(100%-2rem)]">
-          <div className="relative ">
-            <button className="absolute -top-7 right-0 rounded-full p-1.5 hover:opacity-80 transition-opacity">
+          <div className="relative ">{
+            image ?  <button className="absolute -top-7 right-0 rounded-full p-1.5 hover:opacity-80 transition-opacity">
                   <X className="h-4 w-4 text-gray-800" />
-                </button>
+                </button> : null}
+            
             {contentType === "html" && htmlContent ? (
               <div
                 className="rounded-lg [&>*]:max-w-full [&_img]:max-w-full [&_img]:h-auto"
