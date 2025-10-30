@@ -14,6 +14,9 @@ import { BackendCategory, BackendMenu, BackendSubmenu, CreateCategoryRequest, Up
 // API Client configuration
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
+// Helper: encode SKU for safe URL usage (replace '/' with '_')
+const encodeSkuForPath = (sku: string) => sku.replace(/\//g, "_");
+
 // Generic API response type
 interface ApiResponse<T> {
   data: T;
@@ -199,14 +202,15 @@ export const productEndpoints = {
   updateMedia: (id: string, data: ProductMediaUpdateData) =>
     apiClient.put<ProductMediaUpdateResponse>(`/api/products/${id}/media`, data),
   getMultimedia: (sku: string) =>
-    apiClient.get<ProductMultimediaData>(`/api/multimedia/producto/${sku}`),
+    apiClient.get<ProductMultimediaData>(`/api/multimedia/producto/${encodeSkuForPath(sku)}`),
 
   // Modificar imagen en posición específica
   updateImageAtPosition: (sku: string, numero: number, imageFile: File) => {
     const formData = new FormData();
     formData.append('file', imageFile);
 
-    return fetch(`${API_BASE_URL}/api/multimedia/producto/${sku}/imagen/${numero}`, {
+    const safeSku = encodeSkuForPath(sku);
+    return fetch(`${API_BASE_URL}/api/multimedia/producto/${safeSku}/imagen/${numero}`, {
       method: "PUT",
       body: formData,
     }).then(async (response) => {
@@ -228,7 +232,8 @@ export const productEndpoints = {
     const formData = new FormData();
     formData.append('file', imageFile);
 
-    return fetch(`${API_BASE_URL}/api/multimedia/producto/${sku}/imagen/agregar`, {
+    const safeSku = encodeSkuForPath(sku);
+    return fetch(`${API_BASE_URL}/api/multimedia/producto/${safeSku}/imagen/agregar`, {
       method: "POST",
       body: formData,
     }).then(async (response) => {
@@ -252,7 +257,8 @@ export const productEndpoints = {
       formData.append('files', file);
     });
 
-    return fetch(`${API_BASE_URL}/api/multimedia/producto/${sku}/imagenes/agregar-multiples`, {
+    const safeSku = encodeSkuForPath(sku);
+    return fetch(`${API_BASE_URL}/api/multimedia/producto/${safeSku}/imagenes/agregar-multiples`, {
       method: "POST",
       body: formData,
     }).then(async (response) => {
@@ -317,10 +323,11 @@ export const productEndpoints = {
 
   // Reordenar imágenes existentes
   reorderImages: (sku: string, imageUrls: string[]) => {
+    const safeSku = encodeSkuForPath(sku);
     return apiClient.put<{ success: boolean; message: string }>(
-      `/api/multimedia/producto/${sku}/reordenar`,
+      `/api/multimedia/producto/${safeSku}/reordenar`,
       {
-        sku,
+        sku: safeSku,
         imageUrls
       }
     );
@@ -328,7 +335,8 @@ export const productEndpoints = {
 
   // Eliminar una o varias imágenes de detalle
   deleteDetailImages: (sku: string, numeros: number[]) => {
-    return fetch(`${API_BASE_URL}/api/multimedia/producto/${sku}/imagenes-detalle`, {
+    const safeSku = encodeSkuForPath(sku);
+    return fetch(`${API_BASE_URL}/api/multimedia/producto/${safeSku}/imagenes-detalle`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
