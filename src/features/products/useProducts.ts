@@ -15,6 +15,7 @@ import {
   productEndpoints,
   ProductFilterParams,
   ProductApiResponse,
+  ProductApiResponse2,
 } from "@/lib/api";
 
 import {mapApiProductsToFrontend ,groupProductsByCategory} from "@/lib/productMapper";
@@ -24,15 +25,16 @@ export interface ProductColor {
   name: string; // Nombre técnico del color (ej: "black", "white")
   hex: string; // Código hexadecimal del color (ej: "#000000")
   label: string; // Nombre mostrado al usuario (ej: "Negro Medianoche")
-  sku: string; // SKU específico para esta variante de color
-  price?: string; // Precio específico para este color (opcional)
+  sku: string; // SKU específico para esta variante
+  price?: string; // Precio específico para esta variante (opcional)
   originalPrice?: string; // Precio original antes de descuento (opcional)
-  discount?: string; // Descuento específico para este color (opcional)
-  stock?: number; // Stock ecommerce disponible para este color (opcional)
-  stockTiendas?: Record<string, number>; // Stock por tienda para este color (opcional)
-  stockTotal?: number;
+  discount?: string; // Descuento específico para esta variante (opcional)
+  stock?: number; // Stock ecommerce disponible para esta variante (opcional)
+  stockTiendas?: Record<string, number>; // Stock por tienda para esta variante (opcional)
+  stockTotal?: number; // Stock total para esta variante (opcional)
   description?: string; // Descripción detallada de esta variante (opcional)
-  capacity?: string; // Capacidad específica de esta variante (opcional)
+  capacity?: string; // Capacidad específica de esta variante (256GB, 512GB, 1TB, etc.)
+  ram?: string; // Memoria RAM específica de esta variante (12GB, 16GB, etc.)
   imageUrl?: string; // URL de la imagen específica de esta variante (opcional)
   imageDetailsUrls?: string[]; // URLs de las imágenes detalladas de esta variante (opcional)
   premiumImages?: string[]; // URLs de las imágenes premium de esta variante (opcional)
@@ -339,8 +341,9 @@ export const useProduct = (productId: string) => {
         const response = await productEndpoints.getByCodigoMarket(codigoMarketBase);
 
         if (response.success && response.data) {
-          const paginationData = response.data;
-          const mappedProducts = mapApiProductsToFrontend(paginationData.products);
+          const apiData = response.data as ProductApiResponse2;
+          console.log("Fetched product data:", apiData);
+          const mappedProducts = mapApiProductsToFrontend(apiData.products);
 
           if (mappedProducts.length > 0) {
             const foundProduct = mappedProducts[0]; // Tomar el primer producto encontrado

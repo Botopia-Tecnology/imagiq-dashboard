@@ -20,12 +20,14 @@ export default function ProductDetailPage() {
   const productId = params.id as string
 
   const { product, loading, error } = useProduct(productId)
+  console.log("ProductDetailPage render", { product})
   const [selectedColor, setSelectedColor] = useState<ProductColor | null>(null)
 
   // Establecer el primer color como seleccionado por defecto
   useEffect(() => {
     if (product && product.colors.length > 0 && !selectedColor) {
       setSelectedColor(product.colors[0])
+      console.log("Setting default selected color", { selectedColor})
     }
   }, [product, selectedColor])
 
