@@ -31,7 +31,7 @@ const nextConfig: NextConfig = {
               "img-src 'self' data: blob: https: http://localhost:* https://www.clarity.ms https://*.clarity.ms",
               "style-src 'self' 'unsafe-inline'",
               "font-src 'self' data:",
-              "frame-src 'self'",
+              "frame-src 'self' *",
               "object-src 'none'",
               "base-uri 'self'",
               "form-action 'self'",
