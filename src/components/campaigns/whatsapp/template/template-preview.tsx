@@ -17,6 +17,7 @@ import {
   MoreVertical,
   Camera,
   Mic,
+  Plus,
 } from "lucide-react";
 import { BrandIcon } from "@/components/icons/BrandIcon";
 import { IOSNotificationPreview } from "./ios-notification-preview";
@@ -167,34 +168,65 @@ export function WhatsAppTemplatePreview({ templateData }: TemplatePreviewProps) 
         <div className="bg-black rounded-[3rem] p-2 shadow-2xl">
           {/* Dynamic Island / Notch */}
           <div className="relative bg-black rounded-[2.75rem] overflow-hidden">
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-28 h-7 bg-black rounded-b-3xl z-10"></div>
+            {/* Dynamic Island - Pill Shape */}
+            <div className="absolute top-2 left-1/2 -translate-x-1/2 w-24 h-8 bg-black rounded-full z-10 shadow-lg"></div>
 
             {/* Screen Content */}
-            <div className="bg-white dark:bg-black rounded-[2.5rem] overflow-hidden">
+            <div className="bg-white dark:bg-[#000000] rounded-[2.5rem] overflow-hidden">
               {/* iOS Status Bar */}
-              <div className="bg-white dark:bg-black px-6 pt-3 pb-1">
-                <div className="flex items-center justify-between text-[10px] font-semibold">
-                  <span className="dark:text-white">9:41</span>
-                  <div className="flex items-center gap-1">
-                    <div className="flex gap-[2px]">
-                      <div className="w-4 h-2.5 border border-white dark:border-white rounded-sm"></div>
+              <div className="bg-transparent px-8 pt-4 pb-2">
+                <div className="flex items-center justify-between text-[11px] font-semibold">
+                  <span className="text-black dark:text-white">9:41</span>
+                  <div className="flex items-center gap-1.5">
+                    {/* Signal bars */}
+                    <svg width="18" height="12" viewBox="0 0 18 12" className="text-black dark:text-white">
+                      <rect x="0" y="8" width="3" height="4" rx="1" fill="currentColor"/>
+                      <rect x="5" y="5" width="3" height="7" rx="1" fill="currentColor"/>
+                      <rect x="10" y="2" width="3" height="10" rx="1" fill="currentColor"/>
+                      <rect x="15" y="0" width="3" height="12" rx="1" fill="currentColor"/>
+                    </svg>
+                    {/* WiFi */}
+                    <svg width="16" height="12" viewBox="0 0 16 12" className="text-black dark:text-white">
+                      <path d="M8 0C3.58 0 0 1.79 0 4C0 4.83 0.42 5.59 1.12 6.21L8 12L14.88 6.21C15.58 5.59 16 4.83 16 4C16 1.79 12.42 0 8 0Z" fill="currentColor"/>
+                    </svg>
+                    {/* Battery */}
+                    <div className="flex items-center gap-0.5">
+                      <div className="w-6 h-3 border-2 border-black dark:border-white rounded-sm relative">
+                        <div className="absolute inset-0.5 bg-black dark:bg-white rounded-[1px]"></div>
+                      </div>
+                      <div className="w-0.5 h-1.5 bg-black dark:bg-white rounded-r"></div>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* WhatsApp Header */}
-              <div className="bg-[#128C7E] dark:bg-[#0B141A] text-white px-3 py-2 flex items-center gap-2 shadow-sm">
-                <ChevronLeft className="h-5 w-5" />
-                <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center overflow-hidden">
-                  <BrandIcon brand="WhatsApp" size={20} className="text-green-600" />
+              {/* WhatsApp Header - iOS Style */}
+              <div className="bg-[#F6F6F6] dark:bg-[#1C1C1E] border-b border-gray-200 dark:border-gray-800 px-2 py-2">
+                <div className="flex items-center gap-2">
+                  {/* Back Button */}
+                  <button className="p-1">
+                    <ChevronLeft className="h-6 w-6 text-[#007AFF]" strokeWidth={2.5} />
+                  </button>
+
+                  {/* Profile Picture */}
+                  <div className="w-8 h-8 bg-gray-300 dark:bg-gray-600 rounded-full flex items-center justify-center overflow-hidden">
+                    <BrandIcon brand="WhatsApp" size={18} className="text-green-600" />
+                  </div>
+
+                  {/* Contact Info */}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-[13px] text-black dark:text-white truncate leading-tight">Tu Empresa</p>
+                    <p className="text-[11px] text-gray-500 dark:text-gray-400 leading-tight">en línea</p>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <button className="p-1.5">
+                    <VideoIcon className="h-5 w-5 text-[#007AFF]" />
+                  </button>
+                  <button className="p-1.5">
+                    <PhoneCall className="h-5 w-5 text-[#007AFF]" />
+                  </button>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm truncate">Tu Empresa</p>
-                  <p className="text-[10px] text-green-100">en línea</p>
-                </div>
-                <VideoIcon className="h-5 w-5" />
-                <PhoneCall className="h-5 w-5" />
               </div>
 
               {/* Chat Area */}
@@ -228,13 +260,19 @@ export function WhatsAppTemplatePreview({ templateData }: TemplatePreviewProps) 
                 </div>
               </div>
 
-              {/* WhatsApp Input Bar */}
-              <div className="bg-[#F0F0F0] dark:bg-[#1F2C33] px-3 py-2 flex items-center gap-2">
-                <div className="flex-1 bg-white dark:bg-[#2A3942] rounded-full px-3 py-1.5 flex items-center gap-2">
-                  <span className="text-xs text-gray-400">Mensaje</span>
+              {/* WhatsApp Input Bar - iOS Style */}
+              <div className="bg-[#F6F6F6] dark:bg-[#1C1C1E] px-2 py-1.5 border-t border-gray-200 dark:border-gray-800">
+                <div className="flex items-center gap-2">
+                  <button className="p-1">
+                    <Plus className="h-5 w-5 text-[#007AFF]" />
+                  </button>
+                  <div className="flex-1 bg-white dark:bg-[#2C2C2E] rounded-full px-3 py-1.5 flex items-center gap-2 border border-gray-300 dark:border-gray-700">
+                    <span className="text-[11px] text-gray-400">Mensaje</span>
+                  </div>
+                  <button className="p-1">
+                    <Mic className="h-5 w-5 text-[#007AFF]" />
+                  </button>
                 </div>
-                <Camera className="h-5 w-5 text-gray-600 dark:text-gray-400" />
-                <Mic className="h-5 w-5 text-gray-600 dark:text-gray-400" />
               </div>
 
               {/* iOS Home Indicator */}
