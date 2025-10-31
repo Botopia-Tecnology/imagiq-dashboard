@@ -15,6 +15,7 @@ import {
   productEndpoints,
   ProductFilterParams,
   ProductApiResponse,
+  ProductApiResponse2,
 } from "@/lib/api";
 
 import {mapApiProductsToFrontend ,groupProductsByCategory} from "@/lib/productMapper";
@@ -24,15 +25,20 @@ export interface ProductColor {
   name: string; // Nombre técnico del color (ej: "black", "white")
   hex: string; // Código hexadecimal del color (ej: "#000000")
   label: string; // Nombre mostrado al usuario (ej: "Negro Medianoche")
-  sku: string; // SKU específico para esta variante de color
-  price?: string; // Precio específico para este color (opcional)
+  sku: string; // SKU específico para esta variante
+  price?: string; // Precio específico para esta variante (opcional)
   originalPrice?: string; // Precio original antes de descuento (opcional)
-  discount?: string; // Descuento específico para este color (opcional)
-  stock?: number; // Stock disponible para este color (opcional)
+  discount?: string; // Descuento específico para esta variante (opcional)
+  stock?: number; // Stock ecommerce disponible para esta variante (opcional)
+  stockTiendas?: Record<string, number>; // Stock por tienda para esta variante (opcional)
+  stockTotal?: number; // Stock total para esta variante (opcional)
   description?: string; // Descripción detallada de esta variante (opcional)
-  capacity?: string; // Capacidad específica de esta variante (opcional)
+  capacity?: string; // Capacidad específica de esta variante (256GB, 512GB, 1TB, etc.)
+  ram?: string; // Memoria RAM específica de esta variante (12GB, 16GB, etc.)
   imageUrl?: string; // URL de la imagen específica de esta variante (opcional)
   imageDetailsUrls?: string[]; // URLs de las imágenes detalladas de esta variante (opcional)
+  premiumImages?: string[]; // URLs de las imágenes premium de esta variante (opcional)
+  premiumVideos?: string[]; // URLs de los videos premium de esta variante (opcional)
 }
 
 export interface ProductCardProps {
@@ -55,20 +61,22 @@ export interface ProductCardProps {
   brand?: string;
   model?: string;
   category?: string;
-  subcategory?: string;
+  menu?: string;
   capacity?: string | null;
   stock?: number;
+  stockTotal?: number;
   sku?: string | null;
   detailedDescription?: string | null;
   selectedColor?: ProductColor;
   setSelectedColor?: (color: ProductColor) => void;
   puntos_q?: number; // Puntos Q acumulables por producto (valor fijo por ahora)
+  segmento?: string[]; // Array de segmentos del producto (ej: ["Premium"])
 }
 
 
 export interface ProductFilters {
   category?: string;
-  subcategory?: string;
+  menu?: string;
   precioMin?: number;
   precioMax?: number;
   color?: string;
@@ -76,6 +84,8 @@ export interface ProductFilters {
   name?: string;
   withDiscount?: boolean;
   minStock?: number;
+  maxStock?: number;
+  stock?: number;
   descriptionKeyword?: string; // Nuevo filtro para palabras clave en descripción
   searchQuery?: string; // Query de búsqueda general para nombre Y desDetallada
   page?: number; // Página actual para paginación
@@ -134,7 +144,7 @@ export const useProducts = (
 
       // Aplicar filtros específicos (pueden sobrescribir el precioMin por defecto)
       if (filters.category) params.categoria = filters.category;
-      if (filters.subcategory) params.subcategoria = filters.subcategory;
+      if (filters.menu) params.menu = filters.menu;
 
       // Manejar filtros de precio usando precioMin/precioMax
       if (filters.precioMin !== undefined) {
@@ -147,10 +157,12 @@ export const useProducts = (
 
       if (filters.color) params.color = filters.color;
       if (filters.capacity) params.capacidad = filters.capacity;
-      if (filters.name) params.nombre = filters.name;
+      if (filters.name) params.query = filters.name;
+      if(filters.stock) params.stock = filters.stock;
       if (filters.withDiscount !== undefined)
         params.conDescuento = filters.withDiscount;
       if (filters.minStock !== undefined) params.stockMinimo = filters.minStock;
+      if (filters.maxStock !== undefined) params.stockMaximo = filters.maxStock;
       if (filters.descriptionKeyword) {
         // Usar el campo desDetallada para buscar en la descripción detallada
         params.desDetallada = filters.descriptionKeyword;
@@ -192,11 +204,11 @@ export const useProducts = (
 
       try {
         const apiParams = convertFiltersToApiParams(filters);
-        const response = await productEndpoints.getFiltered(apiParams);
+        const response = await productEndpoints.getFilteredSearch(apiParams);
 
-        if (response.success && response.data) {
-          const apiData = response.data as ProductApiResponse;
-          const mappedProducts = mapApiProductsToFrontend(apiData.products);
+        if (response.success && response.data && response.data.data) {
+          const paginationData = response.data.data;
+          const mappedProducts = mapApiProductsToFrontend(paginationData.products);
 
           if (append) {
             setProducts((prev) => [...prev, ...mappedProducts]);
@@ -205,11 +217,17 @@ export const useProducts = (
             setGroupedProducts(groupProductsByCategory(mappedProducts));
           }
 
-          setTotalItems(apiData.totalItems);
-          setTotalPages(apiData.totalPages);
-          setCurrentPage(apiData.currentPage);
-          setHasNextPage(apiData.hasNextPage);
-          setHasPreviousPage(apiData.hasPreviousPage);
+          setTotalItems(paginationData.total);
+          setTotalPages(paginationData.totalPages);
+          setCurrentPage(paginationData.page);
+          setHasNextPage(paginationData.hasNextPage);
+          setHasPreviousPage(paginationData.hasPreviousPage);
+
+          // Si no hay resultados y estamos en una página > 1, no hacer nada más
+          // El reset de página debe ser manual, no automático
+          if (mappedProducts.length === 0 && paginationData.page > 1) {
+            console.warn("Empty results on page > 1, but not auto-resetting to avoid infinite loop");
+          }
         } else {
           setError(response.message || "Error al cargar productos");
         }
@@ -323,7 +341,8 @@ export const useProduct = (productId: string) => {
         const response = await productEndpoints.getByCodigoMarket(codigoMarketBase);
 
         if (response.success && response.data) {
-          const apiData = response.data as ProductApiResponse;
+          const apiData = response.data as ProductApiResponse2;
+          console.log("Fetched product data:", apiData);
           const mappedProducts = mapApiProductsToFrontend(apiData.products);
 
           if (mappedProducts.length > 0) {

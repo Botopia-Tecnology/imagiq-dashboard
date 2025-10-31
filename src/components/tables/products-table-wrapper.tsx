@@ -1,46 +1,108 @@
 "use client";
 
-import { useMemo, useCallback, useState } from "react";
+import { useMemo, useCallback, useState, useEffect } from "react";
 import { DataTable } from "@/components/tables/data-table";
 import { createProductColumns } from "@/components/tables/columns/products-columns";
 import { useProducts } from "@/features/products/useProducts";
-
-const categories = [
-  { label: "Smartphones", value: "Celulares" },
-  { label: "Tablets", value: "Tablets" },
-  { label: "Relojes", value: "Wearables" },
-  { label: "Accesorios", value: "Accesorios" },
-  { label: "Galaxy buds falta buds", value: "buds" },
-
-  { label: "Televisores", value: "Televisores" },
-  { label: "Barras de sonido", value: "Barras de sonido" },
-  { label: "Sistemas de audio", value: "Sistemas de audio" },
-
-  { label: "Refrigeradores", value: "Neveras,Nevecon" },
-  { label: "Lavadora", value: "Lavadora,Secadora" },
-  { label: "Lavavajillas", value: "Lavavajillas" },
-  { label: "Aire acondicionado", value: "Aire Acondicionado" },
-  { label: "Microondas", value: "Microondas" },
-  { label: "Aspiradoras", value: "Aspiradoras" },
-  { label: "Hornos", value: "Hornos" },
-];
+import { categoryEndpoints } from "@/lib/api";
 
 const statuses = [
   { label: "Activo", value: "active" },
   { label: "Inactivo", value: "inactive" },
-  { label: "Borrador", value: "draft" },
 ];
 
 export function ProductsTableWrapper() {
   const [pageSize, setPageSize] = useState(10);
+
+  // Cargar filtros guardados desde localStorage (antes de cualquier petición)
+  const getInitialFilters = (): Record<string, string[]> => {
+    if (typeof window !== 'undefined') {
+      const savedMenuFilter = localStorage.getItem('productsMenuFilter');
+      if (savedMenuFilter) {
+        try {
+          const parsedFilter = JSON.parse(savedMenuFilter);
+          if (Array.isArray(parsedFilter) && parsedFilter.length > 0) {
+            return { menu: parsedFilter };
+          }
+        } catch (error) {
+          console.error('Error parsing saved menu filter:', error);
+        }
+      }
+    }
+    return {};
+  };
+
   const [currentFilters, setCurrentFilters] = useState<
     Record<string, string[]>
-  >({});
-  const [searchQuery, setSearchQuery] = useState("");
+  >(getInitialFilters);
+
+  const [searchQuery, setSearchQuery] = useState(() => {
+    // Cargar búsqueda guardada desde localStorage
+    if (typeof window !== 'undefined') {
+      const savedSearch = localStorage.getItem('productsSearchQuery');
+      return savedSearch || "";
+    }
+    return "";
+  });
   const [sortBy, setSortBy] = useState<string | undefined>();
   const [sortOrder, setSortOrder] = useState< "desc" | "asc" | undefined>();
+  const [categories, setCategories] = useState<{ label: string; value: string }[]>([]);
 
-  const initialFilters = useMemo(() => ({ limit: 10 }), []);
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await categoryEndpoints.getVisibleCompletas();
+        const categoryOptions = response.data.flatMap(category =>
+          category.menus
+            .filter(menu => menu.nombre) // Filtrar menús vacíos
+            .map(menu => ({
+              label: menu.nombre,
+              value: menu.nombre
+            }))
+        );
+        console.log(categoryOptions)
+        setCategories(categoryOptions);
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+      }
+    };
+
+    fetchCategories();
+  }, []);
+
+  const initialFilters = useMemo(() => {
+    const filters: Record<string, any> = { limit: 10, page: 1 };
+
+    // Aplicar filtros guardados desde el inicio
+    const savedFilters = getInitialFilters();
+    const savedSearch = typeof window !== 'undefined' ? localStorage.getItem('productsSearchQuery') : null;
+
+    if (savedFilters.menu && savedFilters.menu.length > 0) {
+      const hasBuds = savedFilters.menu.includes("buds");
+
+      if (hasBuds) {
+        const budsValues = savedFilters.menu.filter(v => v === "buds");
+        const otherValues = savedFilters.menu.filter(v => v !== "buds");
+
+        if (budsValues.length > 0) {
+          filters.name = savedSearch
+            ? `${savedSearch}, ${budsValues.join(", ")}`
+            : budsValues.join(", ");
+        }
+        if (otherValues.length > 0) {
+          filters.menu = otherValues.join(", ");
+        }
+      } else {
+        filters.menu = savedFilters.menu.join(", ");
+      }
+    }
+
+    if (savedSearch && !filters.name) {
+      filters.name = savedSearch;
+    }
+
+    return filters;
+  }, []);
 
   const {
     products,
@@ -64,29 +126,38 @@ export function ProductsTableWrapper() {
         sortOrder: direction,
       };
 
-      // Aplicar filtros de categoría/subcategoría
-      if (currentFilters.subcategory && currentFilters.subcategory.length > 0) {
-        const hasBuds = currentFilters.subcategory.includes("buds");
+      // Aplicar filtros de menú
+      if (currentFilters.menu && currentFilters.menu.length > 0) {
+        const hasBuds = currentFilters.menu.includes("buds");
 
         if (hasBuds) {
-          const budsValues = currentFilters.subcategory.filter(v => v === "buds");
-          const otherValues = currentFilters.subcategory.filter(v => v !== "buds");
+          const budsValues = currentFilters.menu.filter(v => v === "buds");
+          const otherValues = currentFilters.menu.filter(v => v !== "buds");
 
           if (budsValues.length > 0) {
             filters.name = budsValues.join(", ");
           }
 
           if (otherValues.length > 0) {
-            filters.subcategory = otherValues.join(", ");
+            filters.menu = otherValues.join(", ");
           }
         } else {
-          filters.subcategory = currentFilters.subcategory.join(", ");
+          filters.menu = currentFilters.menu.join(", ");
         }
       }
 
       // Aplicar búsqueda solo si no se sobreescribió con buds
       if (searchQuery && !filters.name) {
         filters.name = searchQuery;
+      }
+
+      // Mantener filtro de estado
+       if (currentFilters.status && currentFilters.status.length > 0) {
+        if (currentFilters.status[0] === "active") {
+          filters.minStock = 1;
+        } else if (currentFilters.status[0] === "inactive") {
+          filters.maxStock = 0;
+        }
       }
 
       filterProducts(filters);
@@ -104,23 +175,23 @@ export function ProductsTableWrapper() {
         page: newPage,
       };
 
-      // Aplicar filtros de categoría/subcategoría (separados por comas)
-      if (currentFilters.subcategory && currentFilters.subcategory.length > 0) {
-        const hasBuds = currentFilters.subcategory.includes("buds");
+      // Aplicar filtros de menú (separados por comas)
+      if (currentFilters.menu && currentFilters.menu.length > 0) {
+        const hasBuds = currentFilters.menu.includes("buds");
 
         if (hasBuds) {
-          const budsValues = currentFilters.subcategory.filter(v => v === "buds");
-          const otherValues = currentFilters.subcategory.filter(v => v !== "buds");
+          const budsValues = currentFilters.menu.filter(v => v === "buds");
+          const otherValues = currentFilters.menu.filter(v => v !== "buds");
 
           if (budsValues.length > 0) {
             filters.name = budsValues.join(", ");
           }
 
           if (otherValues.length > 0) {
-            filters.subcategory = otherValues.join(", ");
+            filters.menu = otherValues.join(", ");
           }
         } else {
-          filters.subcategory = currentFilters.subcategory.join(", ");
+          filters.menu = currentFilters.menu.join(", ");
         }
       }
 
@@ -135,6 +206,15 @@ export function ProductsTableWrapper() {
         filters.sortOrder = sortOrder;
       }
 
+      // Mantener filtro de estado
+       if (currentFilters.status && currentFilters.status.length > 0) {
+        if (currentFilters.status[0] === "active") {
+          filters.minStock = 1;
+        } else if (currentFilters.status[0] === "inactive") {
+          filters.maxStock = 0;
+        }
+      }
+
       filterProducts(filters);
     },
     [filterProducts, currentFilters, searchQuery, sortBy, sortOrder]
@@ -143,18 +223,26 @@ export function ProductsTableWrapper() {
   const handleSearchChange = useCallback(
     (search: string) => {
       setSearchQuery(search);
+
+      // Guardar búsqueda en localStorage
+      if (search) {
+        localStorage.setItem('productsSearchQuery', search);
+      } else {
+        localStorage.removeItem('productsSearchQuery');
+      }
+
       const filters: Record<string, any> = {
         name: search,
         limit: pageSize,
         page: 1,
       };
 
-      if (currentFilters.subcategory && currentFilters.subcategory.length > 0) {
-        const hasBuds = currentFilters.subcategory.includes("buds");
+      if (currentFilters.menu && currentFilters.menu.length > 0) {
+        const hasBuds = currentFilters.menu.includes("buds");
 
         if (hasBuds) {
-          const budsValues = currentFilters.subcategory.filter(v => v === "buds");
-          const otherValues = currentFilters.subcategory.filter(v => v !== "buds");
+          const budsValues = currentFilters.menu.filter(v => v === "buds");
+          const otherValues = currentFilters.menu.filter(v => v !== "buds");
 
           // Combinar búsqueda con buds
           if (budsValues.length > 0) {
@@ -162,10 +250,10 @@ export function ProductsTableWrapper() {
           }
 
           if (otherValues.length > 0) {
-            filters.subcategory = otherValues.join(", ");
+            filters.menu = otherValues.join(", ");
           }
         } else {
-          filters.subcategory = currentFilters.subcategory.join(", ");
+          filters.menu = currentFilters.menu.join(", ");
         }
       }
 
@@ -173,6 +261,15 @@ export function ProductsTableWrapper() {
       if (sortBy) {
         filters.sortBy = sortBy;
         filters.sortOrder = sortOrder;
+      }
+
+      // Mantener filtro de estado
+       if (currentFilters.status && currentFilters.status.length > 0) {
+        if (currentFilters.status[0] === "active") {
+          filters.minStock = 1;
+        } else if (currentFilters.status[0] === "inactive") {
+          filters.maxStock = 0;
+        }
       }
 
       filterProducts(filters);
@@ -186,13 +283,31 @@ export function ProductsTableWrapper() {
       console.log(newFilters);
       setCurrentFilters(newFilters);
 
+      // Guardar filtro de menú en localStorage
+      if (filterId === "menu") {
+        if (value.length > 0) {
+          localStorage.setItem('productsMenuFilter', JSON.stringify(value));
+        } else {
+          localStorage.removeItem('productsMenuFilter');
+        }
+      }
+
       const filters: Record<string, any> = {
         limit: pageSize,
         page: 1,
       };
 
+      // Manejar filtro de Estado
+      if (filterId === "status" && value.length > 0) {
+        if (value[0] === "active") {
+          filters.minStock = 1; // Productos activos: stock >= 1
+        } else if (value[0] === "inactive") {
+          filters.maxStock = 0; // Productos inactivos: stock = 0
+        }
+      }
+
       // Validar si alguno de los valores es "buds"
-      if (value.length > 0) {
+      if (filterId === "menu" && value.length > 0) {
         const hasBuds = value.includes("buds");
 
         if (hasBuds) {
@@ -207,12 +322,12 @@ export function ProductsTableWrapper() {
               : budsValues.join(", ");
           }
 
-          // Enviar otras categorías como subcategory
+          // Enviar otros menús como menu
           if (otherValues.length > 0) {
             filters[filterId] = otherValues.join(", ");
           }
         } else {
-          // Si no hay buds, enviar normalmente como subcategory
+          // Si no hay buds, enviar normalmente como menu
           filters[filterId] = value.join(", ");
         }
       }
@@ -228,6 +343,15 @@ export function ProductsTableWrapper() {
         filters.sortOrder = sortOrder;
       }
 
+      // Aplicar filtros de estado desde otros filtros guardados
+      if (filterId !== "status" && currentFilters.status && currentFilters.status.length > 0) {
+        if (currentFilters.status[0] === "active") {
+          filters.minStock = 1;
+        } else if (currentFilters.status[0] === "inactive") {
+          filters.maxStock = 0;
+        }
+      }
+
       filterProducts(filters);
     },
     [filterProducts, pageSize, searchQuery, currentFilters, sortBy, sortOrder]
@@ -236,17 +360,18 @@ export function ProductsTableWrapper() {
   const tableFilters = useMemo(
     () => [
       {
-        id: "subcategory",
-        title: "Categoría",
+        id: "menu",
+        title: "Menú",
         options: categories,
       },
       // {
       //   id: "status",
       //   title: "Estado",
       //   options: statuses,
+      //   singleSelect: true,
       // },
     ],
-    []
+    [categories]
   );
 
   const columns = useMemo(
@@ -275,6 +400,8 @@ export function ProductsTableWrapper() {
       onPaginationChange={handlePaginationChange}
       onSearchChange={handleSearchChange}
       onFilterChange={handleFilterChange}
+      initialFilterValues={currentFilters}
+      initialSearchValue={searchQuery}
       loading={loading}
     />
   );

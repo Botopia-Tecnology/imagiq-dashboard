@@ -142,18 +142,45 @@ export const createProductColumns = (
     },
   },
   {
-    accessorKey: "subcategory",
+    accessorKey: "category",
     header: "Categoría",
     cell: ({ row }) => {
+      const product = row.original
       return (
-        <Badge variant="outline">
-          {row.getValue("subcategory")}
-        </Badge>
+        <div className="flex flex-col gap-1">
+          <Badge variant="outline" className="w-fit">
+            {product.category || "Sin categoría"}
+          </Badge>
+          {/* {product.menu && (
+            <span className="text-xs text-muted-foreground">
+              {product.menu}
+            </span>
+          )} */}
+        </div>
       )
     },
     filterFn: (row, id, value) => {
       return value.includes(row.getValue(id))
     },
+  },
+  {
+    accessorKey: "menu",
+    header: "Menú",
+    cell: ({ row }) => {
+      const product = row.original
+      return (
+        <div className="flex flex-col gap-1">
+          {product.menu }
+        </div>
+      )
+    },
+    filterFn: (row, id, value) => {
+      const menuValue = row.getValue(id) as string
+      return value.includes(menuValue)
+    },
+    enableSorting: false,
+    enableHiding: false,
+    size: 0, // Tamaño 0 para que no ocupe espacio
   },
   {
     accessorKey: "price",
@@ -179,25 +206,28 @@ export const createProductColumns = (
     },
   },
   {
-    accessorKey: "stock",
+    accessorKey: "stockTotal",
     header: ({ column }) => {
       return (
         <Button
           variant="ghost"
-          onClick={() => {
-            const isAsc = column.getIsSorted() === "asc"
-            const newDirection = isAsc ? "desc" : "asc"
-            column.toggleSorting(isAsc)
-            onSortChange?.("stock", newDirection)
-          }}
+          // onClick={() => {
+          //   const currentSort = column.getIsSorted()
+          //   // Si está en desc, cambiar a asc. Si no está ordenado o está en asc, ir a desc
+          //   const isDesc = currentSort === "desc"
+          //   const newDirection = isDesc ? "asc" : "desc"
+          //   // toggleSorting(true) = desc, toggleSorting(false) = asc
+          //   column.toggleSorting(!isDesc)
+          //   onSortChange?.("stock", newDirection)
+          // }}
         >
           Stock
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          {/* <ArrowUpDown className="ml-2 h-4 w-4" /> */}
         </Button>
       )
     },
     cell: ({ row }) => {
-      const stock = row.getValue("stock") as number | undefined
+      const stock = row.getValue("stockTotal") as number | undefined
       return (
         <div className="flex items-center">
           <span className="font-medium">{stock ?? 0}</span>

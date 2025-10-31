@@ -15,6 +15,7 @@ import {
   Calendar,
   ChevronUp,
   User2,
+  MapPin,
 } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
 
@@ -98,6 +99,11 @@ const data = {
       title: "Bodega",
       url: "/bodega",
       icon: Warehouse,
+    },
+    {
+      title: "Zonas de Cobertura",
+      url: "/zonas-cobertura",
+      icon: MapPin,
     },
   ],
   navSecondary: [

@@ -30,6 +30,8 @@ interface DataTableFacetedFilterProps<TData, TValue> {
     icon?: React.ComponentType<{ className?: string }>
   }[]
   onValueChange?: (value: string[]) => void
+  singleSelect?: boolean
+  initialValues?: string[]
 }
 
 export function DataTableFacetedFilter<TData, TValue>({
@@ -37,11 +39,24 @@ export function DataTableFacetedFilter<TData, TValue>({
   title,
   options,
   onValueChange,
+  singleSelect = false,
+  initialValues,
 }: DataTableFacetedFilterProps<TData, TValue>) {
   const facets = column?.getFacetedUniqueValues()
-  const [selectedValues, setSelectedValues] = React.useState<Set<string>>(
-    new Set(column?.getFilterValue() as string[])
-  )
+  const [selectedValues, setSelectedValues] = React.useState<Set<string>>(() => {
+    // Priorizar initialValues si está disponible
+    if (initialValues && initialValues.length > 0) {
+      return new Set(initialValues)
+    }
+    return new Set(column?.getFilterValue() as string[])
+  })
+
+  // Sincronizar el estado cuando cambien los initialValues
+  React.useEffect(() => {
+    if (initialValues) {
+      setSelectedValues(new Set(initialValues))
+    }
+  }, [initialValues])
 
   const handleValueChange = (filterValues: string[]) => {
     const newSelectedValues = new Set(filterValues)
@@ -107,13 +122,20 @@ export function DataTableFacetedFilter<TData, TValue>({
                   <CommandItem
                     key={option.value}
                     onSelect={() => {
-                      if (isSelected) {
-                        selectedValues.delete(option.value)
+                      if (singleSelect) {
+                        // En modo de selección única, solo mantener el valor seleccionado
+                        const newValues = isSelected ? [] : [option.value]
+                        handleValueChange(newValues)
                       } else {
-                        selectedValues.add(option.value)
+                        // Modo multi-selección normal
+                        if (isSelected) {
+                          selectedValues.delete(option.value)
+                        } else {
+                          selectedValues.add(option.value)
+                        }
+                        const filterValues = Array.from(selectedValues)
+                        handleValueChange(filterValues)
                       }
-                      const filterValues = Array.from(selectedValues)
-                      handleValueChange(filterValues)
                     }}
                   >
                     <div

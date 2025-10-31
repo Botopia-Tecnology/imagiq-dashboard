@@ -1,12 +1,13 @@
   "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
   Dialog,
   DialogContent,
@@ -14,15 +15,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import {
   Table,
   TableBody,
@@ -34,29 +27,31 @@ import {
 import { Switch } from "@/components/ui/switch"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import {
-  Plus,
   Edit,
-  Trash2,
   Image as ImageIcon,
   Package,
   GripVertical,
   Eye,
   EyeOff,
   Settings,
+  RefreshCw,
+  Save,
+  X,
 } from "lucide-react"
 import { WebsiteCategory } from "@/types"
 import { useCategories } from "@/features/categories/useCategories"
-import { useAvailableCategories } from "@/features/categories/useAvailableCategories"
+import { multimediaEndpoints } from "@/lib/api"
+import { toast } from "sonner"
 
 export default function CategoriasPage() {
   const router = useRouter()
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   // Mantener estas variables para futuras funcionalidades
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState<WebsiteCategory | null>(null)
-  const [categoryToDelete, setCategoryToDelete] = useState<WebsiteCategory | null>(null)
-  const [deleteError, setDeleteError] = useState<string | null>(null)
+  const [draggedCategory, setDraggedCategory] = useState<WebsiteCategory | null>(null)
+  const [hasOrderChanged, setHasOrderChanged] = useState(false)
+  const [localCategories, setLocalCategories] = useState<WebsiteCategory[]>([])
+  const [orderError, setOrderError] = useState<string | null>(null)
   
   // Hook para manejar categorías del backend
   const {
@@ -64,130 +59,128 @@ export default function CategoriasPage() {
     loading,
     error,
     toggleCategoryActive: handleToggleActive,
-    deleteCategory: handleDeleteCategory,
     updatingCategory,
-    deletingCategory,
-    createCategory,
-    creatingCategory,
     updateCategory,
-    updatingCategoryData
+    updatingCategoryData,
+    syncCategories,
+    syncingCategories,
+    updateCategoriesOrder,
+    updatingOrder,
+    refreshCategories
   } = useCategories()
 
-  // Hook para manejar categorías disponibles del backend
-  const { 
-    availableCategories, 
-    loading: loadingAvailable, 
-    error: errorAvailable 
-  } = useAvailableCategories()
-
-  // Las categorías disponibles ahora vienen del hook useAvailableCategories del backend
-
-  // Filtrar categorías disponibles para excluir las que ya están en categorias_visibles
-  const filteredAvailableCategories = availableCategories.filter(availableCat => 
-    !websiteCategories.some(visibleCat => visibleCat.name === availableCat)
-  )
-
-  // Filtrar categorías disponibles para edición (excluye las ya usadas excepto la actual)
-  const filteredAvailableCategoriesForEdit = availableCategories.filter(availableCat => 
-    !websiteCategories.some(visibleCat => 
-      visibleCat.name === availableCat && visibleCat.id !== selectedCategory?.id
-    )
-  )
-
-  // Estado del formulario del modal de agregar
-  const [selectedCategoryName, setSelectedCategoryName] = useState<string>("")
-  const [description, setDescription] = useState<string>("")
-  const [isActive, setIsActive] = useState<boolean>(true)
+  // Sincronizar el estado local con las categorías del hook
+  useEffect(() => {
+    setLocalCategories(websiteCategories)
+  }, [websiteCategories])
 
   // Estado del formulario del modal de editar
   const [editCategoryName, setEditCategoryName] = useState<string>("")
+  const [editNombreVisible, setEditNombreVisible] = useState<string>("")
   const [editDescription, setEditDescription] = useState<string>("")
   const [editImage, setEditImage] = useState<string>("")
-
-  // Función para manejar el envío del formulario
-  const handleSubmitCategory = async () => {
-    if (!selectedCategoryName) {
-      alert("Por favor selecciona una categoría")
-      return
-    }
-
-    const categoryData = {
-      nombre: selectedCategoryName,
-      descripcion: description,
-      imagen: "https://example.com/mock-image.jpg", // Mock image por ahora
-      activo: isActive
-    }
-
-    const success = await createCategory(categoryData)
-    
-    if (success) {
-      // Limpiar formulario y cerrar modal
-      setSelectedCategoryName("")
-      setDescription("")
-      setIsActive(true)
-      setIsAddDialogOpen(false)
-    }
-  }
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null)
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string>("")
+  const [hasExistingImage, setHasExistingImage] = useState<boolean>(false)
+  const [imageToDelete, setImageToDelete] = useState<boolean>(false)
 
   // Función para manejar la edición de categoría
   const handleEditCategory = async () => {
-    if (!selectedCategory || !editCategoryName) {
-      alert("Por favor completa todos los campos requeridos")
+    if (!selectedCategory || !editCategoryName || !editNombreVisible) {
+      toast.error("Por favor completa todos los campos requeridos")
       return
     }
 
-    const categoryData = {
-      nombre: editCategoryName,
-      descripcion: editDescription,
-      imagen: editImage || "https://example.com/mock-image.jpg", // Mock image por ahora
-    }
+    try {
+      let imageUrl = editImage
 
-    const success = await updateCategory(selectedCategory.id, categoryData)
-    
-    if (success) {
-      // Limpiar formulario y cerrar modal
-      setEditCategoryName("")
-      setEditDescription("")
-      setEditImage("")
-      setSelectedCategory(null)
-      setIsEditDialogOpen(false)
-    }
-  }
+      // 1. Si se marcó para eliminar la imagen
+      if (imageToDelete && hasExistingImage) {
+        toast.info("Eliminando imagen...")
+        const deleteResponse = await multimediaEndpoints.deleteCategoryImage(selectedCategory.id)
 
-  // Función para resetear el formulario al cerrar el modal
-  const handleCloseModal = () => {
-    setSelectedCategoryName("")
-    setDescription("")
-    setIsActive(true)
-    setIsAddDialogOpen(false)
+        if (deleteResponse.success) {
+          imageUrl = "" // Usar cadena vacía en lugar de URL de ejemplo
+          toast.success("Imagen eliminada exitosamente")
+        } else {
+          toast.error(deleteResponse.message || "Error al eliminar la imagen")
+          return
+        }
+      }
+      // 2. Si se seleccionó una nueva imagen
+      else if (selectedImageFile) {
+        toast.info("Subiendo imagen...")
+
+        // Decidir entre POST (crear) o PUT (actualizar) según si hay imagen existente
+        const uploadResponse = hasExistingImage
+          ? await multimediaEndpoints.updateCategoryImage(selectedCategory.id, selectedImageFile)
+          : await multimediaEndpoints.createCategoryImage(selectedCategory.id, selectedImageFile)
+
+        console.log("Upload response:", uploadResponse)
+
+        if (uploadResponse.success) {
+          // Si la respuesta incluye imageUrl, usarla; si no, mantener la imagen actual
+          const data = uploadResponse.data as { imageUrl?: string; url?: string } | undefined
+          imageUrl = data?.imageUrl || data?.url || editImage
+          toast.success("Imagen subida exitosamente")
+        } else {
+          toast.error(uploadResponse.message || "Error al subir la imagen")
+          return
+        }
+      }
+
+      // 2. Luego actualizar los datos de la categoría
+      const categoryData = {
+        nombre: editCategoryName,
+        nombreVisible: editNombreVisible,
+        descripcion: editDescription,
+        imagen: imageUrl || "", // Usar cadena vacía en lugar de URL de ejemplo
+      }
+
+      const success = await updateCategory(selectedCategory.id, categoryData)
+
+      if (success) {
+        toast.success("Categoría actualizada correctamente")
+
+        // Refrescar las categorías para obtener la imagen actualizada
+        await refreshCategories()
+
+        setEditCategoryName("")
+        setEditNombreVisible("")
+        setEditDescription("")
+        setEditImage("")
+        setSelectedImageFile(null)
+        setImagePreviewUrl("")
+        setHasExistingImage(false)
+        setSelectedCategory(null)
+        setIsEditDialogOpen(false)
+      } else {
+        toast.error("Error al actualizar la categoría")
+      }
+    } catch (error) {
+      console.error("Error al actualizar categoría:", error)
+      toast.error("Error inesperado al actualizar la categoría")
+    }
   }
 
   // Función para resetear el formulario de edición al cerrar el modal
   const handleCloseEditModal = () => {
     setEditCategoryName("")
+    setEditNombreVisible("")
     setEditDescription("")
     setEditImage("")
+    setSelectedImageFile(null)
+    setImagePreviewUrl("")
+    setHasExistingImage(false)
+    setImageToDelete(false)
     setSelectedCategory(null)
     setIsEditDialogOpen(false)
-  }
-
-  // Función para manejar el cambio de estado del modal
-  const handleModalOpenChange = (open: boolean) => {
-    if (!open) {
-      // Solo limpiar cuando se cierra, no cuando se abre
-      handleCloseModal()
-    } else {
-      setIsAddDialogOpen(true)
-    }
   }
 
   // Función para manejar el cambio de estado del modal de edición
   const handleEditModalOpenChange = (open: boolean) => {
     if (!open) {
-      // Solo limpiar cuando se cierra, no cuando se abre
       handleCloseEditModal()
-    } else {
-      setIsEditDialogOpen(true)
     }
   }
 
@@ -195,37 +188,123 @@ export default function CategoriasPage() {
   const handleOpenEditModal = (category: WebsiteCategory) => {
     setSelectedCategory(category)
     setEditCategoryName(category.name)
+    setEditNombreVisible(category.nombreVisible || "")
     setEditDescription(category.description || "")
     setEditImage(category.image || "")
+    setSelectedImageFile(null)
+    setImageToDelete(false)
+
+    // Verificar si tiene imagen existente y configurar preview
+    const hasImage = !!(category.image && category.image !== "https://example.com/mock-image.jpg")
+    setHasExistingImage(hasImage)
+    setImagePreviewUrl(hasImage && category.image ? category.image : "")
+
     setIsEditDialogOpen(true)
   }
 
-  // Función para abrir el modal de confirmación de eliminación
-  const handleOpenDeleteModal = (category: WebsiteCategory) => {
-    setCategoryToDelete(category)
-    setDeleteError(null)
-    setIsDeleteDialogOpen(true)
+  // Función para eliminar la imagen actual
+  const handleRemoveImage = () => {
+    setImageToDelete(true)
+    setImagePreviewUrl("")
+    setSelectedImageFile(null)
+    toast.info("Imagen marcada para eliminar")
   }
 
-  // Función para cerrar el modal de confirmación de eliminación
-  const handleCloseDeleteModal = () => {
-    setCategoryToDelete(null)
-    setDeleteError(null)
-    setIsDeleteDialogOpen(false)
-  }
+  // Función para manejar la selección de archivo de imagen
+  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      // Validar que sea una imagen
+      if (!file.type.startsWith('image/')) {
+        toast.error("Por favor selecciona un archivo de imagen válido")
+        return
+      }
 
-  // Función para confirmar la eliminación de la categoría
-  const handleConfirmDelete = async () => {
-    if (!categoryToDelete) return
+      // Validar tamaño máximo (5MB)
+      const maxSize = 5 * 1024 * 1024 // 5MB
+      if (file.size > maxSize) {
+        toast.error("La imagen no debe superar los 5MB")
+        return
+      }
 
-    setDeleteError(null)
-    const success = await handleDeleteCategory(categoryToDelete.id)
+      setSelectedImageFile(file)
+      setImageToDelete(false) // Cancelar eliminación si se selecciona nueva imagen
 
-    if (success) {
-      handleCloseDeleteModal()
-    } else {
-      setDeleteError("No se pudo eliminar la categoría. Por favor, revisa la consola para más detalles.")
+      // Crear URL de preview para la nueva imagen seleccionada
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setImagePreviewUrl(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+
+      toast.success(`Imagen "${file.name}" seleccionada`)
     }
+  }
+
+  // Funciones para drag and drop
+  const handleDragStart = (e: React.DragEvent, category: WebsiteCategory) => {
+    setDraggedCategory(category)
+    e.dataTransfer.effectAllowed = 'move'
+  }
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+  }
+
+  const handleDrop = (e: React.DragEvent, targetCategory: WebsiteCategory) => {
+    e.preventDefault()
+    
+    if (!draggedCategory || draggedCategory.id === targetCategory.id) {
+      setDraggedCategory(null)
+      return
+    }
+
+    // Reordenar las categorías localmente
+    const newCategories = [...localCategories]
+    const draggedIndex = newCategories.findIndex(cat => cat.id === draggedCategory.id)
+    const targetIndex = newCategories.findIndex(cat => cat.id === targetCategory.id)
+    
+    // Remover el elemento arrastrado
+    const [removed] = newCategories.splice(draggedIndex, 1)
+    // Insertar en la nueva posición
+    newCategories.splice(targetIndex, 0, removed)
+    
+    // Actualizar el estado local
+    setLocalCategories(newCategories)
+    setHasOrderChanged(true)
+    setDraggedCategory(null)
+  }
+
+  const handleDragEnd = () => {
+    setDraggedCategory(null)
+  }
+
+  // Función para guardar el nuevo orden
+  const handleSaveOrder = async () => {
+    setOrderError(null)
+    try {
+      const categoryIds = localCategories.map(cat => cat.id)
+      const success = await updateCategoriesOrder(categoryIds)
+      
+      if (success) {
+        setHasOrderChanged(false)
+        // Orden guardado exitosamente 
+      } else {
+        setOrderError('Error al guardar el orden. Por favor, intenta nuevamente.')
+      }
+    } catch (error) {
+      console.error('Error al guardar el orden:', error)
+      setOrderError('Error al guardar el orden. Por favor, intenta nuevamente.')
+    }
+  }
+
+  const handleCancelOrder = () => {
+    // Restaurar el orden original
+    setLocalCategories(websiteCategories)
+    setHasOrderChanged(false)
+    setDraggedCategory(null)
+    setOrderError(null)
   }
 
   // Mostrar estado de carga
@@ -264,7 +343,7 @@ export default function CategoriasPage() {
         </div>
         <div className="flex items-center justify-center py-8">
           <div className="text-center">
-            <p className="text-destructive mb-4">{error || "Ha ocurrido un error"}</p>
+            <p className="text-destructive mb-4">{error ?? "Ha ocurrido un error"}</p>
             <Button onClick={() => window.location.reload()}>
               Reintentar
             </Button>
@@ -283,160 +362,92 @@ export default function CategoriasPage() {
             Categorías del Sitio Web
           </h1>
           <p className="text-sm text-muted-foreground">
-            Gestiona las categorías y subcategorías visibles en tu tienda
+            Gestiona las categorías y menús visibles en tu tienda
           </p>
         </div>
-        <Dialog open={isAddDialogOpen} onOpenChange={handleModalOpenChange}>
-          <DialogTrigger asChild>
-            <Button className="cursor-pointer">
-              <Plus className="mr-2 h-4 w-4" />
-              Agregar Categoría
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Agregar Nueva Categoría</DialogTitle>
-              <DialogDescription>
-                Selecciona una categoría de productos y configura su visualización en el sitio web
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="category-select">Categoría de Productos</Label>
-                <Select 
-                  disabled={loadingAvailable || creatingCategory}
-                  value={selectedCategoryName}
-                  onValueChange={setSelectedCategoryName}
-                >
-                  <SelectTrigger id="category-select">
-                    <SelectValue placeholder={
-                      loadingAvailable 
-                        ? "Cargando categorías..." 
-                        : errorAvailable 
-                          ? "Error al cargar categorías" 
-                          : "Selecciona una categoría"
-                    } />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {filteredAvailableCategories.map((cat) => (
-                      <SelectItem key={cat} value={cat}>
-                        {cat}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">
-                  {loadingAvailable 
-                    ? "Cargando categorías del backend..." 
-                    : errorAvailable 
-                      ? "Error al cargar categorías disponibles" 
-                      : filteredAvailableCategories.length === 0
-                        ? "Todas las categorías ya han sido agregadas"
-                        : `Mostrando ${filteredAvailableCategories.length} categorías disponibles`
-                  }
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="description">Descripción (opcional)</Label>
-                <Input
-                  id="description"
-                  placeholder="Descripción de la categoría para SEO"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  disabled={creatingCategory}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="image">Imagen de la Categoría</Label>
-                <div className="flex gap-2">
-                  <Input id="image" type="file" accept="image/*" />
-                  <Button type="button" variant="outline" size="icon">
-                    <ImageIcon className="h-4 w-4" />
-                  </Button>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Tamaño recomendado: 600x400px
-                </p>
-              </div>
-
-              <div className="flex items-center justify-between rounded-lg border p-3">
-                <div className="space-y-0.5">
-                  <Label htmlFor="active">Categoría Activa</Label>
-                  <p className="text-xs text-muted-foreground">
-                    La categoría será visible en el sitio web
-                  </p>
-                </div>
-                <Switch 
-                  id="active" 
-                  checked={isActive}
-                  onCheckedChange={setIsActive}
-                  disabled={creatingCategory}
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={handleCloseModal} disabled={creatingCategory}>
+        <div className="flex gap-2">
+          {hasOrderChanged && (
+            <>
+              <Button
+                variant="outline"
+                className="cursor-pointer"
+                onClick={handleCancelOrder}
+                disabled={updatingOrder}
+              >
+                <X className="mr-2 h-4 w-4" />
                 Cancelar
               </Button>
-              <Button onClick={handleSubmitCategory} disabled={creatingCategory || !selectedCategoryName || filteredAvailableCategories.length === 0}>
-                {creatingCategory ? (
+              <Button
+                className="cursor-pointer"
+                onClick={handleSaveOrder}
+                disabled={updatingOrder}
+              >
+                {updatingOrder ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Creando...
+                    Guardando...
                   </>
                 ) : (
-                  "Agregar Categoría"
+                  <>
+                    <Save className="mr-2 h-4 w-4" />
+                    Guardar Orden
+                  </>
                 )}
               </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+            </>
+          )}
+          <Button
+            className="cursor-pointer"
+            onClick={syncCategories}
+            disabled={syncingCategories}
+          >
+            <RefreshCw className={`mr-2 h-4 w-4 ${syncingCategories ? 'animate-spin' : ''}`} />
+            {syncingCategories ? 'Sincronizando...' : 'Sincronizar'}
+          </Button>
+        </div>
+
+        {/* Error de Orden */}
+        {orderError && (
+          <Alert variant="destructive">
+            <AlertDescription>{orderError}</AlertDescription>
+          </Alert>
+        )}
 
         {/* Modal de Edición */}
         <Dialog open={isEditDialogOpen} onOpenChange={handleEditModalOpenChange}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col [&>button]:cursor-pointer">
             <DialogHeader>
               <DialogTitle>Editar Categoría</DialogTitle>
               <DialogDescription>
                 Modifica los datos de la categoría seleccionada
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-4 py-4">
+            <div className="space-y-4 py-4 overflow-y-auto">
               <div className="space-y-2">
-                <Label htmlFor="edit-category-select">Categoría de Productos</Label>
-                <Select
-                  disabled={loadingAvailable || updatingCategoryData}
+                <Label htmlFor="edit-category-name">Categoría de Productos</Label>
+                <Input
+                  id="edit-category-name"
                   value={editCategoryName}
-                  onValueChange={setEditCategoryName}
-                >
-                  <SelectTrigger id="edit-category-select">
-                    <SelectValue placeholder={
-                      loadingAvailable
-                        ? "Cargando categorías..."
-                        : errorAvailable
-                          ? "Error al cargar categorías"
-                          : "Selecciona una categoría"
-                    } />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {filteredAvailableCategoriesForEdit.map((cat) => (
-                      <SelectItem key={cat} value={cat}>
-                        {cat}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  disabled={true}
+                  className="bg-muted"
+                />
                 <p className="text-xs text-muted-foreground">
-                  {loadingAvailable
-                    ? "Cargando categorías del backend..."
-                    : errorAvailable
-                      ? "Error al cargar categorías disponibles"
-                      : filteredAvailableCategoriesForEdit.length === 0
-                        ? "Todas las categorías ya han sido agregadas"
-                        : `Mostrando ${filteredAvailableCategoriesForEdit.length} categorías disponibles`
-                  }
+                  El nombre de la categoría no es editable
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-nombre-visible">Nombre Visible</Label>
+                <Input
+                  id="edit-nombre-visible"
+                  placeholder="Nombre que se mostrará en el sitio web"
+                  value={editNombreVisible}
+                  onChange={(e) => setEditNombreVisible(e.target.value)}
+                  disabled={updatingCategoryData}
+                  required
+                />
+                <p className="text-xs text-muted-foreground">
+                  Nombre personalizado para mostrar en el sitio web
                 </p>
               </div>
 
@@ -453,16 +464,59 @@ export default function CategoriasPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="edit-image">Imagen de la Categoría</Label>
+
+                {/* Preview de la imagen */}
+                {imagePreviewUrl && !imageToDelete && (
+                  <div className="relative w-full h-48 border rounded-lg overflow-hidden bg-muted">
+                    <img
+                      src={imagePreviewUrl}
+                      alt="Preview"
+                      className="w-full h-full object-contain"
+                    />
+                    <div className="absolute top-2 right-2 flex gap-2">
+                      <Badge variant={hasExistingImage && !selectedImageFile ? "secondary" : "default"}>
+                        {hasExistingImage && !selectedImageFile ? "Imagen actual" : "Nueva imagen"}
+                      </Badge>
+                      {hasExistingImage && !selectedImageFile && (
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="sm"
+                          onClick={handleRemoveImage}
+                          disabled={updatingCategoryData}
+                          className="cursor-pointer"
+                        >
+                          <X className="h-4 w-4 mr-1" />
+                          Eliminar
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Mensaje si se marcó para eliminar */}
+                {imageToDelete && (
+                  <div className="p-4 border rounded-lg bg-destructive/10 border-destructive/30">
+                    <p className="text-sm text-destructive font-medium">
+                      La imagen se eliminará al presionar "Actualizar Categoría"
+                    </p>
+                  </div>
+                )}
+
                 <div className="flex gap-2">
                   <Input
                     id="edit-image"
                     type="file"
                     accept="image/*"
                     disabled={updatingCategoryData}
+                    onChange={handleImageFileChange}
                   />
-                  <Button type="button" variant="outline" size="icon" disabled={updatingCategoryData}>
-                    <ImageIcon className="h-4 w-4" />
-                  </Button>
+                  {selectedImageFile && (
+                    <Badge variant="secondary" className="gap-1">
+                      <ImageIcon className="h-3 w-3" />
+                      {selectedImageFile.name}
+                    </Badge>
+                  )}
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Tamaño recomendado: 600x400px
@@ -470,10 +524,10 @@ export default function CategoriasPage() {
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={handleCloseEditModal} disabled={updatingCategoryData}>
+              <Button variant="outline" onClick={handleCloseEditModal} disabled={updatingCategoryData} className="cursor-pointer">
                 Cancelar
               </Button>
-              <Button onClick={handleEditCategory} disabled={updatingCategoryData || !editCategoryName || filteredAvailableCategoriesForEdit.length === 0}>
+              <Button onClick={handleEditCategory} disabled={updatingCategoryData || !editCategoryName || !editNombreVisible} className="cursor-pointer">
                 {updatingCategoryData ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
@@ -481,63 +535,6 @@ export default function CategoriasPage() {
                   </>
                 ) : (
                   "Actualizar Categoría"
-                )}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* Modal de Confirmación de Eliminación */}
-        <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Confirmar Eliminación</DialogTitle>
-              <DialogDescription>
-                ¿Estás seguro de que deseas eliminar esta categoría?
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="rounded-lg border p-4 space-y-2">
-                <div className="font-medium text-lg">{categoryToDelete?.name}</div>
-                {categoryToDelete?.description && (
-                  <div className="text-sm text-muted-foreground">
-                    {categoryToDelete.description}
-                  </div>
-                )}
-                <div className="flex items-center gap-4 text-sm text-muted-foreground pt-2">
-                  <div className="flex items-center gap-1">
-                    <Package className="h-3 w-3" />
-                    <span>{categoryToDelete?.productsCount || 0} productos</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span>{categoryToDelete?.subcategories.length || 0} subcategorías</span>
-                  </div>
-                </div>
-              </div>
-              {deleteError && (
-                <div className="rounded-lg bg-destructive/10 border border-destructive/20 p-3">
-                  <p className="text-sm text-destructive">{deleteError}</p>
-                </div>
-              )}
-              <p className="text-sm text-muted-foreground">
-                Esta acción no se puede deshacer. La categoría se eliminará permanentemente de tu sitio web.
-              </p>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={handleCloseDeleteModal} disabled={deletingCategory}>
-                Cancelar
-              </Button>
-              <Button variant="destructive" onClick={handleConfirmDelete} disabled={deletingCategory}>
-                {deletingCategory ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Eliminando...
-                  </>
-                ) : (
-                  <>
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Eliminar Categoría
-                  </>
                 )}
               </Button>
             </DialogFooter>
@@ -564,7 +561,7 @@ export default function CategoriasPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {websiteCategories.reduce((acc, cat) => acc + cat.subcategories.length, 0)}
+              {websiteCategories.reduce((acc, cat) => acc + cat.menus.length, 0)}
             </div>
             <p className="text-xs text-muted-foreground">
               En todas las categorías
@@ -613,7 +610,8 @@ export default function CategoriasPage() {
               <TableRow>
                 <TableHead className="w-12"></TableHead>
                 <TableHead>Categoría</TableHead>
-                <TableHead>Subcategorías</TableHead>
+                <TableHead>Nombre visible</TableHead>
+                <TableHead>Menús</TableHead>
                 <TableHead>Productos</TableHead>
                 <TableHead>Imagen</TableHead>
                 <TableHead>Estado</TableHead>
@@ -621,8 +619,18 @@ export default function CategoriasPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {websiteCategories.map((category) => (
-                <TableRow key={category.id}>
+              {localCategories.map((category) => (
+                <TableRow 
+                  key={category.id}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, category)}
+                  onDragOver={handleDragOver}
+                  onDrop={(e) => handleDrop(e, category)}
+                  onDragEnd={handleDragEnd}
+                  className={`cursor-move transition-all duration-200 ${
+                    draggedCategory?.id === category.id ? 'opacity-50 scale-95' : ''
+                  }`}
+                >
                   <TableCell>
                     <Button variant="ghost" size="icon" className="cursor-grab">
                       <GripVertical className="h-4 w-4 text-muted-foreground" />
@@ -639,6 +647,9 @@ export default function CategoriasPage() {
                     </div>
                   </TableCell>
                   <TableCell>
+                    <span>{category.nombreVisible || '-'}</span>
+                  </TableCell>
+                  <TableCell>
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -647,15 +658,15 @@ export default function CategoriasPage() {
                             size="sm"
                             className="cursor-pointer hover:bg-primary/10 hover:border-primary/20 transition-colors"
                             onClick={() => {
-                              router.push(`/pagina-web/categorias/${category.id}/subcategorias`)
+                              router.push(`/pagina-web/categorias/${category.id}/menus`)
                             }}
                           >
                             <Settings className="h-3 w-3 mr-1" />
-                            {category.subcategories.length} {category.subcategories.length === 1 ? 'subcategoría' : 'subcategorías'}
+                            {category.menus.length} {category.menus.length === 1 ? 'menú' : 'menús'}
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p>Configurar subcategorías de {category.name}</p>
+                          <p>Configurar menús de {category.name}</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
@@ -667,7 +678,7 @@ export default function CategoriasPage() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    {category.image ? (
+                    {category.image && category.image !== "https://example.com/mock-image.jpg" ? (
                       <Badge variant="secondary" className="gap-1">
                         <ImageIcon className="h-3 w-3" />
                         Asignada
@@ -684,36 +695,29 @@ export default function CategoriasPage() {
                         checked={category.isActive}
                         onCheckedChange={() => handleToggleActive(category.id)}
                         disabled={updatingCategory === category.id}
+                        className="cursor-pointer"
                       />
-                      {updatingCategory === category.id ? (
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-                      ) : (
-                        category.isActive ? (
+                      {(() => {
+                        if (updatingCategory === category.id) {
+                          return <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                        }
+                        return category.isActive ? (
                           <Eye className="h-4 w-4 text-green-600" />
                         ) : (
                           <EyeOff className="h-4 w-4 text-muted-foreground" />
                         )
-                      )}
+                      })()}
                     </div>
                   </TableCell>
                   <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="cursor-pointer"
-                        onClick={() => handleOpenEditModal(category)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleOpenDeleteModal(category)}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="cursor-pointer"
+                      onClick={() => handleOpenEditModal(category)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}

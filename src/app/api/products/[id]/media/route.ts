@@ -9,10 +9,10 @@ import { NextRequest, NextResponse } from "next/server";
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id: codigoMarketBase } = params;
+    const { id: codigoMarketBase } = await params;
     const formData = await request.formData();
 
     const sku = formData.get("sku") as string;
@@ -57,7 +57,6 @@ export async function PUT(
       data,
     });
   } catch (error) {
-    console.error("Error updating product media:", error);
     return NextResponse.json(
       {
         success: false,

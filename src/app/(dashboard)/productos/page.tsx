@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Plus, Package, DollarSign, AlertTriangle } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
-import { productEndpoints, ProductSummary } from "@/lib/api"
+import { productEndpoints, ProductSummary, categoryEndpoints } from "@/lib/api"
 
 const ProductsTableWrapper = lazy(() =>
   import("@/components/tables/products-table-wrapper").then(mod => ({
@@ -39,6 +39,7 @@ function TableSkeleton() {
 export default function ProductosPage() {
   const [summary, setSummary] = useState<ProductSummary | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [menusCount, setMenusCount] = useState(0)
 
   useEffect(() => {
     const fetchSummary = async () => {
@@ -50,7 +51,20 @@ export default function ProductosPage() {
       setIsLoading(false)
     }
 
+    const fetchMenusCount = async () => {
+      try {
+        const response = await categoryEndpoints.getVisibleCompletas()
+        const totalMenus = response.data.reduce((total, category) => {
+          return total + category.menus.filter(menu => menu.nombre).length
+        }, 0)
+        setMenusCount(totalMenus)
+      } catch (error) {
+        console.error("Error fetching menus count:", error)
+      }
+    }
+
     fetchSummary()
+    fetchMenusCount()
   }, [])
 
   return (
@@ -136,7 +150,7 @@ export default function ProductosPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Categorías</CardTitle>
+            <CardTitle className="text-sm font-medium">Menús</CardTitle>
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -147,9 +161,9 @@ export default function ProductosPage() {
               </>
             ) : (
               <>
-                <div className="text-2xl font-bold">13</div>
+                <div className="text-2xl font-bold">{menusCount}</div>
                 <p className="text-xs text-muted-foreground">
-                  Categorías disponibles
+                  Menús disponibles
                 </p>
               </>
             )}

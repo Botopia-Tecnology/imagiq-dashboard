@@ -29,12 +29,12 @@ export default function CrearBannerPage() {
   const deviceType = searchParams.get('device'); // same, different
   const subcategory = searchParams.get('subcategory');
 
-  const [bannerData, setBannerData] = useState<Partial<HeroBanner>>({
+  const [bannerData, setBannerData] = useState<Partial<HeroBanner> & { hasEndDate: boolean }>({
     name: "",
     type: typeFromUrl || "image",
     order: 1,
     startDate: new Date(),
-    endDate: null,
+    endDate: undefined,
     hasEndDate: false,
     // Campos para banner de imagen/video
     mediaUrl: "",
@@ -48,7 +48,7 @@ export default function CrearBannerPage() {
     buttonText: "",
     gifSrc: "",
     bgColor: "#24538F"
-  } as Partial<HeroBanner> & { hasEndDate: boolean });
+  });
 
   const handleGoBack = () => {
     router.push('/marketing/banners/crear/seleccionar-tipo');
@@ -317,7 +317,7 @@ export default function CrearBannerPage() {
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button variant="outline" className="w-full justify-start text-left font-normal">
-                      {format(bannerData.startDate, "PPP", { locale: es })}
+                      {bannerData.startDate ? format(bannerData.startDate, "PPP", { locale: es }) : "Seleccionar fecha"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0">
@@ -357,7 +357,7 @@ export default function CrearBannerPage() {
                       <Calendar
                         mode="single"
                         selected={bannerData.endDate || undefined}
-                        onSelect={(date) => setBannerData(prev => ({ ...prev, endDate: date || null }))}
+                        onSelect={(date) => setBannerData(prev => ({ ...prev, endDate: date || undefined }))}
                         initialFocus
                       />
                     </PopoverContent>
@@ -421,7 +421,7 @@ export default function CrearBannerPage() {
                     <span className="text-muted-foreground">Inicio: </span>
                     {bannerData.startDate && format(bannerData.startDate, "PPP", { locale: es })}
                   </div>
-                  {(bannerData as any).hasEndDate && bannerData.endDate && (
+                  {bannerData.hasEndDate && bannerData.endDate && (
                     <div>
                       <span className="text-muted-foreground">Fin: </span>
                       {format(bannerData.endDate, "PPP", { locale: es })}

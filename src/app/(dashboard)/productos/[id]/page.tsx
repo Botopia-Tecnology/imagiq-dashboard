@@ -12,6 +12,7 @@ import { ProductColor } from "@/features/products/useProducts"
 import { ProductMultimedia } from "./components/ProductMultimedia"
 import { ProductInfo } from "./components/ProductInfo"
 import { ProductDescription } from "./components/ProductDescription"
+import { StoreStockDisplay } from "./components/StoreStockDisplay"
 
 export default function ProductDetailPage() {
   const params = useParams()
@@ -19,16 +20,17 @@ export default function ProductDetailPage() {
   const productId = params.id as string
 
   const { product, loading, error } = useProduct(productId)
+  console.log("ProductDetailPage render", { product})
   const [selectedColor, setSelectedColor] = useState<ProductColor | null>(null)
 
   // Establecer el primer color como seleccionado por defecto
   useEffect(() => {
     if (product && product.colors.length > 0 && !selectedColor) {
       setSelectedColor(product.colors[0])
+      console.log("Setting default selected color", { selectedColor})
     }
   }, [product, selectedColor])
 
-  console.log(product)
 
   if (loading) {
     return <ProductDetailSkeleton />
@@ -51,7 +53,9 @@ export default function ProductDetailPage() {
   const currentPrice = selectedColor?.price || product.price
   const currentOriginalPrice = selectedColor?.originalPrice || product.originalPrice
   const currentDiscount = selectedColor?.discount || product.discount
-  const currentStock = selectedColor?.stock ?? product.stock ?? 0
+  const currentStock = selectedColor?.stockTotal ?? product.stock ?? 0
+  const currentStockEcommerce = selectedColor?.stock ?? 0
+  const currentStockTiendas = selectedColor?.stockTiendas || {}
   const currentImage = selectedColor?.imageUrl || product.image
 
   return (
@@ -82,8 +86,10 @@ export default function ProductDetailPage() {
             product={product}
             selectedColor={selectedColor}
             currentPrice={currentPrice}
+            currentStockEcommerce={currentStockEcommerce}
             currentOriginalPrice={currentOriginalPrice}
             currentStock={currentStock}
+            currentStockTiendas={currentStockTiendas}
             onColorSelect={setSelectedColor}
           />
 
@@ -94,6 +100,9 @@ export default function ProductDetailPage() {
           />
         </div>
       </div>
+
+      {/* Componente de Stock por Tienda */}
+      <StoreStockDisplay stockTiendas={currentStockTiendas} />
     </div>
   )
 }

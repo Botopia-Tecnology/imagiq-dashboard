@@ -9,7 +9,7 @@ export interface Product {
   precioDescto: number[];
   stock: number; // stock[0]
   category: string; // categoria
-  subcategoria: string;
+  menu: string;
   color: string[];
   capacidad: string[];
   sku: string[];
@@ -25,21 +25,39 @@ export interface Product {
 export interface WebsiteCategory {
   id: string;
   name: string;
+  nombreVisible?: string;
   slug: string;
   description?: string;
   image?: string;
   order: number;
   isActive: boolean;
   productsCount?: number;
-  subcategories: WebsiteSubcategory[];
+  menus: WebsiteMenu[];
   createdAt: Date;
   updatedAt: Date;
 }
 
-export interface WebsiteSubcategory {
+export interface WebsiteMenu {
   id: string;
   categoryId: string;
   name: string;
+  nombreVisible?: string;
+  slug: string;
+  description?: string;
+  image?: string;
+  order: number;
+  isActive: boolean;
+  productsCount?: number;
+  submenus: WebsiteSubmenu[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface WebsiteSubmenu {
+  id: string;
+  menuId: string;
+  name: string;
+  nombreVisible?: string;
   slug: string;
   description?: string;
   image?: string;
@@ -253,22 +271,39 @@ export interface DashboardMetrics {
 export interface BackendCategory {
   uuid: string;
   nombre: string;
+  nombreVisible?: string;
   descripcion: string;
   imagen: string;
   activo: boolean;
   createdAt: string;
   updatedAt: string;
-  subcategorias: BackendSubcategory[];
+  menus: BackendMenu[];
   totalProducts: number;
 }
 
-export interface BackendSubcategory {
+export interface BackendMenu {
   uuid: string;
   nombre: string;
+  nombreVisible?: string;
   descripcion: string;
   imagen: string;
   activo: boolean;
+  orden: number;
   categoriasVisiblesId: string;
+  createdAt: string;
+  updatedAt: string;
+  totalProducts?: number;
+  submenus?: BackendSubmenu[];
+}
+
+export interface BackendSubmenu {
+  uuid: string;
+  nombre: string;
+  nombreVisible?: string;
+  descripcion: string;
+  imagen: string;
+  activo: boolean;
+  menusVisiblesId: string;
   createdAt: string;
   updatedAt: string;
   totalProducts?: number;
@@ -284,6 +319,7 @@ export interface CreateCategoryRequest {
 
 export interface UpdateCategoryRequest {
   nombre: string;
+  nombreVisible: string;
   descripcion: string;
   imagen: string;
 }
@@ -294,16 +330,32 @@ export interface CreateCategoryResponse {
   data?: BackendCategory;
 }
 
-// Types for creating subcategories
-export interface CreateSubcategoryRequest {
+// Types for creating menus
+export interface CreateMenuRequest {
   nombre: string;
   descripcion: string;
   imagen: string;
   activo: boolean;
 }
 
-export interface UpdateSubcategoryRequest {
+export interface UpdateMenuRequest {
   nombre: string;
+  nombreVisible: string;
+  descripcion: string;
+  imagen: string;
+}
+
+// Types for creating submenus
+export interface CreateSubmenuRequest {
+  nombre: string;
+  descripcion: string;
+  imagen: string;
+  activo: boolean;
+}
+
+export interface UpdateSubmenuRequest {
+  nombre: string;
+  nombreVisible: string;
   descripcion: string;
   imagen: string;
 }

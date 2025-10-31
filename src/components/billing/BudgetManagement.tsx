@@ -104,11 +104,17 @@ const mockBudgets: Budget[] = [
 export function BudgetManagement() {
   const [budgets, setBudgets] = useState<Budget[]>(mockBudgets);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [newBudget, setNewBudget] = useState({
+  const [newBudget, setNewBudget] = useState<{
+    name: string;
+    service: string;
+    budgetAmount: number;
+    period: 'monthly' | 'quarterly' | 'yearly';
+    alertThresholds: number[];
+  }>({
     name: '',
     service: '',
     budgetAmount: 0,
-    period: 'monthly' as const,
+    period: 'monthly',
     alertThresholds: [75, 90, 100]
   });
 
