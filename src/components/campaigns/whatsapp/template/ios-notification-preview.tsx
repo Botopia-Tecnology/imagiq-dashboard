@@ -42,7 +42,7 @@ export function IOSNotificationPreview({ templateData }: IOSNotificationPreviewP
           {/* Notification Content */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between mb-0.5">
-              <span className="font-semibold text-[11px] text-gray-900">Tu Empresa</span>
+              <span className="font-semibold text-[11px] text-gray-900">Samsung Store</span>
               <span className="text-[9px] text-gray-500">ahora</span>
             </div>
 

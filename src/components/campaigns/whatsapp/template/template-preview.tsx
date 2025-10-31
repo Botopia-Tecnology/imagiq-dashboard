@@ -168,8 +168,8 @@ export function WhatsAppTemplatePreview({ templateData }: TemplatePreviewProps) 
         <div className="bg-black rounded-[3rem] p-2 shadow-2xl">
           {/* Dynamic Island / Notch */}
           <div className="relative bg-black rounded-[2.75rem] overflow-hidden">
-            {/* Dynamic Island - Pill Shape */}
-            <div className="absolute top-2 left-1/2 -translate-x-1/2 w-24 h-8 bg-black rounded-full z-10 shadow-lg"></div>
+            {/* Dynamic Island - Pill Shape (Smaller) */}
+            <div className="absolute top-2 left-1/2 -translate-x-1/2 w-20 h-6 bg-black rounded-full z-10 shadow-lg"></div>
 
             {/* Screen Content */}
             <div className="bg-white dark:bg-[#000000] rounded-[2.5rem] overflow-hidden">
@@ -177,25 +177,26 @@ export function WhatsAppTemplatePreview({ templateData }: TemplatePreviewProps) 
               <div className="bg-transparent px-8 pt-4 pb-2">
                 <div className="flex items-center justify-between text-[11px] font-semibold">
                   <span className="text-black dark:text-white">9:41</span>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1">
                     {/* Signal bars */}
-                    <svg width="18" height="12" viewBox="0 0 18 12" className="text-black dark:text-white">
-                      <rect x="0" y="8" width="3" height="4" rx="1" fill="currentColor"/>
-                      <rect x="5" y="5" width="3" height="7" rx="1" fill="currentColor"/>
-                      <rect x="10" y="2" width="3" height="10" rx="1" fill="currentColor"/>
-                      <rect x="15" y="0" width="3" height="12" rx="1" fill="currentColor"/>
+                    <svg width="14" height="10" viewBox="0 0 14 10" fill="none" className="text-black dark:text-white">
+                      <circle cx="1.5" cy="8.5" r="1.5" fill="currentColor"/>
+                      <circle cx="5" cy="7" r="1.5" fill="currentColor"/>
+                      <circle cx="8.5" cy="5.5" r="1.5" fill="currentColor"/>
+                      <circle cx="12" cy="4" r="1.5" fill="currentColor"/>
                     </svg>
                     {/* WiFi */}
-                    <svg width="16" height="12" viewBox="0 0 16 12" className="text-black dark:text-white">
-                      <path d="M8 0C3.58 0 0 1.79 0 4C0 4.83 0.42 5.59 1.12 6.21L8 12L14.88 6.21C15.58 5.59 16 4.83 16 4C16 1.79 12.42 0 8 0Z" fill="currentColor"/>
+                    <svg width="15" height="11" viewBox="0 0 15 11" fill="none" className="text-black dark:text-white">
+                      <path d="M7.5 11L10.5 7.5C9.5 6.5 8.5 6 7.5 6C6.5 6 5.5 6.5 4.5 7.5L7.5 11Z" fill="currentColor"/>
+                      <path d="M7.5 6C8.83 6 10.08 6.53 11 7.4L12.5 5.5C11.17 4.3 9.42 3.5 7.5 3.5C5.58 3.5 3.83 4.3 2.5 5.5L4 7.4C4.92 6.53 6.17 6 7.5 6Z" fill="currentColor"/>
+                      <path d="M7.5 3.5C9.75 3.5 11.83 4.42 13.5 6L15 4C12.92 2.17 10.33 1 7.5 1C4.67 1 2.08 2.17 0 4L1.5 6C3.17 4.42 5.25 3.5 7.5 3.5Z" fill="currentColor"/>
                     </svg>
                     {/* Battery */}
-                    <div className="flex items-center gap-0.5">
-                      <div className="w-6 h-3 border-2 border-black dark:border-white rounded-sm relative">
-                        <div className="absolute inset-0.5 bg-black dark:bg-white rounded-[1px]"></div>
-                      </div>
-                      <div className="w-0.5 h-1.5 bg-black dark:bg-white rounded-r"></div>
-                    </div>
+                    <svg width="22" height="11" viewBox="0 0 22 11" fill="none" className="text-black dark:text-white">
+                      <rect x="0" y="2" width="18" height="7" rx="2" stroke="currentColor" strokeWidth="1"/>
+                      <rect x="2" y="3.5" width="14" height="4" rx="1" fill="currentColor"/>
+                      <rect x="18" y="4" width="2" height="3" rx="1" fill="currentColor"/>
+                    </svg>
                   </div>
                 </div>
               </div>
@@ -209,13 +210,17 @@ export function WhatsAppTemplatePreview({ templateData }: TemplatePreviewProps) 
                   </button>
 
                   {/* Profile Picture */}
-                  <div className="w-8 h-8 bg-gray-300 dark:bg-gray-600 rounded-full flex items-center justify-center overflow-hidden">
-                    <BrandIcon brand="WhatsApp" size={18} className="text-green-600" />
+                  <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center overflow-hidden">
+                    <img
+                      src="https://res.cloudinary.com/dbqgbemui/image/upload/v1761873777/Samsung_Store_deken7.png"
+                      alt="Samsung Store"
+                      className="w-full h-full object-cover"
+                    />
                   </div>
 
                   {/* Contact Info */}
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-[13px] text-black dark:text-white truncate leading-tight">Tu Empresa</p>
+                    <p className="font-semibold text-[13px] text-black dark:text-white truncate leading-tight">Samsung Store</p>
                     <p className="text-[11px] text-gray-500 dark:text-gray-400 leading-tight">en línea</p>
                   </div>
 
