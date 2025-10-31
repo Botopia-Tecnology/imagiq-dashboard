@@ -2,8 +2,6 @@
 
 import React, { memo, useState } from "react";
 import { Handle, Position, NodeProps } from "reactflow";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -20,12 +18,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Clock, Timer, Plus, Trash2, Webhook, Activity } from "lucide-react";
+import { Clock, Timer, Webhook, Activity } from "lucide-react";
 import {
   WaitNode as WaitNodeType,
   WaitConfig,
   WaitTriggerType,
-  ConditionalRule,
 } from "@/types/event-driven-campaigns";
 
 interface WaitNodeData {
@@ -46,7 +43,7 @@ const WaitNode = memo(({ data, selected }: NodeProps<WaitNodeData>) => {
     data.config || {}
   );
 
-  const getWaitTypeIcon = (type: WaitTriggerType) => {
+  const getWaitTypeIcon = (type: WaitTriggerType | "") => {
     switch (type) {
       case "time_delay":
         return <Timer className="h-6 w-6" />;
@@ -59,13 +56,13 @@ const WaitNode = memo(({ data, selected }: NodeProps<WaitNodeData>) => {
     }
   };
 
-  const getWaitTypeLabel = (type: WaitTriggerType) => {
+  const getWaitTypeLabel = (type: WaitTriggerType | "") => {
     const labels = {
       time_delay: "Tiempo",
       wait_for_event: "Evento",
       wait_for_webhook: "Webhook",
     };
-    return labels[type];
+    return type ? labels[type] : "Sin tipo";
   };
 
   const [rawExpectedData, setRawExpectedData] = useState(
@@ -74,9 +71,10 @@ const WaitNode = memo(({ data, selected }: NodeProps<WaitNodeData>) => {
 
 
   const generateSummary = (
-    type: WaitTriggerType,
+    type: WaitTriggerType | "",
     currentConfig: WaitConfig
   ): string => {
+    if (!type) return "Sin configurar";
     switch (type) {
       case "time_delay":
         if (currentConfig.time_delay) {
@@ -374,6 +372,7 @@ const WaitNode = memo(({ data, selected }: NodeProps<WaitNodeData>) => {
         </div>
 
         <div className="p-3 h-full flex flex-col items-center justify-center gap-1.5">
+          
           <div
             className={
               isConfigured()
