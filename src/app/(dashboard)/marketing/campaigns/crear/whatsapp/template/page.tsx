@@ -77,18 +77,8 @@ export default function CrearPlantillaWhatsAppPage() {
         </Card>
 
         {/* Preview Section */}
-        <div className="lg:sticky lg:top-4 lg:self-start">
-          <Card>
-            <CardHeader>
-              <CardTitle>Vista Previa</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Así se verá tu mensaje en WhatsApp
-              </p>
-            </CardHeader>
-            <CardContent>
-              <WhatsAppTemplatePreview templateData={templateData} />
-            </CardContent>
-          </Card>
+        <div className="lg:sticky lg:top-4 lg:self-start space-y-4">
+          <WhatsAppTemplatePreview templateData={templateData} />
         </div>
       </div>
     </div>

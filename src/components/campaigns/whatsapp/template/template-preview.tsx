@@ -19,6 +19,7 @@ import {
   Mic,
 } from "lucide-react";
 import { BrandIcon } from "@/components/icons/BrandIcon";
+import { IOSNotificationPreview } from "./ios-notification-preview";
 
 interface TemplatePreviewProps {
   templateData: any;
@@ -147,7 +148,10 @@ export function WhatsAppTemplatePreview({ templateData }: TemplatePreviewProps) 
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
+      {/* iOS Push Notification Preview */}
+      <IOSNotificationPreview templateData={templateData} />
+
       {/* iPhone 17 Pro Max Frame */}
       <div className="mx-auto" style={{ width: "280px" }}>
         {/* iPhone Container with rounded corners and notch */}
