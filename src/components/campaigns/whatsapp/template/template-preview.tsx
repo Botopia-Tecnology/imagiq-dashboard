@@ -148,12 +148,21 @@ export function WhatsAppTemplatePreview({ templateData }: TemplatePreviewProps) 
   };
 
   return (
-    <div className="space-y-4">
-      {/* iOS Push Notification Preview */}
-      <IOSNotificationPreview templateData={templateData} />
+    <>
+      <style>{`
+        .whatsapp-chat-bg {
+          background-image: url('https://i.pinimg.com/736x/31/04/e0/3104e02012ee109335a5ca2fc52b81db.jpg');
+        }
+        .dark .whatsapp-chat-bg {
+          background-image: url('https://i.pinimg.com/736x/2b/60/94/2b609488b4711e06e40a213e24e55d77.jpg');
+        }
+      `}</style>
+      <div className="space-y-4">
+        {/* iOS Push Notification Preview */}
+        <IOSNotificationPreview templateData={templateData} />
 
-      {/* iPhone 17 Pro Max Frame */}
-      <div className="mx-auto" style={{ width: "280px" }}>
+        {/* iPhone 17 Pro Max Frame */}
+        <div className="mx-auto" style={{ width: "280px" }}>
         {/* iPhone Container with rounded corners and notch */}
         <div className="bg-black rounded-[3rem] p-2 shadow-2xl">
           {/* Dynamic Island / Notch */}
@@ -189,7 +198,10 @@ export function WhatsAppTemplatePreview({ templateData }: TemplatePreviewProps) 
               </div>
 
               {/* Chat Area */}
-              <div className="bg-[#ECE5DD] dark:bg-[#0B141A] px-3 py-3" style={{ height: "420px" }}>
+              <div
+                className="px-3 py-3 bg-cover bg-center whatsapp-chat-bg"
+                style={{ height: "420px" }}
+              >
                 <div className="flex justify-end">
                   {/* Message Bubble */}
                   <div className="bg-[#DCF8C6] dark:bg-[#005C4B] rounded-xl shadow-sm p-2 max-w-[200px]">
@@ -279,6 +291,7 @@ export function WhatsAppTemplatePreview({ templateData }: TemplatePreviewProps) 
           </div>
         </div>
       </Card>
-    </div>
+      </div>
+    </>
   );
 }
