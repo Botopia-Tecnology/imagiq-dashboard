@@ -11,6 +11,12 @@ import {
   Phone,
   ExternalLink,
   Check,
+  ChevronLeft,
+  VideoIcon,
+  PhoneCall,
+  MoreVertical,
+  Camera,
+  Mic,
 } from "lucide-react";
 import { BrandIcon } from "@/components/icons/BrandIcon";
 
@@ -24,7 +30,7 @@ export function WhatsAppTemplatePreview({ templateData }: TemplatePreviewProps) 
 
     if (templateData.header.type === "TEXT") {
       return (
-        <div className="font-bold text-base mb-2">
+        <div className="font-semibold text-sm mb-1.5">
           {templateData.header.content || "Texto del encabezado"}
         </div>
       );
@@ -32,16 +38,16 @@ export function WhatsAppTemplatePreview({ templateData }: TemplatePreviewProps) 
 
     if (templateData.header.type === "IMAGE") {
       return (
-        <div className="mb-2 -mx-3 -mt-3">
+        <div className="mb-1.5 -mx-2 -mt-2">
           {templateData.header.content ? (
             <img
               src={templateData.header.content}
               alt="Header"
-              className="w-full h-48 object-cover rounded-t-lg"
+              className="w-full h-32 object-cover rounded-t-xl"
             />
           ) : (
-            <div className="w-full h-48 bg-gray-200 dark:bg-gray-700 flex items-center justify-center rounded-t-lg">
-              <ImageIcon className="h-12 w-12 text-gray-400" />
+            <div className="w-full h-32 bg-gray-200 dark:bg-gray-700 flex items-center justify-center rounded-t-xl">
+              <ImageIcon className="h-8 w-8 text-gray-400" />
             </div>
           )}
         </div>
@@ -50,9 +56,9 @@ export function WhatsAppTemplatePreview({ templateData }: TemplatePreviewProps) 
 
     if (templateData.header.type === "VIDEO") {
       return (
-        <div className="mb-2 -mx-3 -mt-3">
-          <div className="w-full h-48 bg-gray-200 dark:bg-gray-700 flex items-center justify-center rounded-t-lg">
-            <Video className="h-12 w-12 text-gray-400" />
+        <div className="mb-1.5 -mx-2 -mt-2">
+          <div className="w-full h-32 bg-gray-200 dark:bg-gray-700 flex items-center justify-center rounded-t-xl">
+            <Video className="h-8 w-8 text-gray-400" />
           </div>
         </div>
       );
@@ -60,13 +66,13 @@ export function WhatsAppTemplatePreview({ templateData }: TemplatePreviewProps) 
 
     if (templateData.header.type === "DOCUMENT") {
       return (
-        <div className="mb-2 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center gap-3">
-          <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded">
-            <FileText className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+        <div className="mb-1.5 p-2 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center gap-2">
+          <div className="p-1.5 bg-blue-100 dark:bg-blue-900 rounded">
+            <FileText className="h-4 w-4 text-blue-600 dark:text-blue-400" />
           </div>
-          <div className="flex-1">
-            <p className="text-sm font-medium">Documento.pdf</p>
-            <p className="text-xs text-muted-foreground">PDF Document</p>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-medium truncate">Documento.pdf</p>
+            <p className="text-[10px] text-muted-foreground">PDF</p>
           </div>
         </div>
       );
@@ -74,9 +80,9 @@ export function WhatsAppTemplatePreview({ templateData }: TemplatePreviewProps) 
 
     if (templateData.header.type === "LOCATION") {
       return (
-        <div className="mb-2 -mx-3 -mt-3">
-          <div className="w-full h-48 bg-gray-200 dark:bg-gray-700 flex items-center justify-center rounded-t-lg">
-            <MapPin className="h-12 w-12 text-red-500" />
+        <div className="mb-1.5 -mx-2 -mt-2">
+          <div className="w-full h-32 bg-gray-200 dark:bg-gray-700 flex items-center justify-center rounded-t-xl">
+            <MapPin className="h-8 w-8 text-red-500" />
           </div>
         </div>
       );
@@ -86,8 +92,8 @@ export function WhatsAppTemplatePreview({ templateData }: TemplatePreviewProps) 
   const renderBody = () => {
     if (!templateData.body) {
       return (
-        <p className="text-gray-400 italic text-sm">
-          El cuerpo del mensaje aparecerá aquí...
+        <p className="text-gray-400 italic text-xs">
+          El mensaje aparecerá aquí...
         </p>
       );
     }
@@ -106,12 +112,12 @@ export function WhatsAppTemplatePreview({ templateData }: TemplatePreviewProps) 
         "cuenta",
         "pedido",
       ];
-      bodyText = bodyText.replace(variable, `<span class="font-semibold text-blue-600">${sampleData[index] || "Valor"}</span>`);
+      bodyText = bodyText.replace(variable, `<span class="font-semibold text-blue-600 dark:text-blue-400">${sampleData[index] || "Valor"}</span>`);
     });
 
     return (
       <div
-        className="text-sm whitespace-pre-wrap break-words"
+        className="text-xs whitespace-pre-wrap break-words leading-relaxed"
         dangerouslySetInnerHTML={{ __html: bodyText }}
       />
     );
@@ -121,122 +127,149 @@ export function WhatsAppTemplatePreview({ templateData }: TemplatePreviewProps) 
     if (templateData.buttons.length === 0) return null;
 
     return (
-      <div className="mt-3 space-y-1.5">
+      <div className="mt-2 space-y-1">
         {templateData.buttons.map((button: any) => (
-          <Button
+          <button
             key={button.id}
-            variant="outline"
-            className="w-full justify-center text-blue-600 hover:text-blue-700 border-gray-200 dark:border-gray-700"
-            size="sm"
+            className="w-full py-1.5 px-2 text-center text-[#007AFF] font-medium text-xs border-t border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50 flex items-center justify-center gap-1.5"
           >
             {button.type === "PHONE_NUMBER" && (
-              <Phone className="h-3.5 w-3.5 mr-2" />
+              <Phone className="h-3 w-3" />
             )}
             {button.type === "URL" && (
-              <ExternalLink className="h-3.5 w-3.5 mr-2" />
+              <ExternalLink className="h-3 w-3" />
             )}
             {button.text || "Texto del botón"}
-          </Button>
+          </button>
         ))}
       </div>
     );
   };
 
   return (
-    <div className="space-y-4">
-      {/* WhatsApp Phone Frame */}
-      <div className="mx-auto max-w-sm">
-        {/* Phone Header */}
-        <div className="bg-[#075E54] text-white p-3 rounded-t-2xl flex items-center gap-3">
-          <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center">
-            <BrandIcon brand="WhatsApp" size={24} className="text-green-600" />
-          </div>
-          <div className="flex-1">
-            <p className="font-semibold text-sm">Tu Empresa</p>
-            <p className="text-xs text-green-100 flex items-center gap-1">
-              <span className="w-2 h-2 bg-green-300 rounded-full"></span>
-              En línea
-            </p>
-          </div>
-        </div>
+    <div className="space-y-3">
+      {/* iPhone 17 Pro Max Frame */}
+      <div className="mx-auto" style={{ width: "280px" }}>
+        {/* iPhone Container with rounded corners and notch */}
+        <div className="bg-black rounded-[3rem] p-2 shadow-2xl">
+          {/* Dynamic Island / Notch */}
+          <div className="relative bg-black rounded-[2.75rem] overflow-hidden">
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-28 h-7 bg-black rounded-b-3xl z-10"></div>
 
-        {/* Chat Background */}
-        <div className="bg-[#ECE5DD] dark:bg-[#0B141A] p-4 min-h-[500px]">
-          {/* Message Bubble */}
-          <div className="bg-white dark:bg-[#005C4B] rounded-lg shadow-sm p-3 max-w-[280px] ml-auto">
-            {renderHeader()}
+            {/* Screen Content */}
+            <div className="bg-white dark:bg-black rounded-[2.5rem] overflow-hidden">
+              {/* iOS Status Bar */}
+              <div className="bg-white dark:bg-black px-6 pt-3 pb-1">
+                <div className="flex items-center justify-between text-[10px] font-semibold">
+                  <span className="dark:text-white">9:41</span>
+                  <div className="flex items-center gap-1">
+                    <div className="flex gap-[2px]">
+                      <div className="w-4 h-2.5 border border-white dark:border-white rounded-sm"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
-            <div className="space-y-2">
-              {renderBody()}
+              {/* WhatsApp Header */}
+              <div className="bg-[#128C7E] dark:bg-[#0B141A] text-white px-3 py-2 flex items-center gap-2 shadow-sm">
+                <ChevronLeft className="h-5 w-5" />
+                <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center overflow-hidden">
+                  <BrandIcon brand="WhatsApp" size={20} className="text-green-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-sm truncate">Tu Empresa</p>
+                  <p className="text-[10px] text-green-100">en línea</p>
+                </div>
+                <VideoIcon className="h-5 w-5" />
+                <PhoneCall className="h-5 w-5" />
+              </div>
 
-              {templateData.footer && (
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                  {templateData.footer}
-                </p>
-              )}
+              {/* Chat Area */}
+              <div className="bg-[#ECE5DD] dark:bg-[#0B141A] px-3 py-3" style={{ height: "420px" }}>
+                <div className="flex justify-end">
+                  {/* Message Bubble */}
+                  <div className="bg-[#DCF8C6] dark:bg-[#005C4B] rounded-xl shadow-sm p-2 max-w-[200px]">
+                    {renderHeader()}
 
-              <div className="flex items-center justify-end gap-1 text-xs text-gray-500 dark:text-gray-400 mt-2">
-                <span>10:30</span>
-                <Check className="h-3 w-3" />
-                <Check className="h-3 w-3 -ml-1.5" />
+                    <div className="space-y-1">
+                      {renderBody()}
+
+                      {templateData.footer && (
+                        <p className="text-[10px] text-gray-600 dark:text-gray-400 mt-1">
+                          {templateData.footer}
+                        </p>
+                      )}
+
+                      <div className="flex items-center justify-end gap-1 text-[9px] text-gray-600 dark:text-gray-400 mt-1">
+                        <span>10:30</span>
+                        <Check className="h-2.5 w-2.5" />
+                        <Check className="h-2.5 w-2.5 -ml-1" />
+                      </div>
+                    </div>
+
+                    {renderButtons()}
+                  </div>
+                </div>
+              </div>
+
+              {/* WhatsApp Input Bar */}
+              <div className="bg-[#F0F0F0] dark:bg-[#1F2C33] px-3 py-2 flex items-center gap-2">
+                <div className="flex-1 bg-white dark:bg-[#2A3942] rounded-full px-3 py-1.5 flex items-center gap-2">
+                  <span className="text-xs text-gray-400">Mensaje</span>
+                </div>
+                <Camera className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+                <Mic className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+              </div>
+
+              {/* iOS Home Indicator */}
+              <div className="bg-white dark:bg-black flex justify-center py-2">
+                <div className="w-32 h-1 bg-gray-800 dark:bg-gray-300 rounded-full"></div>
               </div>
             </div>
-
-            {renderButtons()}
           </div>
         </div>
       </div>
 
-      {/* Template Info */}
-      <Card className="p-4 bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800">
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Nombre:</span>
-            <span className="font-medium">
-              {templateData.name || "sin_nombre"}
-            </span>
+      {/* Compact Template Info */}
+      <Card className="p-3 bg-gradient-to-br from-blue-50 to-green-50 dark:from-blue-950/30 dark:to-green-950/30 border-blue-200 dark:border-blue-800">
+        <div className="grid grid-cols-2 gap-3 text-xs">
+          <div>
+            <span className="text-muted-foreground block">Nombre</span>
+            <span className="font-medium">{templateData.name || "sin_nombre"}</span>
           </div>
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Categoría:</span>
-            <Badge variant="outline">
+          <div>
+            <span className="text-muted-foreground block">Categoría</span>
+            <Badge variant="outline" className="text-xs mt-0.5">
               {templateData.category === "MARKETING" && "Marketing"}
               {templateData.category === "UTILITY" && "Utilidad"}
-              {templateData.category === "AUTHENTICATION" && "Autenticación"}
+              {templateData.category === "AUTHENTICATION" && "Auth"}
             </Badge>
           </div>
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Idioma:</span>
-            <span className="font-medium">
-              {templateData.language === "es" && "Español"}
-              {templateData.language === "es_AR" && "Español (Argentina)"}
-              {templateData.language === "es_ES" && "Español (España)"}
-              {templateData.language === "es_MX" && "Español (México)"}
-              {templateData.language === "en" && "English"}
-              {templateData.language === "pt_BR" && "Português (Brasil)"}
+          <div>
+            <span className="text-muted-foreground block">Idioma</span>
+            <span className="font-medium text-xs">
+              {templateData.language === "es" && "ES"}
+              {templateData.language === "es_AR" && "ES-AR"}
+              {templateData.language === "es_ES" && "ES-ES"}
+              {templateData.language === "es_MX" && "ES-MX"}
+              {templateData.language === "en" && "EN"}
+              {templateData.language === "pt_BR" && "PT-BR"}
             </span>
           </div>
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Componentes:</span>
-            <div className="flex gap-2">
+          <div>
+            <span className="text-muted-foreground block">Componentes</span>
+            <div className="flex gap-1 flex-wrap mt-0.5">
               {templateData.header.type !== "NONE" && (
-                <Badge variant="secondary" className="text-xs">
-                  Header
-                </Badge>
+                <Badge variant="secondary" className="text-[10px] px-1.5 py-0">H</Badge>
               )}
               {templateData.body && (
-                <Badge variant="secondary" className="text-xs">
-                  Body
-                </Badge>
+                <Badge variant="secondary" className="text-[10px] px-1.5 py-0">B</Badge>
               )}
               {templateData.footer && (
-                <Badge variant="secondary" className="text-xs">
-                  Footer
-                </Badge>
+                <Badge variant="secondary" className="text-[10px] px-1.5 py-0">F</Badge>
               )}
               {templateData.buttons.length > 0 && (
-                <Badge variant="secondary" className="text-xs">
-                  {templateData.buttons.length} Botones
-                </Badge>
+                <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{templateData.buttons.length}BTN</Badge>
               )}
             </div>
           </div>
