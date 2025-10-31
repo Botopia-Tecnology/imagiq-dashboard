@@ -139,7 +139,7 @@ const nodeTemplates = [
       {
         id: "trigger",
         label: "Trigger",
-        icon: { type: "lucide", name: "Zap" },
+        icon: { type: "lucide" as const, name: "Zap" },
         color:
           "bg-red-50 dark:bg-red-950/50 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800",
       },
@@ -152,7 +152,7 @@ const nodeTemplates = [
       {
         id: "campaign",
         label: "Campaña",
-        icon: { type: "lucide", name: "Megaphone" },
+        icon: { type: "lucide" as const, name: "Megaphone" },
         color:
           "bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800",
       },
@@ -165,7 +165,7 @@ const nodeTemplates = [
       {
         id: "wait_time",
         label: "Esperar",
-        icon: { type: "lucide", name: "Timer" },
+        icon: { type: "lucide" as const, name: "Timer" },
         color:
           "bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800",
       },
@@ -175,16 +175,16 @@ const nodeTemplates = [
     type: "condition",
     category: "Condiciones",
     items: [
-      // { id: 'user_segment', label: 'Segmento Usuario', icon: { type: 'lucide', name: 'Target' }, color: 'bg-yellow-50 dark:bg-yellow-950/50 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800' },
+      // { id: 'user_segment', label: 'Segmento Usuario', icon: { type: 'lucide' as const, name: 'Target' }, color: 'bg-yellow-50 dark:bg-yellow-950/50 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800' },
       {
         id: "cart_value",
         label: "Condiciones",
-        icon: { type: "lucide", name: "Network" },
+        icon: { type: "lucide" as const, name: "Network" },
         color:
           "bg-green-50 dark:bg-green-950/50 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800",
       }, //Valor Carrito
-      //   { id: 'geographic_location', label: 'Ubicación', icon: { type: 'lucide', name: 'Globe' }, color: 'bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800' },
-      //   { id: 'device_type', label: 'Tipo Dispositivo', icon: { type: 'lucide', name: 'Smartphone' }, color: 'bg-gray-50 dark:bg-gray-950/50 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-800' },
+      //   { id: 'geographic_location', label: 'Ubicación', icon: { type: 'lucide' as const, name: 'Globe' }, color: 'bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800' },
+      //   { id: 'device_type', label: 'Tipo Dispositivo', icon: { type: 'lucide' as const, name: 'Smartphone' }, color: 'bg-gray-50 dark:bg-gray-950/50 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-800' },
     ],
   },
   {
@@ -194,7 +194,7 @@ const nodeTemplates = [
       {
         id: "time_delay",
         label: "Esperar",
-        icon: { type: "lucide", name: "Timer" },
+        icon: { type: "lucide" as const, name: "Timer" },
         color:
           "bg-orange-50 dark:bg-orange-950/50 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-800",
       },
@@ -208,7 +208,7 @@ const nodeTemplates = [
       {
         id: "conditional",
         label: "IF Condicional",
-        icon: { type: "lucide", name: "GitBranch" },
+        icon: { type: "lucide" as const, name: "GitBranch" },
         color:
           "bg-orange-50 dark:bg-orange-950/50 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-800",
       },
@@ -232,8 +232,8 @@ export function EventCampaignCanvas({
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const [reactFlowInstance, setReactFlowInstance] =
     useState<ReactFlowInstance | null>(null);
-  const [nodes, setNodes, onNodesChange] = useNodesState(campaign?.nodes || []);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(campaign?.edges || []);
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node>(campaign?.nodes as Node[] || []);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>(campaign?.edges as Edge[] || []);
   const [selectedNodeType, setSelectedNodeType] = useState<string | null>(null);
   const [audienceSegmentation, setAudienceSegmentation] =
     useState<AudienceSegmentationData>();
@@ -337,7 +337,7 @@ export function EventCampaignCanvas({
   const getNodeIcon = (type: string, subtype: string) => {
     const template = nodeTemplates.find((t) => t.type === type);
     const item = template?.items.find((i) => i.id === subtype);
-    return item?.icon || { type: "lucide", name: "Settings" };
+    return item?.icon || { type: "lucide" as const, name: "Settings" };
   };
 
   // Save campaign
@@ -348,8 +348,8 @@ export function EventCampaignCanvas({
       id: campaign?.id || `campaign-${Date.now()}`,
       name: campaign?.name || "Nueva Campaña",
       status: campaign?.status || "draft",
-      nodes: nodes as FlowNode[],
-      edges: edges as FlowEdge[],
+      nodes: nodes as unknown as FlowNode[],
+      edges: edges as unknown as FlowEdge[],
       createdAt: campaign?.createdAt || new Date(),
       updatedAt: new Date(),
       createdBy: campaign?.createdBy || "current-user",

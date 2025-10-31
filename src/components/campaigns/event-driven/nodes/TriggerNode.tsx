@@ -105,6 +105,7 @@ const TriggerNode = memo(({ data, selected }: NodeProps<TriggerNodeData>) => {
       'user_registration': 'Registro de Usuario',
       'purchase_event': 'Evento de Compra',
       'form_submission': 'Envío de Formulario',
+      'time_delay': 'Retraso de Tiempo',
     };
 
     return labels[triggerType] || triggerType;
