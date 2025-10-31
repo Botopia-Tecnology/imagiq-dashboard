@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { GitBranch, Plus, Trash2, Settings } from 'lucide-react';
+import { GitBranch, Plus, Trash2 } from 'lucide-react';
 import { IfNode as IfNodeType, ConditionalRule, ConditionalLogicType } from '@/types/event-driven-campaigns';
 
 interface IfNodeData {
@@ -42,21 +42,6 @@ const IfNode = memo(({ data, selected }: NodeProps<IfNodeData>) => {
     setConditions(conditions.filter((_, i) => i !== index));
   };
 
-  const getOperatorLabel = (op: ConditionalLogicType) => {
-    const labels = {
-      equals: 'es igual a',
-      not_equals: 'no es igual a',
-      greater_than: 'es mayor que',
-      less_than: 'es menor que',
-      contains: 'contiene',
-      not_contains: 'no contiene',
-      starts_with: 'empieza con',
-      ends_with: 'termina con',
-      is_empty: 'está vacío',
-      is_not_empty: 'no está vacío'
-    };
-    return labels[op] || op;
-  };
 
   return (
     <>

@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useRef, useState } from "react";
 import ReactFlow, {
   ReactFlowProvider,
   addEdge,
@@ -8,19 +8,24 @@ import ReactFlow, {
   useEdgesState,
   Controls,
   Background,
+  BackgroundVariant,
   Connection,
   Edge,
   Node,
   ReactFlowInstance,
   MiniMap,
-} from 'reactflow';
-import 'reactflow/dist/style.css';
+} from "reactflow";
+import "reactflow/dist/style.css";
 
-import { FlowNode, FlowEdge, EventDrivenCampaign } from '@/types/event-driven-campaigns';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
+import {
+  FlowNode,
+  FlowEdge,
+  EventDrivenCampaign,
+} from "@/types/event-driven-campaigns";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Play,
   Pause,
@@ -29,7 +34,9 @@ import {
   Trash2,
   Plus,
   Zap,
+  Megaphone,
   Filter,
+  Network,
   Clock,
   MessageSquare,
   GitBranch,
@@ -47,30 +54,38 @@ import {
   ActivitySquare,
   Link,
   RotateCcw as Refresh,
-  Settings
-} from 'lucide-react';
+  Settings,
+} from "lucide-react";
 
 // Import custom node components
-import TriggerNode from './nodes/TriggerNode';
-import ConditionNode from './nodes/ConditionNode';
-import ActionNode from './nodes/ActionNode';
-import DelayNode from './nodes/DelayNode';
-import { IfNode } from './nodes/IfNode';
-import { WaitNode } from './nodes/WaitNode';
-import { BrandIcon } from '@/components/icons/BrandIcon';
+import TriggerNode from "./nodes/TriggerNode";
+import ConditionNode from "./nodes/ConditionNode";
+import CampaignNode from "./nodes/CampaignNode";
+import DelayNode from "./nodes/DelayNode";
+import { IfNode } from "./nodes/IfNode";
+import { WaitNode } from "./nodes/WaitNode";
+import { BrandIcon } from "@/components/icons/BrandIcon";
+import {
+  AudienceSegmentation,
+  AudienceSegmentationData,
+} from "./AudienceSegmentation";
 
 // Icon component helper to render both BrandIcon and Lucide icons
-const NodeIcon = ({ icon, size = 16, className = "" }: {
-  icon: { type: 'brand' | 'lucide', name: string } | string,
-  size?: number,
-  className?: string
+const NodeIcon = ({
+  icon,
+  size = 16,
+  className = "",
+}: {
+  icon: { type: "brand" | "lucide"; name: string } | string;
+  size?: number;
+  className?: string;
 }) => {
-  if (typeof icon === 'string') {
+  if (typeof icon === "string") {
     // Legacy support for emoji icons
     return <span className={`text-lg ${className}`}>{icon}</span>;
   }
 
-  if (icon.type === 'brand') {
+  if (icon.type === "brand") {
     return <BrandIcon brand={icon.name} size={size} className={className} />;
   }
 
@@ -84,14 +99,17 @@ const NodeIcon = ({ icon, size = 16, className = "" }: {
     Target,
     DollarSign,
     Globe,
+    Zap,
+    Megaphone,
     Smartphone,
+    Network,
     Monitor,
     Timer,
     GitBranch,
     ActivitySquare,
     Link,
     Refresh,
-    Settings
+    Settings,
   };
 
   const IconComponent = iconMap[icon.name];
@@ -106,7 +124,7 @@ const NodeIcon = ({ icon, size = 16, className = "" }: {
 const nodeTypes = {
   trigger: TriggerNode,
   condition: ConditionNode,
-  action: ActionNode,
+  campaign: CampaignNode,
   delay: DelayNode,
   if: IfNode,
   wait: WaitNode,
@@ -115,80 +133,110 @@ const nodeTypes = {
 // Sidebar node templates
 const nodeTemplates = [
   {
-    type: 'trigger',
-    category: 'Triggers',
+    type: "trigger",
+    category: "Trigger",
     items: [
-      { id: 'abandoned_cart', label: 'Carrito Abandonado', icon: { type: 'lucide' as const, name: 'ShoppingCart' }, color: 'bg-red-50 dark:bg-red-950/50 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800' },
-      { id: 'product_view', label: 'Ver Producto', icon: { type: 'lucide' as const, name: 'Eye' }, color: 'bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800' },
-      { id: 'add_to_favorites', label: 'Agregar Favoritos', icon: { type: 'lucide' as const, name: 'Heart' }, color: 'bg-pink-50 dark:bg-pink-950/50 text-pink-700 dark:text-pink-300 border-pink-200 dark:border-pink-800' },
-      { id: 'page_view', label: 'Ver Página', icon: { type: 'lucide' as const, name: 'FileText' }, color: 'bg-green-50 dark:bg-green-950/50 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800' },
-      { id: 'user_registration', label: 'Registro', icon: { type: 'lucide' as const, name: 'User' }, color: 'bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800' },
-    ]
+      {
+        id: "trigger",
+        label: "Trigger",
+        icon: { type: "lucide" as const, name: "Zap" },
+        color:
+          "bg-red-50 dark:bg-red-950/50 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800",
+      },
+    ],
   },
   {
-    type: 'condition',
-    category: 'Condiciones',
+    type: "campaign",
+    category: "Campaña",
     items: [
-      { id: 'user_segment', label: 'Segmento Usuario', icon: { type: 'lucide' as const, name: 'Target' }, color: 'bg-yellow-50 dark:bg-yellow-950/50 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800' },
-      { id: 'cart_value', label: 'Valor Carrito', icon: { type: 'lucide' as const, name: 'DollarSign' }, color: 'bg-green-50 dark:bg-green-950/50 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800' },
-      { id: 'geographic_location', label: 'Ubicación', icon: { type: 'lucide' as const, name: 'Globe' }, color: 'bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800' },
-      { id: 'device_type', label: 'Tipo Dispositivo', icon: { type: 'lucide' as const, name: 'Smartphone' }, color: 'bg-gray-50 dark:bg-gray-950/50 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-800' },
-    ]
+      {
+        id: "campaign",
+        label: "Campaña",
+        icon: { type: "lucide" as const, name: "Megaphone" },
+        color:
+          "bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800",
+      },
+    ],
   },
   {
-    type: 'action',
-    category: 'Acciones',
+    type: "wait",
+    category: "Esperas Avanzadas",
     items: [
-      { id: 'email', label: 'Email', icon: { type: 'brand' as const, name: 'gmail' }, color: 'bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800' },
-      { id: 'sms', label: 'SMS', icon: { type: 'lucide' as const, name: 'MessageSquare' }, color: 'bg-green-50 dark:bg-green-950/50 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800' },
-      { id: 'whatsapp', label: 'WhatsApp', icon: { type: 'brand' as const, name: 'whatsapp' }, color: 'bg-green-50 dark:bg-green-950/50 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800' },
-      { id: 'inweb', label: 'In-Web', icon: { type: 'lucide' as const, name: 'Monitor' }, color: 'bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800' },
-    ]
+      {
+        id: "wait_time",
+        label: "Esperar",
+        icon: { type: "lucide" as const, name: "Timer" },
+        color:
+          "bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800",
+      },
+    ],
   },
   {
-    type: 'delay',
-    category: 'Esperas',
+    type: "condition",
+    category: "Condiciones",
     items: [
-      { id: 'time_delay', label: 'Esperar', icon: { type: 'lucide' as const, name: 'Timer' }, color: 'bg-orange-50 dark:bg-orange-950/50 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-800' },
-    ]
+      // { id: 'user_segment', label: 'Segmento Usuario', icon: { type: 'lucide' as const, name: 'Target' }, color: 'bg-yellow-50 dark:bg-yellow-950/50 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800' },
+      {
+        id: "cart_value",
+        label: "Condiciones",
+        icon: { type: "lucide" as const, name: "Network" },
+        color:
+          "bg-green-50 dark:bg-green-950/50 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800",
+      }, //Valor Carrito
+      //   { id: 'geographic_location', label: 'Ubicación', icon: { type: 'lucide' as const, name: 'Globe' }, color: 'bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800' },
+      //   { id: 'device_type', label: 'Tipo Dispositivo', icon: { type: 'lucide' as const, name: 'Smartphone' }, color: 'bg-gray-50 dark:bg-gray-950/50 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-800' },
+    ],
   },
   {
-    type: 'if',
-    category: 'Lógica',
+    type: "delay",
+    category: "Esperas",
     items: [
-      { id: 'conditional', label: 'IF Condicional', icon: { type: 'lucide' as const, name: 'GitBranch' }, color: 'bg-orange-50 dark:bg-orange-950/50 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-800' },
-    ]
+      {
+        id: "time_delay",
+        label: "Esperar",
+        icon: { type: "lucide" as const, name: "Timer" },
+        color:
+          "bg-orange-50 dark:bg-orange-950/50 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-800",
+      },
+    ],
   },
+
   {
-    type: 'wait',
-    category: 'Esperas Avanzadas',
+    type: "if",
+    category: "Lógica",
     items: [
-      { id: 'wait_time', label: 'Esperar Tiempo', icon: { type: 'lucide' as const, name: 'Timer' }, color: 'bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800' },
-      { id: 'wait_event', label: 'Esperar Evento', icon: { type: 'lucide' as const, name: 'ActivitySquare' }, color: 'bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800' },
-      { id: 'wait_condition', label: 'Esperar Condición', icon: { type: 'lucide' as const, name: 'Refresh' }, color: 'bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800' },
-      { id: 'wait_webhook', label: 'Esperar Webhook', icon: { type: 'lucide' as const, name: 'Link' }, color: 'bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800' },
-    ]
-  }
+      {
+        id: "conditional",
+        label: "IF Condicional",
+        icon: { type: "lucide" as const, name: "GitBranch" },
+        color:
+          "bg-orange-50 dark:bg-orange-950/50 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-800",
+      },
+    ],
+  },
 ];
 
 interface EventCampaignCanvasProps {
   campaign?: EventDrivenCampaign;
   onSave?: (campaign: EventDrivenCampaign) => void;
   onPreview?: (campaign: EventDrivenCampaign) => void;
-  onStatusChange?: (campaignId: string, status: 'active' | 'paused') => void;
+  onStatusChange?: (campaignId: string, status: "active" | "paused") => void;
 }
 
 export function EventCampaignCanvas({
   campaign,
   onSave,
   onPreview,
-  onStatusChange
+  onStatusChange,
 }: EventCampaignCanvasProps) {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
-  const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null);
-  const [nodes, setNodes, onNodesChange] = useNodesState(campaign?.nodes || [] as any);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(campaign?.edges || [] as any);
+  const [reactFlowInstance, setReactFlowInstance] =
+    useState<ReactFlowInstance | null>(null);
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node>(campaign?.nodes as Node[] || []);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>(campaign?.edges as Edge[] || []);
   const [selectedNodeType, setSelectedNodeType] = useState<string | null>(null);
+  const [audienceSegmentation, setAudienceSegmentation] =
+    useState<AudienceSegmentationData>();
 
   // Handle new connections between nodes
   const onConnect = useCallback(
@@ -199,7 +247,7 @@ export function EventCampaignCanvas({
   // Handle drag over for drop functionality
   const onDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault();
-    event.dataTransfer.dropEffect = 'move';
+    event.dataTransfer.dropEffect = "move";
   }, []);
 
   // Handle drop of new nodes onto canvas
@@ -207,10 +255,12 @@ export function EventCampaignCanvas({
     (event: React.DragEvent) => {
       event.preventDefault();
 
-      const type = event.dataTransfer.getData('application/reactflow');
-      const subtype = event.dataTransfer.getData('application/reactflow-subtype');
+      const type = event.dataTransfer.getData("application/reactflow");
+      const subtype = event.dataTransfer.getData(
+        "application/reactflow-subtype"
+      );
 
-      if (typeof type === 'undefined' || !type || !reactFlowInstance) {
+      if (typeof type === "undefined" || !type || !reactFlowInstance) {
         return;
       }
 
@@ -226,28 +276,28 @@ export function EventCampaignCanvas({
 
       // Set specific data based on node type
       switch (type) {
-        case 'trigger':
+        case "trigger":
           nodeData.triggerType = subtype;
           break;
-        case 'condition':
+        case "condition":
           nodeData.conditions = [];
-          nodeData.operator = 'AND';
+          nodeData.operator = "AND";
           break;
-        case 'action':
+        case "campaign":
           nodeData.channel = subtype;
           nodeData.config = {};
           break;
-        case 'delay':
+        case "delay":
           nodeData.delayAmount = 1;
-          nodeData.delayUnit = 'hours';
+          nodeData.delayUnit = "hours";
           break;
-        case 'if':
+        case "if":
           nodeData.conditions = [];
-          nodeData.operator = 'AND';
+          nodeData.operator = "AND";
           nodeData.trueOutputs = [];
           nodeData.falseOutputs = [];
           break;
-        case 'wait':
+        case "wait":
           nodeData.waitType = subtype;
           nodeData.config = {};
           break;
@@ -266,24 +316,28 @@ export function EventCampaignCanvas({
   );
 
   // Handle node drag start
-  const onDragStart = (event: React.DragEvent, nodeType: string, subtype: string) => {
-    event.dataTransfer.setData('application/reactflow', nodeType);
-    event.dataTransfer.setData('application/reactflow-subtype', subtype);
-    event.dataTransfer.effectAllowed = 'move';
+  const onDragStart = (
+    event: React.DragEvent,
+    nodeType: string,
+    subtype: string
+  ) => {
+    event.dataTransfer.setData("application/reactflow", nodeType);
+    event.dataTransfer.setData("application/reactflow-subtype", subtype);
+    event.dataTransfer.effectAllowed = "move";
   };
 
   // Get node label based on type and subtype
   const getNodeLabel = (type: string, subtype: string) => {
-    const template = nodeTemplates.find(t => t.type === type);
-    const item = template?.items.find(i => i.id === subtype);
+    const template = nodeTemplates.find((t) => t.type === type);
+    const item = template?.items.find((i) => i.id === subtype);
     return item?.label || subtype;
   };
 
   // Get node icon based on type and subtype
   const getNodeIcon = (type: string, subtype: string) => {
-    const template = nodeTemplates.find(t => t.type === type);
-    const item = template?.items.find(i => i.id === subtype);
-    return item?.icon || { type: 'lucide', name: 'Settings' };
+    const template = nodeTemplates.find((t) => t.type === type);
+    const item = template?.items.find((i) => i.id === subtype);
+    return item?.icon || { type: "lucide" as const, name: "Settings" };
   };
 
   // Save campaign
@@ -292,13 +346,13 @@ export function EventCampaignCanvas({
 
     const updatedCampaign: EventDrivenCampaign = {
       id: campaign?.id || `campaign-${Date.now()}`,
-      name: campaign?.name || 'Nueva Campaña',
-      status: campaign?.status || 'draft',
-      nodes: nodes as FlowNode[],
-      edges: edges as FlowEdge[],
+      name: campaign?.name || "Nueva Campaña",
+      status: campaign?.status || "draft",
+      nodes: nodes as unknown as FlowNode[],
+      edges: edges as unknown as FlowEdge[],
       createdAt: campaign?.createdAt || new Date(),
       updatedAt: new Date(),
-      createdBy: campaign?.createdBy || 'current-user',
+      createdBy: campaign?.createdBy || "current-user",
     };
 
     onSave(updatedCampaign);
@@ -308,7 +362,7 @@ export function EventCampaignCanvas({
   const handleStatusToggle = () => {
     if (!campaign || !onStatusChange) return;
 
-    const newStatus = campaign.status === 'active' ? 'paused' : 'active';
+    const newStatus = campaign.status === "active" ? "paused" : "active";
     onStatusChange(campaign.id, newStatus);
   };
 
@@ -341,124 +395,222 @@ export function EventCampaignCanvas({
 
   return (
     <div className="h-screen flex">
-      {/* Sidebar with node templates */}
-      <Card className="w-80 h-full rounded-none border-r">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Zap className="h-5 w-5" />
-            Elementos de Campaña
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-4 space-y-6 overflow-y-auto">
-          {nodeTemplates.map((template) => (
-            <div key={template.type}>
-              <h3 className="font-semibold mb-3 text-sm uppercase tracking-wide text-muted-foreground">
-                {template.category}
-              </h3>
-              <div className="space-y-2">
-                {template.items.map((item) => (
-                  <div
-                    key={item.id}
-                    draggable
-                    onDragStart={(e) => onDragStart(e, template.type, item.id)}
-                    className={`p-3 rounded-lg border cursor-move hover:shadow-md transition-all ${item.color}`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <NodeIcon icon={item.icon} size={18} />
-                      <span className="font-medium text-sm">{item.label}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <Separator className="my-4" />
-            </div>
-          ))}
-        </CardContent>
-      </Card>
-
       {/* Main canvas area */}
       <div className="flex-1 flex flex-col">
-        {/* Toolbar */}
-        <Card className="rounded-none border-b">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <h1 className="text-xl font-bold">
-                  {campaign?.name || 'Nueva Campaña Basada en Eventos'}
-                </h1>
-                {campaign?.status && (
-                  <Badge variant={campaign.status === 'active' ? 'default' : 'secondary'}>
-                    {campaign.status === 'active' ? 'Activa' :
-                     campaign.status === 'paused' ? 'Pausada' :
-                     campaign.status === 'draft' ? 'Borrador' : 'Completada'}
-                  </Badge>
-                )}
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" onClick={() => onPreview && campaign && onPreview(campaign)}>
-                  <Eye className="h-4 w-4 mr-2" />
-                  Vista Previa
-                </Button>
-                <Button variant="outline" size="sm" onClick={handleSave}>
-                  <Save className="h-4 w-4 mr-2" />
-                  Guardar
-                </Button>
-                <Button variant="outline" size="sm" onClick={handleAutoLayout}>
-                  <RotateCcw className="h-4 w-4 mr-2" />
-                  Auto Layout
-                </Button>
-                {campaign && (
-                  <Button
-                    variant={campaign.status === 'active' ? 'destructive' : 'default'}
-                    size="sm"
-                    onClick={handleStatusToggle}
+        {/* Tabs and Toolbar in same row */}
+        <Tabs defaultValue="canvas" className="flex-1 flex flex-col">
+          <Card className="rounded-none border-b">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                {/* Tabs on the left */}
+                <TabsList className="h-auto bg-transparent p-0 border-0">
+                  <TabsTrigger
+                    value="canvas"
+                    className="
+  rounded-b-lg
+  border-b-2
+  border-transparent
+  px-4
+  py-2
+  text-gray-700
+  cursor-pointer
+  transition-all
+  duration-300
+  ease-in-out
+  data-[state=active]:border-blue-500
+  data-[state=active]:bg-blue-50
+  data-[state=active]:text-blue-700
+  hover:text-blue-600
+  hover:bg-blue-100
+"
                   >
-                    {campaign.status === 'active' ? (
-                      <>
-                        <Pause className="h-4 w-4 mr-2" />
-                        Pausar
-                      </>
-                    ) : (
-                      <>
-                        <Play className="h-4 w-4 mr-2" />
-                        Activar
-                      </>
-                    )}
-                  </Button>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+                    <Network className="h-4 w-4 mr-2" />
+                    Construcción de Flujo
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="segment"
+                    className="
+  rounded-b-lg
+  border-b-2
+  border-transparent
+  px-4
+  py-2
+  text-gray-700
+  cursor-pointer
+  transition-all
+  duration-300
+  ease-in-out
+  data-[state=active]:border-blue-500
+  data-[state=active]:bg-blue-50
+  data-[state=active]:text-blue-700
+  hover:text-blue-600
+  hover:bg-blue-100
+"
+                  >
+                    <Target className="h-4 w-4 mr-2" />
+                    Segmento de Audiencia
+                  </TabsTrigger>
+                </TabsList>
 
-        {/* React Flow Canvas */}
-        <div className="flex-1" ref={reactFlowWrapper}>
-          <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
-            onInit={setReactFlowInstance}
-            onDrop={onDrop}
-            onDragOver={onDragOver}
-            nodeTypes={nodeTypes}
-            fitView
-            className="bg-slate-50 dark:bg-slate-950"
-          >
-            <Controls />
-            <MiniMap />
-            <Background variant={"dots" as any} gap={12} size={1} />
-          </ReactFlow>
-        </div>
+                {/* Separator */}
+                <div className="h-8 w-px bg-border mx-4" />
+
+                {/* Toolbar on the right */}
+                <div className="flex items-center gap-4 flex-1">
+                  <div className="flex items-center gap-4">
+                    <h1 className="text-xl font-bold">
+                      {campaign?.name || "Nueva Campaña Basada en Eventos"}
+                    </h1>
+                    {campaign?.status && (
+                      <Badge
+                        variant={
+                          campaign.status === "active" ? "default" : "secondary"
+                        }
+                      >
+                        {campaign.status === "active"
+                          ? "Activa"
+                          : campaign.status === "paused"
+                          ? "Pausada"
+                          : campaign.status === "draft"
+                          ? "Borrador"
+                          : "Completada"}
+                      </Badge>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2 ml-auto">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        onPreview && campaign && onPreview(campaign)
+                      }
+                    >
+                      <Eye className="h-4 w-4 mr-2" />
+                      Vista Previa
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={handleSave}>
+                      <Save className="h-4 w-4 mr-2" />
+                      Guardar
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleAutoLayout}
+                    >
+                      <RotateCcw className="h-4 w-4 mr-2" />
+                      Auto Layout
+                    </Button>
+                    {campaign && (
+                      <Button
+                        variant={
+                          campaign.status === "active"
+                            ? "destructive"
+                            : "default"
+                        }
+                        size="sm"
+                        onClick={handleStatusToggle}
+                      >
+                        {campaign.status === "active" ? (
+                          <>
+                            <Pause className="h-4 w-4 mr-2" />
+                            Pausar
+                          </>
+                        ) : (
+                          <>
+                            <Play className="h-4 w-4 mr-2" />
+                            Activar
+                          </>
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <TabsContent value="canvas" className="flex-1 m-0 flex">
+            {/* Sidebar with node templates */}
+            <Card className="w-64 h-full rounded-none border-r">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  {/* <Zap className="h-5 w-5" /> */}
+                  Elementos de Campaña
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 space-y-6 overflow-y-auto">
+                {nodeTemplates.map((template) => (
+                  <div key={template.type}>
+                    {/* <h3 className="font-semibold mb-3 text-sm uppercase tracking-wide text-muted-foreground">
+                {template.category}
+              </h3> */}
+                    <div className="space-y-2">
+                      {template.items.map((item) => (
+                        <div
+                          key={item.id}
+                          draggable
+                          onDragStart={(e) =>
+                            onDragStart(e, template.type, item.id)
+                          }
+                          className={`p-3 rounded-lg border cursor-move hover:shadow-md transition-all ${item.color}`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <NodeIcon icon={item.icon} size={18} />
+                            <span className="font-medium text-sm">
+                              {item.label}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    {/* <Separator className="my-4" /> */}
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+            {/* React Flow Canvas */}
+            <div className="flex-1 h-full" ref={reactFlowWrapper}>
+              <ReactFlow
+                nodes={nodes}
+                edges={edges}
+                onNodesChange={onNodesChange}
+                onEdgesChange={onEdgesChange}
+                onConnect={onConnect}
+                onInit={setReactFlowInstance}
+                onDrop={onDrop}
+                onDragOver={onDragOver}
+                nodeTypes={nodeTypes}
+                fitView
+                className="bg-slate-50 dark:bg-slate-950"
+              >
+                <Controls />
+                <MiniMap />
+                <Background
+                  variant={BackgroundVariant.Dots}
+                  gap={12}
+                  size={1}
+                />
+              </ReactFlow>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="segment" className="flex-1 m-0">
+            <AudienceSegmentation
+              data={audienceSegmentation}
+              onChange={setAudienceSegmentation}
+            />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
 }
 
 // Wrap component with ReactFlowProvider
-export default function EventCampaignCanvasProvider(props: EventCampaignCanvasProps) {
+export default function EventCampaignCanvasProvider(
+  props: EventCampaignCanvasProps
+) {
   return (
     <ReactFlowProvider>
       <EventCampaignCanvas {...props} />

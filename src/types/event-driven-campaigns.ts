@@ -48,7 +48,7 @@ export type ConditionalLogicType =
 export type WaitTriggerType =
   | 'time_delay'
   | 'wait_for_event'
-  | 'wait_for_condition'
+  // | 'wait_for_condition'
   | 'wait_for_webhook';
 
 // Base Node interface
