@@ -1,7 +1,7 @@
 export { mockProducts } from './products';
 export { mockOrders } from './orders';
 export { mockCustomers } from './customers';
-export { mockCampaigns } from './campaigns';
+export { mockCampaigns, mockWhatsAppTemplates } from './campaigns';
 export {
   mockDashboardMetrics,
   mockSalesData,

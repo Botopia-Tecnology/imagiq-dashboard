@@ -7,13 +7,18 @@ import { ArrowLeft, Zap, MessageSquare, Mail, Smartphone, Globe, Monitor, Ban } 
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { BrandIcon } from "@/components/icons/BrandIcon";
+import { WhatsAppActionModal } from "@/components/campaigns/whatsapp/whatsapp-action-modal";
+import { useState } from "react";
 
 export default function CrearCampañaPage() {
   const router = useRouter();
+  const [isWhatsAppModalOpen, setIsWhatsAppModalOpen] = useState(false);
 
   const handleCreateCampaign = (type: string) => {
     if (type === 'event-driven') {
       router.push('/marketing/campaigns/event-driven');
+    } else if (type === 'whatsapp') {
+      setIsWhatsAppModalOpen(true);
     } else {
       router.push(`/marketing/campaigns/crear/${type}`);
     }
@@ -187,6 +192,12 @@ export default function CrearCampañaPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* WhatsApp Action Modal */}
+      <WhatsAppActionModal
+        isOpen={isWhatsAppModalOpen}
+        onClose={() => setIsWhatsAppModalOpen(false)}
+      />
     </div>
   );
 }

@@ -53,14 +53,14 @@ export function DataTableToolbar<TData>({
   };
 
   return (
-    <div className="flex items-center justify-between">
-      <div className="flex flex-1 items-center space-x-2">
+    <div className="flex flex-col space-y-2 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
+      <div className="flex flex-1 items-center space-x-2 overflow-x-auto pb-2 sm:pb-0">
         <Input
           placeholder={`Buscar por nombre`}
           value={input}
           onChange={(event) => handleSearchChange(event.target.value)}
           onKeyDown={(event) => event.key === "Enter" && handleKey()}
-          className="h-8 w-[150px] lg:w-[250px]"
+          className="h-8 w-full min-w-[120px] sm:w-[150px] lg:w-[250px]"
         />
         {filters?.map((filter) => {
           const column = table.getColumn(filter.id);
@@ -81,7 +81,9 @@ export function DataTableToolbar<TData>({
           ) : null;
         })}
       </div>
-      <DataTableViewOptions table={table} />
+      <div className="flex-shrink-0">
+        <DataTableViewOptions table={table} />
+      </div>
     </div>
   );
 }
