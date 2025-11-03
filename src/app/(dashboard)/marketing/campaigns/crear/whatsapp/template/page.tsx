@@ -9,6 +9,8 @@ import { WhatsAppTemplateForm } from "@/components/campaigns/whatsapp/template/t
 import { WhatsAppTemplatePreview } from "@/components/campaigns/whatsapp/template/template-preview";
 import { TemplateVariables } from "@/components/campaigns/whatsapp/template/template-variables";
 import { useState } from "react";
+import { whatsappTemplateEndpoints } from "@/lib/api";
+import { toast } from "sonner";
 
 export default function CrearPlantillaWhatsAppPage() {
   const router = useRouter();
@@ -28,9 +30,70 @@ export default function CrearPlantillaWhatsAppPage() {
   const [variableValues, setVariableValues] = useState<Record<string, string>>({});
   const [selectedOS, setSelectedOS] = useState<'ios' | 'android'>('ios');
 
-  const handleSaveTemplate = () => {
-    // TODO: Implement save template logic
-    console.log("Saving template:", templateData);
+  const handleSaveTemplate = async () => {
+    try {
+      // Validaciones básicas
+      if (!templateData.name || !/^([a-z0-9_]+)$/.test(templateData.name)) {
+        toast.error("Nombre inválido. Usa minúsculas, números y guiones bajos.");
+        return;
+      }
+      if (!templateData.body || templateData.body.trim().length === 0) {
+        toast.error("El cuerpo del mensaje es requerido.");
+        return;
+      }
+
+      // Construir components según el esquema del backend
+      const components: any[] = [];
+
+      // HEADER
+      if (templateData.header?.type && templateData.header.type !== "NONE") {
+        const headerComponent: any = { type: "HEADER", format: templateData.header.type };
+        if (templateData.header.type === "TEXT") {
+          headerComponent.text = templateData.header.content || "";
+        }
+        components.push(headerComponent);
+      }
+
+      // BODY (requerido)
+      components.push({ type: "BODY", text: templateData.body });
+
+      // FOOTER
+      if (templateData.footer && templateData.footer.trim().length > 0) {
+        components.push({ type: "FOOTER", text: templateData.footer });
+      }
+
+      // BUTTONS (opcionales)
+      if (Array.isArray(templateData.buttons) && templateData.buttons.length > 0) {
+        const buttons = templateData.buttons.map((btn: any) => {
+          if (btn.type === "URL") {
+            return { type: "URL", text: btn.text || "", url: btn.url || "" };
+          }
+          if (btn.type === "PHONE_NUMBER") {
+            return { type: "PHONE_NUMBER", text: btn.text || "", phone_number: btn.phoneNumber || "" };
+          }
+          return { type: "QUICK_REPLY", text: btn.text || "" };
+        });
+        components.push({ type: "BUTTONS", buttons });
+      }
+
+      const payload = {
+        name: templateData.name,
+        category: templateData.category as "MARKETING" | "UTILITY" | "AUTHENTICATION",
+        language: templateData.language,
+        components,
+      };
+
+      const response = await whatsappTemplateEndpoints.create(payload);
+      if (response.success) {
+        toast.success("Plantilla creada correctamente");
+        router.push("/marketing/campaigns/templates/whatsapp");
+      } else {
+        toast.error(response.message || "No se pudo crear la plantilla");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Error al conectar con el servidor");
+    }
   };
 
   return (
