@@ -258,6 +258,40 @@ export interface Campaign {
   createdAt: Date;
 }
 
+export interface WhatsAppTemplate {
+  id: string;
+  name: string;
+  category: 'MARKETING' | 'UTILITY' | 'AUTHENTICATION';
+  language: string;
+  status: 'active' | 'inactive' | 'pending' | 'rejected';
+  header: {
+    type: 'NONE' | 'TEXT' | 'IMAGE' | 'VIDEO' | 'DOCUMENT' | 'LOCATION';
+    content: string;
+  };
+  body: string;
+  footer: string;
+  buttons: Array<{
+    id: number;
+    type: 'QUICK_REPLY' | 'PHONE_NUMBER' | 'URL';
+    text: string;
+    phoneNumber?: string;
+    url?: string;
+  }>;
+  metrics: {
+    sent: number;
+    delivered: number;
+    read: number;
+    clicks: number;
+    conversions: number;
+    openRate: number;
+    ctr: number;
+    conversionRate: number;
+  };
+  lastUsed?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface DashboardMetrics {
   totalSales: number;
   totalOrders: number;

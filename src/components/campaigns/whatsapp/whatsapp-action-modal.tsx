@@ -22,8 +22,7 @@ export function WhatsAppActionModal({ isOpen, onClose }: WhatsAppActionModalProp
 
   const handleCreateTemplate = () => {
     onClose();
-    // TODO: Navigate to template creation page when implemented
-    router.push('/marketing/campaigns/crear/whatsapp/template');
+    router.push('/marketing/campaigns/templates/whatsapp');
   };
 
   const handleLaunchCampaign = () => {
@@ -52,17 +51,17 @@ export function WhatsAppActionModal({ isOpen, onClose }: WhatsAppActionModalProp
               </div>
               <div className="flex-1">
                 <h3 className="font-semibold text-lg mb-2 flex items-center gap-2">
-                  Crear Plantilla
+                  Gestionar Plantillas
                   <ArrowRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </h3>
                 <p className="text-sm text-muted-foreground">
-                  Diseña una nueva plantilla de mensaje de WhatsApp con texto, imágenes, botones y más
+                  Administra tus plantillas de WhatsApp: crea nuevas, edita existentes o revisa métricas
                 </p>
                 <ul className="mt-3 space-y-1 text-sm text-muted-foreground">
-                  <li>• Personaliza el contenido del mensaje</li>
-                  <li>• Añade imágenes, videos o documentos</li>
-                  <li>• Configura botones de acción</li>
-                  <li>• Guarda para usar en futuras campañas</li>
+                  <li>• Ver todas las plantillas existentes</li>
+                  <li>• Crear nuevas plantillas</li>
+                  <li>• Editar o eliminar plantillas</li>
+                  <li>• Revisar métricas de rendimiento</li>
                 </ul>
               </div>
             </div>

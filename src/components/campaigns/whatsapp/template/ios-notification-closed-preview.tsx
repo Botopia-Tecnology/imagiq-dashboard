@@ -2,14 +2,14 @@
 
 import { BrandIcon } from "@/components/icons/BrandIcon";
 
-interface IOSNotificationPreviewProps {
+interface IOSNotificationClosedPreviewProps {
   templateData: any;
   variableValues?: Record<string, string>;
 }
 
-export function IOSNotificationPreview({ templateData, variableValues = {} }: IOSNotificationPreviewProps) {
-  // Get notification body with header prepended if exists and format text
-  const getNotificationBody = () => {
+export function IOSNotificationClosedPreview({ templateData, variableValues = {} }: IOSNotificationClosedPreviewProps) {
+  // Get short notification text for banner
+  const getNotificationText = () => {
     if (!templateData.body) return "Tu mensaje aparecerá aquí...";
 
     let text = "";
@@ -24,7 +24,7 @@ export function IOSNotificationPreview({ templateData, variableValues = {} }: IO
           headerText = headerText.replace(variable, variableValues[variable]);
         }
       });
-      text = headerText + "\n";
+      text = headerText + " ";
     }
 
     // Add body with variables replaced only if user provided values
@@ -37,24 +37,17 @@ export function IOSNotificationPreview({ templateData, variableValues = {} }: IO
     });
     text += bodyText;
 
-    // Remove WhatsApp formatting symbols for notification (they don't show in notifications)
-    // Remove bold formatting: *texto* and **texto**
+    // Remove WhatsApp formatting symbols for notification
     text = text.replace(/\*\*([^\*]+?)\*\*/g, '$1');
     text = text.replace(/(?<!\*)\*([^\*\n]+?)\*(?!\*)/g, '$1');
-
-    // Remove italic formatting: _texto_ and __texto__
     text = text.replace(/__([^_]+?)__/g, '$1');
     text = text.replace(/(?<!_)_([^_\n]+?)_(?!_)/g, '$1');
-
-    // Remove strikethrough: ~texto~
     text = text.replace(/~([^~\n]+?)~/g, '$1');
-
-    // Remove monospace: ```texto```
     text = text.replace(/```([^`]+?)```/g, '$1');
 
-    // Allow more text for expanded iOS notification (about 160 chars for 3 lines)
-    if (text.length > 160) {
-      text = text.substring(0, 157) + "...";
+    // Truncate to 40 chars for closed banner
+    if (text.length > 40) {
+      text = text.substring(0, 37) + "...";
     }
 
     return text;
@@ -62,13 +55,13 @@ export function IOSNotificationPreview({ templateData, variableValues = {} }: IO
 
   return (
     <div className="mx-auto" style={{ width: "280px" }}>
-      {/* iOS Push Notification Banner */}
+      {/* iOS Push Notification Banner - Closed */}
       <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl rounded-xl p-2 shadow-xl border border-gray-200/50 dark:border-gray-700/50">
-        <div className="flex items-start gap-2">
+        <div className="flex items-center gap-2">
           {/* Profile Picture with WhatsApp Badge */}
-          <div className="flex-shrink-0 w-8 h-8 relative">
+          <div className="flex-shrink-0 w-6 h-6 relative">
             {/* Profile Picture */}
-            <div className="w-8 h-8 bg-white dark:bg-gray-700 rounded-lg overflow-hidden">
+            <div className="w-6 h-6 bg-white dark:bg-gray-700 rounded-lg overflow-hidden">
               <img
                 src="https://res.cloudinary.com/dbqgbemui/image/upload/v1761873777/Samsung_Store_deken7.png"
                 alt="Samsung Store"
@@ -76,33 +69,22 @@ export function IOSNotificationPreview({ templateData, variableValues = {} }: IO
               />
             </div>
             {/* WhatsApp Badge */}
-            <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-[#25D366] rounded-full flex items-center justify-center border border-white dark:border-gray-800 shadow-sm">
-              <BrandIcon brand="WhatsApp" size={8} className="text-white" />
+            <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-[#25D366] rounded-full flex items-center justify-center border border-white dark:border-gray-800 shadow-sm">
+              <BrandIcon brand="WhatsApp" size={6} className="text-white" />
             </div>
           </div>
 
           {/* Notification Content */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between mb-0.5">
-              <span className="font-semibold text-[11px] text-gray-900 dark:text-gray-100">Samsung Store</span>
-              <span className="text-[9px] text-gray-500 dark:text-gray-400">ahora</span>
+            <div className="flex items-center justify-between">
+              <span className="font-semibold text-[10px] text-gray-900 dark:text-gray-100 truncate">Samsung Store</span>
+              <span className="text-[8px] text-gray-500 dark:text-gray-400 ml-2">ahora</span>
             </div>
 
-            {/* Message Body */}
-            <div className="text-[11px] text-gray-600 dark:text-gray-300 leading-snug line-clamp-3">
-              {getNotificationBody()}
+            {/* Message Body - Single line */}
+            <div className="text-[9px] text-gray-600 dark:text-gray-300 truncate">
+              {getNotificationText()}
             </div>
-
-            {/* Media Indicator */}
-            {["IMAGE", "VIDEO", "DOCUMENT"].includes(templateData.header.type) && (
-              <div className="flex items-center gap-1 mt-1">
-                <div className="text-[9px] text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                  {templateData.header.type === "IMAGE" && "📷 Foto"}
-                  {templateData.header.type === "VIDEO" && "🎥 Video"}
-                  {templateData.header.type === "DOCUMENT" && "📄 Documento"}
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </div>

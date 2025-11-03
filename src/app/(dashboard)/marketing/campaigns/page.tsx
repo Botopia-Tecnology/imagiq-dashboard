@@ -5,9 +5,10 @@ import { CampaignsTable } from "@/components/campaigns/tables/campaigns-table";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, Users, Mail, Eye, MessageSquare, Smartphone, Monitor, Globe, Ban, Zap } from "lucide-react";
+import { Plus, Search, Users, Mail, Eye, MessageSquare, Smartphone, Monitor, Globe, Ban, Zap, Settings } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { BrandIcon } from "@/components/icons/BrandIcon";
+import Link from "next/link";
 
 export default function CampañasPage() {
   const router = useRouter();
@@ -80,9 +81,17 @@ export default function CampañasPage() {
                     <div className="text-xs text-muted-foreground">2 campañas activas</div>
                   </div>
                 </div>
-                <Button variant="outline" size="sm" className="h-7 px-2 text-xs">
-                  Crear
-                </Button>
+                <div className="flex gap-1">
+                  <Link href="/marketing/campaigns/templates/whatsapp">
+                    <Button variant="ghost" size="sm" className="h-7 px-2 text-xs">
+                      <Settings className="h-3 w-3 mr-1" />
+                      Plantillas
+                    </Button>
+                  </Link>
+                  <Button variant="outline" size="sm" className="h-7 px-2 text-xs">
+                    Crear
+                  </Button>
+                </div>
               </div>
 
               <div className="flex items-center justify-between p-2.5 rounded-lg border dark:border-gray-700">

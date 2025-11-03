@@ -1,8 +1,5 @@
 "use client";
 
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   Image as ImageIcon,
   Video,
@@ -10,23 +7,27 @@ import {
   MapPin,
   Phone,
   ExternalLink,
-  Check,
   ChevronLeft,
   VideoIcon,
   PhoneCall,
-  MoreVertical,
   Camera,
   Mic,
   Plus,
+  CornerUpLeft,
 } from "lucide-react";
-import { BrandIcon } from "@/components/icons/BrandIcon";
 import { IOSNotificationPreview } from "./ios-notification-preview";
+import { AndroidNotificationPreview } from "./android-notification-preview";
+import { IOSNotificationClosedPreview } from "./ios-notification-closed-preview";
+import { AndroidNotificationClosedPreview } from "./android-notification-closed-preview";
+import { AndroidChatPreview } from "./android-chat-preview";
 
 interface TemplatePreviewProps {
   templateData: any;
+  variableValues?: Record<string, string>;
+  selectedOS?: 'ios' | 'android';
 }
 
-export function WhatsAppTemplatePreview({ templateData }: TemplatePreviewProps) {
+export function WhatsAppTemplatePreview({ templateData, variableValues = {}, selectedOS = 'ios' }: TemplatePreviewProps) {
   const renderHeader = () => {
     if (templateData.header.type === "NONE") return null;
 
@@ -100,22 +101,35 @@ export function WhatsAppTemplatePreview({ templateData }: TemplatePreviewProps) 
       );
     }
 
-    // Replace variables with sample data
+    // Replace variables with user-provided values only
     let bodyText = templateData.body;
     const variables = bodyText.match(/\{\{\d+\}\}/g) || [];
-    variables.forEach((variable: string, index: number) => {
-      const sampleData = [
-        "Juan",
-        "Pérez",
-        "20%",
-        "hoy",
-        "producto",
-        "servicio",
-        "cuenta",
-        "pedido",
-      ];
-      bodyText = bodyText.replace(variable, `<span class="font-semibold text-blue-600 dark:text-blue-400">${sampleData[index] || "Valor"}</span>`);
+    variables.forEach((variable: string) => {
+      // Only replace if user has provided a value
+      if (variableValues[variable]) {
+        const value = variableValues[variable];
+        bodyText = bodyText.replace(variable, value);
+      }
     });
+
+    // Apply WhatsApp formatting in the correct order to avoid conflicts
+    // Monospace first (triple backticks): ```texto```
+    bodyText = bodyText.replace(/```([^`]+?)```/g, '<code class="bg-gray-100 dark:bg-gray-800 px-1 rounded font-mono text-[10px]">$1</code>');
+
+    // Bold: **texto** (double asterisk has priority over single)
+    bodyText = bodyText.replace(/\*\*([^\*]+?)\*\*/g, '<strong class="font-bold">$1</strong>');
+
+    // Bold: *texto* (single asterisk, but not if already processed)
+    bodyText = bodyText.replace(/(?<!\*)\*([^\*\n]+?)\*(?!\*)/g, '<strong class="font-bold">$1</strong>');
+
+    // Italic: __texto__ (double underscore has priority)
+    bodyText = bodyText.replace(/__([^_]+?)__/g, '<em class="italic">$1</em>');
+
+    // Italic: _texto_ (single underscore, but not if already processed)
+    bodyText = bodyText.replace(/(?<!_)_([^_\n]+?)_(?!_)/g, '<em class="italic">$1</em>');
+
+    // Strikethrough: ~texto~
+    bodyText = bodyText.replace(/~([^~\n]+?)~/g, '<del class="line-through">$1</del>');
 
     return (
       <div
@@ -133,8 +147,11 @@ export function WhatsAppTemplatePreview({ templateData }: TemplatePreviewProps) 
         {templateData.buttons.map((button: any) => (
           <button
             key={button.id}
-            className="w-full py-1.5 px-2 text-center text-[#007AFF] font-medium text-xs border-t border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50 flex items-center justify-center gap-1.5"
+            className="w-full py-1.5 px-2 text-center text-[#1C8854] font-medium text-xs border-t border-gray-200 dark:border-gray-700 flex items-center justify-center gap-1.5"
           >
+            {button.type === "QUICK_REPLY" && (
+              <CornerUpLeft className="h-3 w-3" />
+            )}
             {button.type === "PHONE_NUMBER" && (
               <Phone className="h-3 w-3" />
             )}
@@ -155,185 +172,176 @@ export function WhatsAppTemplatePreview({ templateData }: TemplatePreviewProps) 
           background-image: url('https://i.pinimg.com/736x/31/04/e0/3104e02012ee109335a5ca2fc52b81db.jpg');
         }
         .dark .whatsapp-chat-bg {
-          background-image: url('https://i.pinimg.com/736x/2b/60/94/2b609488b4711e06e40a213e24e55d77.jpg');
+          background-image: url('https://i.pinimg.com/736x/cd/3d/62/cd3d628f57875af792c07d6ad262391c.jpg');
         }
       `}</style>
-      <div className="space-y-4">
-        {/* iOS Push Notification Preview */}
-        <IOSNotificationPreview templateData={templateData} />
+      <div>
+        {/* Main Content - Side by Side Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* Left Side - Notifications */}
+          <div className="space-y-3">
+            {/* Closed Notification */}
+            <div>
+              {selectedOS === 'ios' ? (
+                <IOSNotificationClosedPreview templateData={templateData} variableValues={variableValues} />
+              ) : (
+                <AndroidNotificationClosedPreview templateData={templateData} variableValues={variableValues} />
+              )}
+            </div>
 
-        {/* iPhone 17 Pro Max Frame */}
-        <div className="mx-auto" style={{ width: "280px" }}>
-        {/* iPhone Container with rounded corners and notch */}
-        <div className="bg-black rounded-[3rem] p-2 shadow-2xl">
-          {/* Dynamic Island / Notch */}
-          <div className="relative bg-black rounded-[2.75rem] overflow-hidden">
-            {/* Dynamic Island - Pill Shape (Smaller) */}
-            <div className="absolute top-2 left-1/2 -translate-x-1/2 w-20 h-6 bg-black rounded-full z-10 shadow-lg"></div>
+            {/* Open Notification */}
+            <div>
+              {selectedOS === 'ios' ? (
+                <IOSNotificationPreview templateData={templateData} variableValues={variableValues} />
+              ) : (
+                <AndroidNotificationPreview templateData={templateData} variableValues={variableValues} />
+              )}
+            </div>
+          </div>
 
-            {/* Screen Content */}
-            <div className="bg-white dark:bg-[#000000] rounded-[2.5rem] overflow-hidden">
-              {/* iOS Status Bar */}
-              <div className="bg-transparent px-8 pt-4 pb-2">
-                <div className="flex items-center justify-between text-[11px] font-semibold">
-                  <span className="text-black dark:text-white">9:41</span>
-                  <div className="flex items-center gap-1">
-                    {/* Signal bars */}
-                    <svg width="14" height="10" viewBox="0 0 14 10" fill="none" className="text-black dark:text-white">
-                      <circle cx="1.5" cy="8.5" r="1.5" fill="currentColor"/>
-                      <circle cx="5" cy="7" r="1.5" fill="currentColor"/>
-                      <circle cx="8.5" cy="5.5" r="1.5" fill="currentColor"/>
-                      <circle cx="12" cy="4" r="1.5" fill="currentColor"/>
-                    </svg>
-                    {/* WiFi */}
-                    <svg width="15" height="11" viewBox="0 0 15 11" fill="none" className="text-black dark:text-white">
-                      <path d="M7.5 11L10.5 7.5C9.5 6.5 8.5 6 7.5 6C6.5 6 5.5 6.5 4.5 7.5L7.5 11Z" fill="currentColor"/>
-                      <path d="M7.5 6C8.83 6 10.08 6.53 11 7.4L12.5 5.5C11.17 4.3 9.42 3.5 7.5 3.5C5.58 3.5 3.83 4.3 2.5 5.5L4 7.4C4.92 6.53 6.17 6 7.5 6Z" fill="currentColor"/>
-                      <path d="M7.5 3.5C9.75 3.5 11.83 4.42 13.5 6L15 4C12.92 2.17 10.33 1 7.5 1C4.67 1 2.08 2.17 0 4L1.5 6C3.17 4.42 5.25 3.5 7.5 3.5Z" fill="currentColor"/>
-                    </svg>
-                    {/* Battery */}
-                    <svg width="22" height="11" viewBox="0 0 22 11" fill="none" className="text-black dark:text-white">
-                      <rect x="0" y="2" width="18" height="7" rx="2" stroke="currentColor" strokeWidth="1"/>
-                      <rect x="2" y="3.5" width="14" height="4" rx="1" fill="currentColor"/>
-                      <rect x="18" y="4" width="2" height="3" rx="1" fill="currentColor"/>
-                    </svg>
-                  </div>
-                </div>
-              </div>
+          {/* Right Side - Chat */}
+          <div>
+            {selectedOS === 'ios' ? (
+            // iOS Chat Preview (existing iPhone frame)
+            <div className="mx-auto" style={{ width: "280px" }}>
+              {/* iPhone Container with rounded corners and notch */}
+              <div className="bg-black dark:bg-gray-900 rounded-[2.5rem] p-2 shadow-2xl">
+                {/* Dynamic Island / Notch */}
+                <div className="relative bg-black dark:bg-gray-900 rounded-[2.25rem] overflow-hidden">
+                  {/* Dynamic Island - Pill Shape (Smaller & Thinner) - Aligned with status bar */}
+                  <div className="absolute top-[12px] left-1/2 -translate-x-1/2 w-20 h-5 bg-black dark:bg-black rounded-full z-20 shadow-lg"></div>
 
-              {/* WhatsApp Header - iOS Style */}
-              <div className="bg-[#F6F6F6] dark:bg-[#1C1C1E] border-b border-gray-200 dark:border-gray-800 px-2 py-2">
-                <div className="flex items-center gap-2">
-                  {/* Back Button */}
-                  <button className="p-1">
-                    <ChevronLeft className="h-6 w-6 text-[#007AFF]" strokeWidth={2.5} />
-                  </button>
-
-                  {/* Profile Picture */}
-                  <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center overflow-hidden">
-                    <img
-                      src="https://res.cloudinary.com/dbqgbemui/image/upload/v1761873777/Samsung_Store_deken7.png"
-                      alt="Samsung Store"
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-
-                  {/* Contact Info */}
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-[13px] text-black dark:text-white truncate leading-tight">Samsung Store</p>
-                    <p className="text-[11px] text-gray-500 dark:text-gray-400 leading-tight">en línea</p>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <button className="p-1.5">
-                    <VideoIcon className="h-5 w-5 text-[#007AFF]" />
-                  </button>
-                  <button className="p-1.5">
-                    <PhoneCall className="h-5 w-5 text-[#007AFF]" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Chat Area */}
-              <div
-                className="px-3 py-3 bg-cover bg-center whatsapp-chat-bg"
-                style={{ height: "420px" }}
-              >
-                <div className="flex justify-end">
-                  {/* Message Bubble */}
-                  <div className="bg-[#DCF8C6] dark:bg-[#005C4B] rounded-xl shadow-sm p-2 max-w-[200px]">
-                    {renderHeader()}
-
-                    <div className="space-y-1">
-                      {renderBody()}
-
-                      {templateData.footer && (
-                        <p className="text-[10px] text-gray-600 dark:text-gray-400 mt-1">
-                          {templateData.footer}
-                        </p>
-                      )}
-
-                      <div className="flex items-center justify-end gap-1 text-[9px] text-gray-600 dark:text-gray-400 mt-1">
-                        <span>10:30</span>
-                        <Check className="h-2.5 w-2.5" />
-                        <Check className="h-2.5 w-2.5 -ml-1" />
+                  {/* Screen Content */}
+                  <div className="bg-white dark:bg-gray-950 rounded-[2rem] overflow-hidden">
+                    {/* iOS Status Bar with translucent background */}
+                    <div className="bg-[#F5F2EB] dark:bg-gray-950 backdrop-blur-xl px-3 pt-3 pb-2">
+                      <div className="flex items-center justify-between text-[11px] font-semibold">
+                        <span className="text-black dark:text-white ml-1">9:41</span>
+                        <div className="flex items-center gap-1 mr-1">
+                          {/* Cellular Signal - Smaller */}
+                          <svg width="15" height="11" viewBox="0 0 15 11" fill="none" className="text-black dark:text-white">
+                            <rect x="0" y="7" width="2.5" height="4" rx="0.5" fill="currentColor"/>
+                            <rect x="4" y="5.5" width="2.5" height="5.5" rx="0.5" fill="currentColor"/>
+                            <rect x="8" y="3.5" width="2.5" height="7.5" rx="0.5" fill="currentColor"/>
+                            <rect x="12" y="0" width="2.5" height="11" rx="0.5" fill="currentColor"/>
+                          </svg>
+                          {/* WiFi - Smaller */}
+                          <svg width="15" height="11" viewBox="0 0 15 11" fill="none" className="text-black dark:text-white">
+                            <path d="M7.5 11C8.05 11 8.5 10.55 8.5 10C8.5 9.45 8.05 9 7.5 9C6.95 9 6.5 9.45 6.5 10C6.5 10.55 6.95 11 7.5 11Z" fill="currentColor"/>
+                            <path d="M7.5 6.5C8.6 6.5 9.6 7 10.2 7.8C10.3 8 10.6 8 10.8 7.9C11 7.8 11 7.5 10.9 7.3C10.1 6.2 8.9 5.5 7.5 5.5C6.1 5.5 4.9 6.2 4.1 7.3C4 7.5 4 7.8 4.2 7.9C4.4 8 4.7 8 4.8 7.8C5.4 7 6.4 6.5 7.5 6.5Z" fill="currentColor"/>
+                            <path d="M7.5 3C9.5 3 11.3 3.9 12.5 5.5C12.6 5.7 12.9 5.7 13.1 5.6C13.3 5.5 13.3 5.2 13.2 5C11.8 3.2 9.8 2 7.5 2C5.2 2 3.2 3.2 1.8 5C1.7 5.2 1.7 5.5 1.9 5.6C2.1 5.7 2.4 5.7 2.5 5.5C3.7 3.9 5.5 3 7.5 3Z" fill="currentColor"/>
+                          </svg>
+                          {/* Battery - Smaller */}
+                          <svg width="22" height="11" viewBox="0 0 22 11" fill="none" className="text-black dark:text-white">
+                            <rect x="0.5" y="2" width="18" height="7" rx="2" stroke="currentColor" strokeWidth="1" opacity="0.4"/>
+                            <rect x="1.5" y="3" width="16" height="5" rx="1.5" fill="currentColor"/>
+                            <path d="M20 4C20 3.72386 20.2239 3.5 20.5 3.5H21C21.2761 3.5 21.5 3.72386 21.5 4V7C21.5 7.27614 21.2761 7.5 21 7.5H20.5C20.2239 7.5 20 7.27614 20 7V4Z" fill="currentColor" opacity="0.4"/>
+                          </svg>
+                        </div>
                       </div>
                     </div>
 
-                    {renderButtons()}
+                    {/* WhatsApp Header - iOS Style - Same translucent background */}
+                    <div className="bg-[#F5F2EB] dark:bg-gray-950 backdrop-blur-xl px-2 py-2">
+                      <div className="flex items-center gap-2">
+                        {/* Back Button */}
+                        <button className="p-1">
+                          <ChevronLeft className="h-5 w-5 text-black dark:text-white" strokeWidth={2.5} />
+                        </button>
+
+                        {/* Profile Picture - Smaller */}
+                        <div className="w-7 h-7 bg-white rounded-full flex items-center justify-center overflow-hidden">
+                          <img
+                            src="https://res.cloudinary.com/dbqgbemui/image/upload/v1761873777/Samsung_Store_deken7.png"
+                            alt="Samsung Store"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+
+                        {/* Contact Info - Smaller Text */}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-[12px] text-black dark:text-white truncate leading-tight">Samsung Store</p>
+                          <p className="text-[10px] text-gray-500 dark:text-gray-400 leading-tight">en línea</p>
+                        </div>
+
+                        {/* Action Buttons - Black Icons */}
+                        <button className="p-1">
+                          <VideoIcon className="h-[15px] w-[15px] text-black dark:text-white" />
+                        </button>
+                        <button className="p-1">
+                          <PhoneCall className="h-[15px] w-[15px] text-black dark:text-white" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Chat Area */}
+                    <div
+                      className="px-3 py-3 bg-cover bg-center whatsapp-chat-bg"
+                      style={{ height: "420px" }}
+                    >
+                      <div className="flex justify-start">
+                        {/* Message Bubble - User receiving (left side, white/dark gray) */}
+                        <div className="bg-white dark:bg-[#1F2C33] rounded-md shadow-sm p-2 max-w-[200px]">
+                          {renderHeader()}
+
+                          <div className="space-y-1">
+                            {renderBody()}
+
+                            {templateData.footer && (
+                              <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1">
+                                {templateData.footer}
+                              </p>
+                            )}
+
+                            <div className="flex items-center justify-end gap-1 text-[9px] text-gray-500 dark:text-gray-400 mt-1">
+                              <span>10:30</span>
+                            </div>
+                          </div>
+
+                          {renderButtons()}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* WhatsApp Input Bar - iOS Style */}
+                    <div className="bg-[#F6F6F6] dark:bg-gray-950 px-2 py-1">
+                      <div className="flex items-center gap-1.5">
+                        <button className="p-0.5">
+                          <Plus className="h-[18px] w-[18px] text-black dark:text-white" />
+                        </button>
+                        <div className="flex-1 bg-white dark:bg-[#2A3942] rounded-full px-2.5 py-1 flex items-center gap-2">
+                          <span className="text-[10px] text-gray-400 dark:text-gray-500 flex-1">Mensaje</span>
+                          {/* Sticker icon */}
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="text-gray-400 dark:text-gray-500">
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.5"/>
+                            <circle cx="9" cy="10" r="1.5" fill="currentColor"/>
+                            <circle cx="15" cy="10" r="1.5" fill="currentColor"/>
+                            <path d="M8 15C8 15 9.5 17 12 17C14.5 17 16 15 16 15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                          </svg>
+                        </div>
+                        <button className="p-0.5">
+                          <Camera className="h-[18px] w-[18px] text-black dark:text-white" />
+                        </button>
+                        <button className="p-0.5">
+                          <Mic className="h-[18px] w-[18px] text-black dark:text-white" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* iOS Home Indicator */}
+                    <div className="bg-[#F5F2EB] dark:bg-gray-950 flex justify-center py-2">
+
+                    </div>
                   </div>
                 </div>
               </div>
-
-              {/* WhatsApp Input Bar - iOS Style */}
-              <div className="bg-[#F6F6F6] dark:bg-[#1C1C1E] px-2 py-1.5 border-t border-gray-200 dark:border-gray-800">
-                <div className="flex items-center gap-2">
-                  <button className="p-1">
-                    <Plus className="h-5 w-5 text-[#007AFF]" />
-                  </button>
-                  <div className="flex-1 bg-white dark:bg-[#2C2C2E] rounded-full px-3 py-1.5 flex items-center gap-2 border border-gray-300 dark:border-gray-700">
-                    <span className="text-[11px] text-gray-400">Mensaje</span>
-                  </div>
-                  <button className="p-1">
-                    <Mic className="h-5 w-5 text-[#007AFF]" />
-                  </button>
-                </div>
-              </div>
-
-              {/* iOS Home Indicator */}
-              <div className="bg-white dark:bg-black flex justify-center py-2">
-                <div className="w-32 h-1 bg-gray-800 dark:bg-gray-300 rounded-full"></div>
-              </div>
             </div>
+            ) : (
+              // Android Chat Preview
+              <AndroidChatPreview templateData={templateData} variableValues={variableValues} />
+            )}
           </div>
         </div>
-      </div>
-
-      {/* Compact Template Info */}
-      <Card className="p-3 bg-gradient-to-br from-blue-50 to-green-50 dark:from-blue-950/30 dark:to-green-950/30 border-blue-200 dark:border-blue-800">
-        <div className="grid grid-cols-2 gap-3 text-xs">
-          <div>
-            <span className="text-muted-foreground block">Nombre</span>
-            <span className="font-medium">{templateData.name || "sin_nombre"}</span>
-          </div>
-          <div>
-            <span className="text-muted-foreground block">Categoría</span>
-            <Badge variant="outline" className="text-xs mt-0.5">
-              {templateData.category === "MARKETING" && "Marketing"}
-              {templateData.category === "UTILITY" && "Utilidad"}
-              {templateData.category === "AUTHENTICATION" && "Auth"}
-            </Badge>
-          </div>
-          <div>
-            <span className="text-muted-foreground block">Idioma</span>
-            <span className="font-medium text-xs">
-              {templateData.language === "es" && "ES"}
-              {templateData.language === "es_AR" && "ES-AR"}
-              {templateData.language === "es_ES" && "ES-ES"}
-              {templateData.language === "es_MX" && "ES-MX"}
-              {templateData.language === "en" && "EN"}
-              {templateData.language === "pt_BR" && "PT-BR"}
-            </span>
-          </div>
-          <div>
-            <span className="text-muted-foreground block">Componentes</span>
-            <div className="flex gap-1 flex-wrap mt-0.5">
-              {templateData.header.type !== "NONE" && (
-                <Badge variant="secondary" className="text-[10px] px-1.5 py-0">H</Badge>
-              )}
-              {templateData.body && (
-                <Badge variant="secondary" className="text-[10px] px-1.5 py-0">B</Badge>
-              )}
-              {templateData.footer && (
-                <Badge variant="secondary" className="text-[10px] px-1.5 py-0">F</Badge>
-              )}
-              {templateData.buttons.length > 0 && (
-                <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{templateData.buttons.length}BTN</Badge>
-              )}
-            </div>
-          </div>
-        </div>
-      </Card>
       </div>
     </>
   );
