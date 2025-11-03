@@ -277,6 +277,7 @@ export interface WhatsAppTemplate {
     phoneNumber?: string;
     url?: string;
   }>;
+  variables?: string[]; // Variables from the template
   metrics: {
     sent: number;
     delivered: number;
@@ -299,6 +300,57 @@ export interface DashboardMetrics {
   conversionRate: number;
   salesGrowth: number;
   ordersGrowth: number;
+}
+
+// Backend WhatsApp Template Response
+export interface BackendWhatsAppTemplate {
+  id: string;
+  id_template?: string;
+  name: string; // Primary field name
+  category: 'MARKETING' | 'UTILITY' | 'AUTHENTICATION';
+  language: string;
+  status: string;
+  components?: Array<{ // Array of components (not JSON string)
+    type: string;
+    text?: string;
+    example?: any;
+    buttons?: Array<{
+      text: string;
+      type: string;
+      phoneNumber?: string;
+      url?: string;
+    }>;
+  }>;
+  componentes?: string; // Legacy JSON string format
+  quality_score?: {
+    score: string;
+    date: number;
+  };
+  puntuacion_calidad?: string;
+  rejected_reason?: string;
+  razon_rechazo?: string;
+  variables?: string[]; // New field
+  preview_text?: string; // New field
+  fecha_creacion?: string;
+  fecha_actualizacion?: string;
+  mensajes_enviados?: number;
+  mensajes_entregados?: number;
+  mensajes_leidos?: number;
+  clics_enlaces?: number;
+  fecha_ultimo_uso?: string | null;
+}
+
+// Parsed component from JSON
+export interface ParsedComponent {
+  type: 'HEADER' | 'BODY' | 'FOOTER' | 'BUTTONS';
+  text?: string;
+  example?: any;
+  buttons?: Array<{
+    text: string;
+    type: 'QUICK_REPLY' | 'PHONE_NUMBER' | 'URL';
+    phoneNumber?: string;
+    url?: string;
+  }>;
 }
 
 // Backend API Types for Categories

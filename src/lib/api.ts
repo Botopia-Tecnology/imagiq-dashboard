@@ -8,7 +8,7 @@
  * - TypeScript interfaces para requests/responses
  */
 
-import { BackendCategory, BackendMenu, BackendSubmenu, CreateCategoryRequest, UpdateCategoryRequest, CreateMenuRequest, UpdateMenuRequest, CreateSubmenuRequest, UpdateSubmenuRequest } from "@/types";
+import { BackendCategory, BackendMenu, BackendSubmenu, CreateCategoryRequest, UpdateCategoryRequest, CreateMenuRequest, UpdateMenuRequest, CreateSubmenuRequest, UpdateSubmenuRequest, BackendWhatsAppTemplate } from "@/types";
 
 
 // API Client configuration
@@ -893,4 +893,37 @@ export const multimediaEndpoints = {
       `/api/multimedia/submenus/${submenuId}`
     );
   },
+};
+
+// WhatsApp Templates API endpoints
+export const whatsappTemplateEndpoints = {
+  getAll: async () => {
+    const response = await apiClient.get<BackendWhatsAppTemplate[] | { data: BackendWhatsAppTemplate[]; total?: number }>("/api/messaging/templates");
+    
+    // Handle both response formats: direct array or wrapped in { data: [...] }
+    if (response.success && response.data) {
+      // Check if data is already an array
+      if (Array.isArray(response.data)) {
+        return {
+          ...response,
+          data: response.data as BackendWhatsAppTemplate[],
+        };
+      }
+      
+      // If wrapped in { data: [...] }
+      const wrappedData = response.data as { data: BackendWhatsAppTemplate[]; total?: number };
+      if (wrappedData.data && Array.isArray(wrappedData.data)) {
+        return {
+          ...response,
+          data: wrappedData.data,
+        };
+      }
+    }
+    
+    return {
+      ...response,
+      data: [] as BackendWhatsAppTemplate[],
+    };
+  },
+  getById: (id: string) => apiClient.get<BackendWhatsAppTemplate>(`/api/messaging/templates/${id}`),
 };

@@ -174,8 +174,18 @@ export function DataTable<TData, TValue>({
                 {table.getHeaderGroups().map((headerGroup) => (
                   <TableRow key={headerGroup.id}>
                     {headerGroup.headers.map((header) => {
+                      const columnSize = header.getSize();
+                      const isPlantillaColumn = header.column.id === 'name';
                       return (
-                        <TableHead key={header.id}>
+                        <TableHead 
+                          key={header.id}
+                          style={{ 
+                            width: columnSize !== 150 ? `${columnSize}px` : undefined,
+                            minWidth: columnSize !== 150 ? `${columnSize}px` : undefined,
+                            maxWidth: isPlantillaColumn ? `${columnSize}px` : undefined
+                          }}
+                          className={isPlantillaColumn ? '!whitespace-normal' : ''}
+                        >
                           {header.isPlaceholder
                             ? null
                             : flexRender(
@@ -195,14 +205,26 @@ export function DataTable<TData, TValue>({
                       key={row.id}
                       data-state={row.getIsSelected() && "selected"}
                     >
-                      {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id}>
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext()
-                          )}
-                        </TableCell>
-                      ))}
+                      {row.getVisibleCells().map((cell) => {
+                        const columnSize = cell.column.getSize();
+                        const isPlantillaColumn = cell.column.id === 'name';
+                        return (
+                          <TableCell 
+                            key={cell.id}
+                            style={{ 
+                              width: columnSize !== 150 ? `${columnSize}px` : undefined,
+                              minWidth: columnSize !== 150 ? `${columnSize}px` : undefined,
+                              maxWidth: isPlantillaColumn ? `${columnSize}px` : undefined
+                            }}
+                            className={isPlantillaColumn ? '!whitespace-normal' : ''}
+                          >
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext()
+                            )}
+                          </TableCell>
+                        )
+                      })}
                     </TableRow>
                   ))
                 ) : (

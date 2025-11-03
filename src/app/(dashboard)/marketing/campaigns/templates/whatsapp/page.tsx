@@ -26,11 +26,14 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Plus, MoreHorizontal, Edit, Trash2, MessageSquare, Eye, TrendingUp, Copy, ArrowUp, ArrowDown } from "lucide-react";
 import { WhatsAppTemplate } from "@/types";
-import { mockWhatsAppTemplates } from "@/lib/mock-data";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Skeleton } from "@/components/ui/skeleton";
+import { whatsappTemplateEndpoints } from "@/lib/api";
+import { mapBackendArrayToFrontend } from "@/lib/whatsappTemplateMapper";
+import { toast } from "sonner";
 
 const getStatusBadge = (status: string) => {
   switch (status) {
@@ -110,7 +113,34 @@ const MetricCard = ({ label, value, change, icon: Icon, compact = false }: {
 
 export default function WhatsAppTemplatesPage() {
   const router = useRouter();
-  const [templates, setTemplates] = useState<WhatsAppTemplate[]>(mockWhatsAppTemplates);
+  const [templates, setTemplates] = useState<WhatsAppTemplate[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchTemplates = async () => {
+      try {
+        setIsLoading(true);
+        const response = await whatsappTemplateEndpoints.getAll();
+        
+        if (response.success && response.data) {
+          const mappedTemplates = mapBackendArrayToFrontend(response.data);
+          setTemplates(mappedTemplates);
+        } else {
+          console.error("Error fetching templates:", response.message);
+          toast.error("Error al cargar las plantillas");
+          setTemplates([]);
+        }
+      } catch (error) {
+        console.error("Error fetching templates:", error);
+        toast.error("Error al conectar con el servidor");
+        setTemplates([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchTemplates();
+  }, []);
 
   const handleDeleteTemplate = (templateId: string) => {
     setTemplates(templates.filter(t => t.id !== templateId));
@@ -120,32 +150,94 @@ export default function WhatsAppTemplatesPage() {
     {
       accessorKey: "name",
       header: "Plantilla",
-      size: 280,
-      minSize: 200,
+      size: 200,
+      minSize: 160,
+      maxSize: 200,
       cell: ({ row }) => {
         const template = row.original;
+        // Procesar el texto para reemplazar placeholders con badges inline
+        const renderBodyWithVariables = () => {
+          if (!template.body) return null;
+          
+          // Normalizar espacios múltiples a uno solo
+          let processedText = template.body.replace(/\s+/g, ' ').trim();
+          
+          // Si no hay variables, retornar el texto directamente
+          if (!template.variables || template.variables.length === 0) {
+            return <span>{processedText}</span>;
+          }
+          
+          // Dividir el texto por los placeholders {{número}}
+          const parts: (string | number)[] = [];
+          let lastIndex = 0;
+          const placeholderRegex = /\{\{(\d+)\}\}/g;
+          let match;
+          let foundPlaceholders = false;
+          
+          while ((match = placeholderRegex.exec(processedText)) !== null) {
+            foundPlaceholders = true;
+            // Agregar texto antes del placeholder
+            if (match.index > lastIndex) {
+              parts.push(processedText.substring(lastIndex, match.index));
+            }
+            
+            // Agregar el índice de la variable (restar 1 porque los placeholders empiezan en 1)
+            const varIndex = parseInt(match[1], 10) - 1;
+            parts.push(varIndex);
+            
+            lastIndex = match.index + match[0].length;
+          }
+          
+          // Agregar el texto restante
+          if (lastIndex < processedText.length) {
+            parts.push(processedText.substring(lastIndex));
+          }
+          
+          // Si no se encontraron placeholders, retornar el texto original
+          if (!foundPlaceholders) {
+            return <span>{processedText}</span>;
+          }
+          
+          // Si parts está vacío, retornar el texto original
+          if (parts.length === 0) {
+            return <span>{processedText}</span>;
+          }
+          
+          // Renderizar con badges inline
+          return (
+            <span>
+              {parts.map((part, index) => {
+                if (typeof part === 'number') {
+                  // Es un índice de variable
+                  const variable = template.variables?.[part];
+                  if (variable) {
+                    return (
+                      <Badge
+                        key={index}
+                        variant="outline"
+                        className="text-[10px] px-1.5 py-0 h-4 inline-flex align-middle mx-0.5 bg-muted/50 border-muted-foreground/30"
+                      >
+                        {variable}
+                      </Badge>
+                    );
+                  }
+                  return null;
+                }
+                // Es texto normal
+                return <span key={index}>{part}</span>;
+              })}
+            </span>
+          );
+        };
+        
         return (
-          <div className="space-y-1">
+          <div className="space-y-1.5 py-2" style={{ maxWidth: '200px', wordBreak: 'break-word' }}>
             <div className="flex items-center gap-2 min-w-0">
               <MessageSquare className="h-4 w-4 text-green-600 flex-shrink-0" />
               <span className="font-medium truncate">{template.name}</span>
             </div>
-            <div className="text-xs text-muted-foreground max-w-[200px] sm:max-w-[250px]">
-              <span className="line-clamp-2">
-                {template.body.replace(/\{\{\d+\}\}/g, '').replace(/\s+/g, ' ').trim()}
-              </span>
-              {template.body.match(/\{\{\d+\}\}/g) && (
-                <div className="flex gap-1 mt-1 flex-wrap">
-                  {template.body.match(/\{\{\d+\}\}/g)?.slice(0, 3).map((_, index) => (
-                    <Badge key={index} variant="outline" className="text-xs px-1 py-0 h-4">
-                      var{index + 1}
-                    </Badge>
-                  ))}
-                  {(template.body.match(/\{\{\d+\}\}/g)?.length ?? 0) > 3 && (
-                    <Badge variant="outline" className="text-xs px-1 py-0 h-4">+{(template.body.match(/\{\{\d+\}\}/g)?.length ?? 0) - 3}</Badge>
-                  )}
-                </div>
-              )}
+            <div className="text-xs text-muted-foreground" style={{ wordBreak: 'break-word', whiteSpace: 'normal' }}>
+              {renderBodyWithVariables()}
             </div>
           </div>
         );
@@ -421,10 +513,19 @@ export default function WhatsAppTemplatesPage() {
             <MessageSquare className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{templates.length}</div>
-            <p className="text-xs text-muted-foreground">
-              {templates.filter(t => t.status === 'active').length} activas
-            </p>
+            {isLoading ? (
+              <>
+                <Skeleton className="h-8 w-12 mb-2" />
+                <Skeleton className="h-4 w-32" />
+              </>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">{templates.length}</div>
+                <p className="text-xs text-muted-foreground">
+                  {templates.filter(t => t.status === 'active').length} activas
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -434,12 +535,21 @@ export default function WhatsAppTemplatesPage() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {templates.reduce((acc, t) => acc + t.metrics.sent, 0).toLocaleString()}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Este mes
-            </p>
+            {isLoading ? (
+              <>
+                <Skeleton className="h-8 w-12 mb-2" />
+                <Skeleton className="h-4 w-32" />
+              </>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">
+                  {templates.reduce((acc, t) => acc + t.metrics.sent, 0).toLocaleString()}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Este mes
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -449,12 +559,24 @@ export default function WhatsAppTemplatesPage() {
             <Eye className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {(templates.reduce((acc, t) => acc + t.metrics.openRate, 0) / templates.length).toFixed(1)}%
-            </div>
-            <p className="text-xs text-green-600">
-              +2.1% vs mes anterior
-            </p>
+            {isLoading ? (
+              <>
+                <Skeleton className="h-8 w-12 mb-2" />
+                <Skeleton className="h-4 w-32" />
+              </>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">
+                  {templates.length > 0 
+                    ? (templates.reduce((acc, t) => acc + t.metrics.openRate, 0) / templates.length).toFixed(1)
+                    : '0.0'
+                  }%
+                </div>
+                <p className="text-xs text-green-600">
+                  +2.1% vs mes anterior
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -464,12 +586,24 @@ export default function WhatsAppTemplatesPage() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {(templates.reduce((acc, t) => acc + t.metrics.ctr, 0) / templates.length).toFixed(1)}%
-            </div>
-            <p className="text-xs text-green-600">
-              +1.8% vs mes anterior
-            </p>
+            {isLoading ? (
+              <>
+                <Skeleton className="h-8 w-12 mb-2" />
+                <Skeleton className="h-4 w-32" />
+              </>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">
+                  {templates.length > 0
+                    ? (templates.reduce((acc, t) => acc + t.metrics.ctr, 0) / templates.length).toFixed(1)
+                    : '0.0'
+                  }%
+                </div>
+                <p className="text-xs text-green-600">
+                  +1.8% vs mes anterior
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -484,6 +618,7 @@ export default function WhatsAppTemplatesPage() {
             columns={columns}
             data={templates}
             searchKey="name"
+            loading={isLoading}
             filters={[
               {
                 id: "status",
