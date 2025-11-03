@@ -200,9 +200,25 @@ function createProductColorsFromArray(apiProduct: ProductApiData): ProductColor[
   console.log(`  - Primeras 3 capacidades:`, capacidadArray.slice(0, 3));
   console.log(`  - Primeras 3 RAM:`, ramArray.slice(0, 3));
 
-  // Iterar sobre todos los índices para agrupar por características (color+capacidad+RAM)
+  // Primero, crear un array de índices con información de prioridad
+  // para procesar primero los SKUs que no tienen "F-" al inicio
+  const skuArray = Array.isArray(apiProduct.sku) ? apiProduct.sku : [];
+  const indicesWithPriority = colorsArray.map((_, index) => ({
+    index,
+    sku: skuArray[index] || '',
+    hasFPrefix: skuArray[index]?.startsWith('F-') || false
+  }));
+
+  // Ordenar: primero los que NO tienen "F-", luego los que sí
+  indicesWithPriority.sort((a, b) => {
+    if (a.hasFPrefix === b.hasFPrefix) return 0;
+    return a.hasFPrefix ? 1 : -1; // false viene antes que true
+  });
+
+  // Iterar sobre todos los índices ordenados para agrupar por características (color+capacidad+RAM)
   // Múltiples SKUs con mismas características se combinarán (sumando stocks)
-  colorsArray.forEach((color, index) => {
+  indicesWithPriority.forEach(({ index }) => {
+    const color = colorsArray[index];
     const precioNormal = preciosNormales[index] || 0;
     const precioDescto = preciosDescto[index] || 0;
 
@@ -216,17 +232,32 @@ function createProductColorsFromArray(apiProduct: ProductApiData): ProductColor[
       const normalizedColor = normalizeColorValue(color);
       const key = `${normalizedColor}|${capacity || 'NA'}|${ram || 'NA'}`;
 
-      // Si ya existe esta combinación, solo actualizar si el nuevo tiene mejor precio
-      // o mayor stock. Esto maneja el caso de múltiples SKUs para la misma variante
+      // Si ya existe esta combinación, solo actualizar si el nuevo NO tiene "F-"
+      // Esto maneja el caso de múltiples SKUs para la misma variante
       if (variantMap.has(key)) {
         const existing = variantMap.get(key)!;
-        // Preferir el que tenga stock o el precio más bajo
-        const currentStock = Array.isArray(apiProduct.stockTotal) ? (apiProduct.stockTotal[index] || 0) : 0;
-        const existingStock = Array.isArray(apiProduct.stockTotal) ? (apiProduct.stockTotal[existing.index] || 0) : 0;
+        const existingSku = skuArray[existing.index] || '';
+        const currentSku = skuArray[index] || '';
+        
+        // Verificar si el existente o el actual tienen prefijo "F-"
+        const existingHasFPrefix = existingSku.startsWith('F-');
+        const currentHasFPrefix = currentSku.startsWith('F-');
+        
+        // Priorizar SKUs sin "F-" al inicio
+        let shouldReplace = false;
+        
+        if (!currentHasFPrefix && existingHasFPrefix) {
+          // Si el actual NO tiene "F-" y el existente SÍ, reemplazar
+          shouldReplace = true;
+        } else if (currentHasFPrefix === existingHasFPrefix) {
+          // Si ambos tienen el mismo prefijo "F-", mantener la lógica original de stock/precio
+          const currentStock = Array.isArray(apiProduct.stockTotal) ? (apiProduct.stockTotal[index] || 0) : 0;
+          const existingStock = Array.isArray(apiProduct.stockTotal) ? (apiProduct.stockTotal[existing.index] || 0) : 0;
+          shouldReplace = currentStock > existingStock ||
+            (currentStock === existingStock && precioDescto > 0 && precioDescto < existing.precioDescto);
+        }
 
-        // Si el nuevo tiene más stock o mismo stock pero mejor precio, reemplazarlo
-        if (currentStock > existingStock ||
-            (currentStock === existingStock && precioDescto > 0 && precioDescto < existing.precioDescto)) {
+        if (shouldReplace) {
           variantMap.set(key, {
             color: normalizedColor,
             capacity,
