@@ -179,7 +179,7 @@ function InWebPreviewComponent({
           title="Mobile Preview"
         />
         {/* Modal en la parte superior, ajustado a los márgenes del celular */}
-        <div className="absolute top-[8%] left-[12%] right-[12%] z-10 max-h-[calc(100%-10%)]">
+        <div className="absolute top-[2%] px-5 z-10 max-h-[calc(100%-10%)]">
           <div className="relative">
             {contentType === "html" && htmlContent ? (
               <div
