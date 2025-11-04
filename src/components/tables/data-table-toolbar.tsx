@@ -46,9 +46,11 @@ export function DataTableToolbar<TData>({
 
   const handleKey = () => {
     if (onSearchChange) {
-       // NO establecer filtro local porque el filtrado se hace en el servidor
-      // table.getColumn(searchKey)?.setFilterValue(input);
+      // Filtrado del servidor
       onSearchChange(input);
+    } else {
+      // Filtrado local
+      table.getColumn(searchKey)?.setFilterValue(input);
     }
   };
 

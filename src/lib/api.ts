@@ -926,4 +926,19 @@ export const whatsappTemplateEndpoints = {
     };
   },
   getById: (id: string) => apiClient.get<BackendWhatsAppTemplate>(`/api/messaging/templates/${id}`),
+  create: (payload: {
+    name: string;
+    category: 'MARKETING' | 'UTILITY' | 'AUTHENTICATION';
+    language: string;
+    components: Array<any>;
+  }) => apiClient.post<{ id: string; success: boolean; message?: string }>(
+    "/api/messaging/templates",
+    payload
+  ),
+  cleanDuplicates: () => apiClient.post<{ success: boolean; message?: string; removed?: number }>(
+    "/api/messaging/templates/clean-duplicates"
+  ),
+  delete: (templateName: string) => apiClient.delete<{ success: boolean; message?: string }>(
+    `/api/messaging/templates/${templateName}`
+  ),
 };

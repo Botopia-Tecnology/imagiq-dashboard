@@ -34,6 +34,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { whatsappTemplateEndpoints } from "@/lib/api";
 import { mapBackendArrayToFrontend } from "@/lib/whatsappTemplateMapper";
 import { toast } from "sonner";
+import { TemplatePreviewModal } from "@/components/campaigns/whatsapp/template/template-preview-modal";
 
 const getStatusBadge = (status: string) => {
   switch (status) {
@@ -42,7 +43,7 @@ const getStatusBadge = (status: string) => {
     case 'inactive':
       return <Badge variant="secondary">Inactiva</Badge>;
     case 'pending':
-      return <Badge variant="outline" className="border-yellow-300 text-yellow-800 dark:border-yellow-700 dark:text-yellow-300">Pendiente</Badge>;
+      return <Badge variant="outline" className="border-yellow-300 text-yellow-800 dark:border-yellow-700 dark:text-yellow-300 bg-yellow-50 dark:bg-yellow-950/30">Pendiente</Badge>;
     case 'rejected':
       return <Badge variant="destructive">Rechazada</Badge>;
     default:
@@ -115,6 +116,9 @@ export default function WhatsAppTemplatesPage() {
   const router = useRouter();
   const [templates, setTemplates] = useState<WhatsAppTemplate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [previewTemplate, setPreviewTemplate] = useState<WhatsAppTemplate | null>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [deletingTemplateId, setDeletingTemplateId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchTemplates = async () => {
@@ -142,8 +146,52 @@ export default function WhatsAppTemplatesPage() {
     fetchTemplates();
   }, []);
 
-  const handleDeleteTemplate = (templateId: string) => {
-    setTemplates(templates.filter(t => t.id !== templateId));
+  const handleDeleteTemplate = async (template: WhatsAppTemplate) => {
+    try {
+      setDeletingTemplateId(template.id);
+      const response = await whatsappTemplateEndpoints.delete(template.name);
+      if (response.success) {
+        setTemplates(templates.filter(t => t.id !== template.id));
+        toast.success("Plantilla eliminada correctamente");
+      } else {
+        toast.error(response.message || "Error al eliminar la plantilla");
+      }
+    } catch (error) {
+      console.error("Error deleting template:", error);
+      toast.error("Error al conectar con el servidor");
+    } finally {
+      setDeletingTemplateId(null);
+    }
+  };
+
+  const handlePreviewTemplate = (template: WhatsAppTemplate) => {
+    setPreviewTemplate(template);
+    setIsPreviewOpen(true);
+  };
+
+  const handleClosePreview = () => {
+    setIsPreviewOpen(false);
+    setPreviewTemplate(null);
+  };
+
+  const handleCleanDuplicates = async () => {
+    try {
+      const response = await whatsappTemplateEndpoints.cleanDuplicates();
+      if (response.success) {
+        toast.success(`Duplicados eliminados: ${response.data?.removed || 0} plantillas`);
+        // Recargar la lista
+        const refreshResponse = await whatsappTemplateEndpoints.getAll();
+        if (refreshResponse.success && refreshResponse.data) {
+          const mappedTemplates = mapBackendArrayToFrontend(refreshResponse.data);
+          setTemplates(mappedTemplates);
+        }
+      } else {
+        toast.error(response.message || "Error al limpiar duplicados");
+      }
+    } catch (error) {
+      console.error("Error cleaning duplicates:", error);
+      toast.error("Error al conectar con el servidor");
+    }
   };
 
   const columns: ColumnDef<WhatsAppTemplate>[] = [
@@ -153,6 +201,12 @@ export default function WhatsAppTemplatesPage() {
       size: 200,
       minSize: 160,
       maxSize: 200,
+      filterFn: (row, id, value) => {
+        const name = row.getValue(id) as string;
+        const body = row.original.body || '';
+        const searchValue = value.toLowerCase();
+        return name.toLowerCase().includes(searchValue) || body.toLowerCase().includes(searchValue);
+      },
       cell: ({ row }) => {
         const template = row.original;
         // Procesar el texto para reemplazar placeholders con badges inline
@@ -279,11 +333,11 @@ export default function WhatsAppTemplatesPage() {
         const template = row.original;
         return (
           <TooltipProvider>
-            {/* Layout responsivo: compacto en pantallas medianas, normal en grandes */}
-            <div className="w-full max-w-[320px]">
-              {/* Layout compacto para pantallas medianas (md:900px-lg:1024px) */}
-              <div className="block xl:hidden">
-                <div className="space-y-1.5">
+            <div className="w-full max-w-[280px]">
+              {/* Layout en 2 filas: Primera fila con Enviados y CTR, Segunda fila con Tasa apertura */}
+              <div className="space-y-1">
+                {/* Primera fila: 50% Enviados, 50% CTR */}
+                <div className="grid grid-cols-2 gap-1.5">
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <MetricCard
@@ -298,70 +352,6 @@ export default function WhatsAppTemplatesPage() {
                     </TooltipContent>
                   </Tooltip>
 
-                  <div className="grid grid-cols-2 gap-1.5">
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <MetricCard
-                          label="Tasa apertura"
-                          value={`${template.metrics.openRate}%`}
-                          change={template.status === 'active' ? Number.parseFloat((Math.random() * 10 - 5).toFixed(1)) : undefined}
-                          icon={Eye}
-                          compact
-                        />
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Porcentaje de mensajes leídos</p>
-                      </TooltipContent>
-                    </Tooltip>
-
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <MetricCard
-                          label="CTR"
-                          value={`${template.metrics.ctr}%`}
-                          change={template.status === 'active' ? Number.parseFloat((Math.random() * 8 - 4).toFixed(1)) : undefined}
-                          icon={TrendingUp}
-                          compact
-                        />
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Tasa de clics sobre mensajes enviados</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </div>
-                </div>
-              </div>
-
-              {/* Layout normal para pantallas grandes (xl:1280px+) */}
-              <div className="hidden xl:block">
-                <div className="grid grid-cols-1 gap-2">
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <MetricCard
-                        label="Enviados"
-                        value={template.metrics.sent.toLocaleString()}
-                        icon={MessageSquare}
-                      />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Total de mensajes enviados</p>
-                    </TooltipContent>
-                  </Tooltip>
-
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <MetricCard
-                        label="Tasa apertura"
-                        value={`${template.metrics.openRate}%`}
-                        change={template.status === 'active' ? Number.parseFloat((Math.random() * 10 - 5).toFixed(1)) : undefined}
-                        icon={Eye}
-                      />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Porcentaje de mensajes leídos</p>
-                    </TooltipContent>
-                  </Tooltip>
-
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <MetricCard
@@ -369,6 +359,7 @@ export default function WhatsAppTemplatesPage() {
                         value={`${template.metrics.ctr}%`}
                         change={template.status === 'active' ? Number.parseFloat((Math.random() * 8 - 4).toFixed(1)) : undefined}
                         icon={TrendingUp}
+                        compact
                       />
                     </TooltipTrigger>
                     <TooltipContent>
@@ -376,6 +367,22 @@ export default function WhatsAppTemplatesPage() {
                     </TooltipContent>
                   </Tooltip>
                 </div>
+
+                {/* Segunda fila: Tasa apertura */}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <MetricCard
+                      label="Tasa apertura"
+                      value={`${template.metrics.openRate}%`}
+                      change={template.status === 'active' ? Number.parseFloat((Math.random() * 10 - 5).toFixed(1)) : undefined}
+                      icon={Eye}
+                      compact
+                    />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Porcentaje de mensajes leídos</p>
+                  </TooltipContent>
+                </Tooltip>
               </div>
             </div>
           </TooltipProvider>
@@ -413,24 +420,9 @@ export default function WhatsAppTemplatesPage() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-              <DropdownMenuItem
-                onClick={() => router.push(`/marketing/campaigns/templates/whatsapp/${template.id}/edit`)}
-              >
-                <Edit className="mr-2 h-4 w-4" />
-                Editar plantilla
-              </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handlePreviewTemplate(template)}>
                 <Eye className="mr-2 h-4 w-4" />
                 Vista previa
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => {
-                  // TODO: Implementar duplicación
-                  console.log('Duplicating template:', template.id);
-                }}
-              >
-                <Copy className="mr-2 h-4 w-4" />
-                Duplicar plantilla
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <AlertDialog>
@@ -451,12 +443,15 @@ export default function WhatsAppTemplatesPage() {
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogCancel disabled={deletingTemplateId === template.id}>
+                      Cancelar
+                    </AlertDialogCancel>
                     <AlertDialogAction
-                      onClick={() => handleDeleteTemplate(template.id)}
+                      onClick={() => handleDeleteTemplate(template)}
+                      disabled={deletingTemplateId === template.id}
                       className="bg-red-600 hover:bg-red-700"
                     >
-                      Eliminar
+                      {deletingTemplateId === template.id ? "Eliminando..." : "Eliminar"}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
@@ -639,6 +634,13 @@ export default function WhatsAppTemplatesPage() {
           />
         </CardContent>
       </Card>
+
+      {/* Modal de Vista Previa */}
+      <TemplatePreviewModal
+        template={previewTemplate}
+        isOpen={isPreviewOpen}
+        onClose={handleClosePreview}
+      />
     </div>
   );
 }
