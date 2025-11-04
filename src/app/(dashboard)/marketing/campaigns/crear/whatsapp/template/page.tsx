@@ -14,7 +14,24 @@ import { toast } from "sonner";
 
 export default function CrearPlantillaWhatsAppPage() {
   const router = useRouter();
-  const [templateData, setTemplateData] = useState({
+  const [templateData, setTemplateData] = useState<{
+    name: string;
+    category: string;
+    language: string;
+    header: {
+      type: string;
+      content: string;
+    };
+    body: string;
+    footer: string;
+    buttons: Array<{
+      id: number;
+      type: string;
+      text: string;
+      phoneNumber?: string;
+      url?: string;
+    }>;
+  }>({
     name: "",
     category: "MARKETING",
     language: "es",
