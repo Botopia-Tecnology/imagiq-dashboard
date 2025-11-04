@@ -115,8 +115,8 @@ export function DataTable<TData, TValue>({
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
     manualPagination: !!pageCount,
-    manualSorting: true, // Desactivar ordenamiento local, se ordena en el servidor
-    manualFiltering: true, // Desactivar filtrado local, se filtra en el servido
+    manualSorting: !!onPaginationChange, // Solo manual si hay paginación del servidor
+    manualFiltering: !!onFilterChange, // Solo manual si hay filtrado del servidor
     autoResetPageIndex: false, // FIX: Evitar reset automático que causa ciclos infinitos con resultados vacíos
   })
 

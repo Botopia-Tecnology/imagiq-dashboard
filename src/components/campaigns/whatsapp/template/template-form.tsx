@@ -169,48 +169,83 @@ export function WhatsAppTemplateForm({
             className="mt-2"
           >
             <div className="grid grid-cols-2 gap-3">
-              <div className="flex items-center space-x-2 border rounded-lg p-3 cursor-pointer hover:bg-accent">
+              <Label 
+                htmlFor="header-none" 
+                className={`flex items-center space-x-2 border rounded-lg p-3 cursor-pointer hover:bg-accent transition-colors ${
+                  templateData.header.type === "NONE" ? "bg-accent border-primary" : ""
+                }`}
+              >
                 <RadioGroupItem value="NONE" id="header-none" />
-                <Label htmlFor="header-none" className="cursor-pointer flex items-center gap-2">
+                <div className="flex items-center gap-2">
                   <AlertCircle className="h-4 w-4" />
                   Ninguno
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2 border rounded-lg p-3 cursor-pointer hover:bg-accent">
+                </div>
+              </Label>
+              
+              <Label 
+                htmlFor="header-text" 
+                className={`flex items-center space-x-2 border rounded-lg p-3 cursor-pointer hover:bg-accent transition-colors ${
+                  templateData.header.type === "TEXT" ? "bg-accent border-primary" : ""
+                }`}
+              >
                 <RadioGroupItem value="TEXT" id="header-text" />
-                <Label htmlFor="header-text" className="cursor-pointer flex items-center gap-2">
+                <div className="flex items-center gap-2">
                   <Type className="h-4 w-4" />
                   Texto
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2 border rounded-lg p-3 cursor-pointer hover:bg-accent">
+                </div>
+              </Label>
+              
+              <Label 
+                htmlFor="header-image" 
+                className={`flex items-center space-x-2 border rounded-lg p-3 cursor-pointer hover:bg-accent transition-colors ${
+                  templateData.header.type === "IMAGE" ? "bg-accent border-primary" : ""
+                }`}
+              >
                 <RadioGroupItem value="IMAGE" id="header-image" />
-                <Label htmlFor="header-image" className="cursor-pointer flex items-center gap-2">
+                <div className="flex items-center gap-2">
                   <Image className="h-4 w-4" />
                   Imagen
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2 border rounded-lg p-3 cursor-pointer hover:bg-accent">
+                </div>
+              </Label>
+              
+              <Label 
+                htmlFor="header-video" 
+                className={`flex items-center space-x-2 border rounded-lg p-3 cursor-pointer hover:bg-accent transition-colors ${
+                  templateData.header.type === "VIDEO" ? "bg-accent border-primary" : ""
+                }`}
+              >
                 <RadioGroupItem value="VIDEO" id="header-video" />
-                <Label htmlFor="header-video" className="cursor-pointer flex items-center gap-2">
+                <div className="flex items-center gap-2">
                   <Video className="h-4 w-4" />
                   Video
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2 border rounded-lg p-3 cursor-pointer hover:bg-accent">
+                </div>
+              </Label>
+              
+              <Label 
+                htmlFor="header-document" 
+                className={`flex items-center space-x-2 border rounded-lg p-3 cursor-pointer hover:bg-accent transition-colors ${
+                  templateData.header.type === "DOCUMENT" ? "bg-accent border-primary" : ""
+                }`}
+              >
                 <RadioGroupItem value="DOCUMENT" id="header-document" />
-                <Label htmlFor="header-document" className="cursor-pointer flex items-center gap-2">
+                <div className="flex items-center gap-2">
                   <FileText className="h-4 w-4" />
                   Documento
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2 border rounded-lg p-3 cursor-pointer hover:bg-accent">
+                </div>
+              </Label>
+              
+              <Label 
+                htmlFor="header-location" 
+                className={`flex items-center space-x-2 border rounded-lg p-3 cursor-pointer hover:bg-accent transition-colors ${
+                  templateData.header.type === "LOCATION" ? "bg-accent border-primary" : ""
+                }`}
+              >
                 <RadioGroupItem value="LOCATION" id="header-location" />
-                <Label htmlFor="header-location" className="cursor-pointer flex items-center gap-2">
+                <div className="flex items-center gap-2">
                   <MapPin className="h-4 w-4" />
                   Ubicación
-                </Label>
-              </div>
+                </div>
+              </Label>
             </div>
           </RadioGroup>
         </div>

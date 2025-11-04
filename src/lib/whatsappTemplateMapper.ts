@@ -73,6 +73,9 @@ export function mapBackendToFrontend(
       'pending': 'pending',
       'rejected': 'rejected',
       'inactive': 'inactive',
+      // Agregar más mapeos para cubrir todos los casos de la BD
+      'active': 'active',
+      'draft': 'pending',
     };
     const status = statusMap[estado] || 'pending';
 
@@ -147,6 +150,13 @@ export function mapBackendToFrontend(
 export function mapBackendArrayToFrontend(
   backendTemplates: BackendWhatsAppTemplate[]
 ): WhatsAppTemplate[] {
-  return backendTemplates.map(mapBackendToFrontend);
+  const mappedTemplates = backendTemplates.map(mapBackendToFrontend);
+  
+  // Eliminar duplicados basados en el nombre de la plantilla
+  const uniqueTemplates = mappedTemplates.filter((template, index, self) => 
+    index === self.findIndex(t => t.name === template.name)
+  );
+  
+  return uniqueTemplates;
 }
 

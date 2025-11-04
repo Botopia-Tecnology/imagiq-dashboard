@@ -935,4 +935,10 @@ export const whatsappTemplateEndpoints = {
     "/api/messaging/templates",
     payload
   ),
+  cleanDuplicates: () => apiClient.post<{ success: boolean; message?: string; removed?: number }>(
+    "/api/messaging/templates/clean-duplicates"
+  ),
+  delete: (templateName: string) => apiClient.delete<{ success: boolean; message?: string }>(
+    `/api/messaging/templates/${templateName}`
+  ),
 };
