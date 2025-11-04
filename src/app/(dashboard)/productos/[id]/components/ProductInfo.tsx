@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ProductCardProps, ProductColor } from "@/features/products/useProducts"
 
@@ -30,62 +31,91 @@ export function ProductInfo({
     return 'text-green-600'
   }
 
-  // Obtener colores únicos del producto
+  // Estados para rastrear qué filtros están activos (seleccionados por el usuario)
+  // Al inicio, aunque selectedColor tenga valores, estos filtros están inactivos
+  const [activeCapacityFilter, setActiveCapacityFilter] = useState<string | undefined>();
+  const [activeRamFilter, setActiveRamFilter] = useState<string | undefined>();
+
+  // Obtener el estado actual de selección de capacidad y RAM
+  // Solo usar como filtro si fue seleccionado explícitamente
+  const currentCapacity = activeCapacityFilter;
+  const currentRam = activeRamFilter;
+
+  // Obtener colores únicos filtrados por capacidad y RAM seleccionados
   const getUniqueColors = () => {
     const colorMap = new Map<string, { hex: string; label: string; hasStock: boolean }>();
 
     product.colors.forEach((variant) => {
-      if (!colorMap.has(variant.hex)) {
-        colorMap.set(variant.hex, {
-          hex: variant.hex,
-          label: variant.label,
-          hasStock: false
-        });
-      }
+      // Filtrado cruzado: solo mostrar colores que tengan la capacidad y RAM seleccionados
+      const matchesCapacity = !currentCapacity || variant.capacity === currentCapacity;
+      const matchesRam = !currentRam || variant.ram === currentRam;
 
-      // Si alguna variante de este color tiene stock, marcarlo como disponible
-      if (variant.stockTotal && variant.stockTotal > 0) {
-        const colorData = colorMap.get(variant.hex)!;
-        colorData.hasStock = true;
-       }
+      if (matchesCapacity && matchesRam) {
+        if (!colorMap.has(variant.hex)) {
+          colorMap.set(variant.hex, {
+            hex: variant.hex,
+            label: variant.label,
+            hasStock: false
+          });
+        }
+
+        // Si alguna variante de este color tiene stock, marcarlo como disponible
+        if (variant.stockTotal && variant.stockTotal > 0) {
+          const colorData = colorMap.get(variant.hex)!;
+          colorData.hasStock = true;
+        }
+      }
     });
 
     return Array.from(colorMap.values());
   };
 
-  // Obtener opciones de capacidad disponibles según el color seleccionado
+  // Obtener opciones de capacidad disponibles según el color y RAM seleccionados
   const getCapacityOptions = () => {
-    if (!selectedColor?.hex) return [];
-
     const capacities = new Set<string>();
+
     product.colors.forEach((variant) => {
-      if (variant.hex === selectedColor.hex && variant.capacity) {
+      if (!variant.capacity) return;
+
+      // Filtrado cruzado: solo mostrar capacidades que tengan el color y RAM seleccionados
+      const matchesColor = !selectedColor?.hex || variant.hex === selectedColor.hex;
+      const matchesRam = !currentRam || variant.ram === currentRam;
+
+      if (matchesColor && matchesRam) {
         capacities.add(variant.capacity);
       }
     });
 
-    return Array.from(capacities).sort();
+    return Array.from(capacities).sort((a, b) => {
+      // Ordenar capacidades numéricamente
+      const aNum = parseInt(a);
+      const bNum = parseInt(b);
+      return aNum - bNum;
+    });
   };
 
   // Obtener opciones de RAM disponibles según el color y capacidad seleccionados
   const getRamOptions = () => {
-    if (!selectedColor?.hex) return [];
-
     const rams = new Set<string>();
+
     product.colors.forEach((variant) => {
-      if (variant.hex === selectedColor.hex && variant.ram) {
-        // Si hay capacidad seleccionada, filtrar por ella también
-        if (selectedColor.capacity) {
-          if (variant.capacity === selectedColor.capacity) {
-            rams.add(variant.ram);
-          }
-        } else {
-          rams.add(variant.ram);
-        }
+      if (!variant.ram) return;
+
+      // Filtrado cruzado: solo mostrar RAM que tengan el color y capacidad seleccionados
+      const matchesColor = !selectedColor?.hex || variant.hex === selectedColor.hex;
+      const matchesCapacity = !currentCapacity || variant.capacity === currentCapacity;
+
+      if (matchesColor && matchesCapacity) {
+        rams.add(variant.ram);
       }
     });
 
-    return Array.from(rams).sort();
+    return Array.from(rams).sort((a, b) => {
+      // Ordenar RAM numéricamente
+      const aNum = parseInt(a);
+      const bNum = parseInt(b);
+      return aNum - bNum;
+    });
   };
 
   // Encontrar la variante exacta que coincida con los parámetros
@@ -101,20 +131,32 @@ export function ProductInfo({
 
   // Manejar cambio de color
   const handleColorChange = (hex: string) => {
-    // Buscar la primera variante con este color
-    const variant = product.colors.find((v) => v.hex === hex);
+    // Buscar la primera variante con este color que coincida con los filtros activos
+    const variant = findVariant(hex, activeCapacityFilter, activeRamFilter);
 
     if (variant) {
       onColorSelect(variant);
+    } else {
+      // Si no hay coincidencia con los filtros, buscar cualquier variante de ese color
+      const anyVariant = product.colors.find((v) => v.hex === hex);
+      if (anyVariant) {
+        onColorSelect(anyVariant);
+        // Actualizar los filtros activos con los valores de la nueva variante
+        setActiveCapacityFilter(anyVariant.capacity);
+        setActiveRamFilter(anyVariant.ram);
+      }
     }
   };
 
   // Manejar cambio de capacidad
   const handleCapacityChange = (capacity: string) => {
+    // Activar filtro de capacidad
+    setActiveCapacityFilter(capacity);
+
     if (!selectedColor) return;
 
-    // Buscar la primera variante con este color y capacidad (sin importar la RAM)
-    const variant = findVariant(selectedColor.hex, capacity);
+    // Buscar la primera variante con este color y capacidad (manteniendo RAM si es compatible)
+    const variant = findVariant(selectedColor.hex, capacity, activeRamFilter);
     if (variant) {
       onColorSelect(variant);
     }
@@ -122,9 +164,13 @@ export function ProductInfo({
 
   // Manejar cambio de RAM
   const handleRamChange = (ram: string) => {
+    // Activar filtro de RAM
+    setActiveRamFilter(ram);
+
     if (!selectedColor) return;
 
-    const variant = findVariant(selectedColor.hex, selectedColor.capacity, ram);
+    // Buscar la primera variante con este color y RAM (manteniendo capacidad si es compatible)
+    const variant = findVariant(selectedColor.hex, activeCapacityFilter, ram);
     if (variant) {
       onColorSelect(variant);
     }
@@ -196,7 +242,7 @@ export function ProductInfo({
           </div>
 
           {/* Selector de Capacidad (si aplica) */}
-          {getCapacityOptions().length > 1 && (
+          {getCapacityOptions().length > 0 && (
             <div className="space-y-3">
               <label className="text-sm font-medium">
                 Capacidad: {selectedColor?.capacity || 'Selecciona una capacidad'}
@@ -220,7 +266,7 @@ export function ProductInfo({
           )}
 
           {/* Selector de RAM (si aplica) */}
-          {getRamOptions().length > 1 && (
+          {getRamOptions().length > 0 && (
             <div className="space-y-3">
               <label className="text-sm font-medium">
                 RAM: {selectedColor?.ram || 'Selecciona la RAM'}
