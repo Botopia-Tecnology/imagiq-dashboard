@@ -12,6 +12,166 @@ import { useState } from "react";
 import { whatsappTemplateEndpoints } from "@/lib/api";
 import { toast } from "sonner";
 
+/**
+ * Extrae las variables de un texto en formato {{1}}, {{2}}, etc.
+ * @param text - Texto que puede contener variables
+ * @returns Array de números de variables encontradas, ordenados
+ */
+function extractVariables(text: string): number[] {
+  const matches = text.match(/\{\{(\d+)\}\}/g);
+  if (!matches) return [];
+  
+  return matches
+    .map(match => parseInt(match.replace(/\{|\}/g, '')))
+    .filter((v, i, arr) => arr.indexOf(v) === i) // Eliminar duplicados
+    .sort((a, b) => a - b);
+}
+
+/**
+ * Construye el component BODY con su example si tiene variables
+ * @param bodyText - Texto del cuerpo del mensaje
+ * @param variableValues - Valores de ejemplo para las variables
+ * @returns Component BODY con structure correcta
+ */
+function buildBodyComponent(
+  bodyText: string,
+  variableValues: Record<string, string>
+): any {
+  const component: any = {
+    type: "BODY",
+    text: bodyText
+  };
+
+  const variables = extractVariables(bodyText);
+  
+  if (variables.length > 0) {
+    const exampleValues = variables.map(varNum => {
+      const key = `{{${varNum}}}`;
+      return variableValues[key] || `Ejemplo ${varNum}`;
+    });
+    
+    // IMPORTANTE: body_text debe ser un array de arrays
+    component.example = {
+      body_text: [exampleValues]
+    };
+  }
+
+  return component;
+}
+
+/**
+ * Construye el component HEADER con su example si es necesario
+ * @param headerType - Tipo de header (TEXT, IMAGE, VIDEO, etc.)
+ * @param headerContent - Contenido del header
+ * @param variableValues - Valores de ejemplo para las variables
+ * @returns Component HEADER con structure correcta o null si es NONE
+ */
+function buildHeaderComponent(
+  headerType: string,
+  headerContent: string,
+  variableValues: Record<string, string>
+): any | null {
+  if (!headerType || headerType === "NONE") {
+    return null;
+  }
+
+  const component: any = {
+    type: "HEADER",
+    format: headerType
+  };
+
+  switch (headerType) {
+    case "TEXT":
+      component.text = headerContent || "";
+      
+      const variables = extractVariables(headerContent);
+      if (variables.length > 0) {
+        const exampleValues = variables.map(varNum => {
+          const key = `{{${varNum}}}`;
+          return variableValues[key] || `Ejemplo ${varNum}`;
+        });
+        
+        // IMPORTANTE: header_text es un array simple (no anidado)
+        component.example = {
+          header_text: exampleValues
+        };
+      }
+      break;
+
+    case "IMAGE":
+    case "VIDEO":
+    case "DOCUMENT":
+      // Para media, siempre incluir example con URL de ejemplo
+      component.example = {
+        header_handle: [headerContent || "https://example.com/media"]
+      };
+      break;
+
+    case "LOCATION":
+      // Para ubicación, incluir coordenadas de ejemplo
+      component.example = {
+        header_location: {
+          latitude: 37.7749,
+          longitude: -122.4194,
+          name: "Ubicación de ejemplo",
+          address: "Dirección de ejemplo"
+        }
+      };
+      break;
+  }
+
+  return component;
+}
+
+/**
+ * Construye el component BUTTONS con examples para URLs dinámicas
+ * @param buttons - Array de botones del formulario
+ * @param variableValues - Valores de ejemplo para las variables
+ * @returns Component BUTTONS con structure correcta o null si no hay botones
+ */
+function buildButtonsComponent(
+  buttons: Array<any>,
+  variableValues: Record<string, string>
+): any | null {
+  if (!buttons || buttons.length === 0) {
+    return null;
+  }
+
+  const formattedButtons = buttons.map(btn => {
+    const button: any = {
+      type: btn.type,
+      text: btn.text || ""
+    };
+
+    if (btn.type === "URL") {
+      button.url = btn.url || "";
+      
+      // Si la URL tiene variables, agregar example
+      const variables = extractVariables(btn.url);
+      if (variables.length > 0) {
+        let exampleUrl = btn.url;
+        variables.forEach(varNum => {
+          const key = `{{${varNum}}}`;
+          const value = variableValues[key] || `ejemplo-${varNum}`;
+          exampleUrl = exampleUrl.replace(key, value);
+        });
+        
+        // IMPORTANTE: example para URL es un array simple
+        button.example = [exampleUrl];
+      }
+    } else if (btn.type === "PHONE_NUMBER") {
+      button.phone_number = btn.phoneNumber || "";
+    }
+
+    return button;
+  });
+
+  return {
+    type: "BUTTONS",
+    buttons: formattedButtons
+  };
+}
+
 export default function CrearPlantillaWhatsAppPage() {
   const router = useRouter();
   const [templateData, setTemplateData] = useState<{
@@ -49,31 +209,30 @@ export default function CrearPlantillaWhatsAppPage() {
 
   const createExampleTemplate = () => {
     const exampleTemplate = {
-      name: "pedido_confirmado",
-      category: "MARKETING",
-      language: "es",
+      name: "order_confirmation",
+      category: "UTILITY",
+      language: "en",
       header: {
         type: "TEXT",
-        content: "Pedido confirmado",
+        content: "Order Confirmed",
       },
-      body: "Hola, {{1}}:\n\n¡Gracias por tu {{2}}! El número de pedido es {{3}}.\n\nEmpezaremos a preparar {{4}} para su envío.\n\nEntrega estimada: {{5}} \n\nTe avisaremos cuando se envíe el pedido.",
-      footer: "Imagiq Store - Tu tienda de confianza",
+      body: "Hi {{1}}, your order {{2}} has been successfully confirmed and is being processed by our team. You will receive a notification once it ships to {{3}}. Expected delivery date is {{4}}. Thank you for shopping with us and trusting our service!",
+      footer: "Imagiq Store - We appreciate your business",
       buttons: [
         {
           id: 1,
           type: "URL",
-          text: "Ver detalles del pedido",
-          url: "https://imagiq-frontend.vercel.app/{{1}}"
+          text: "Track Order",
+          url: "https://imagiq-frontend.vercel.app/orders/{{2}}"
         }
       ],
     };
 
     const exampleVariables = {
       "{{1}}": "John",
-      "{{2}}": "compra", 
-      "{{3}}": "12345",
-      "{{4}}": "2 paquetes de 12 rollos de papel de cocina Jasper's",
-      "{{5}}": "1 de enero de 2024"
+      "{{2}}": "ORD-12345", 
+      "{{3}}": "123 Main Street",
+      "{{4}}": "January 15, 2024"
     };
 
     setTemplateData(exampleTemplate);
@@ -83,28 +242,28 @@ export default function CrearPlantillaWhatsAppPage() {
 
   const createLocationExample = () => {
     const locationTemplate = {
-      name: "ubicacion_tienda",
+      name: "store_location",
       category: "UTILITY",
-      language: "es",
+      language: "en",
       header: {
         type: "LOCATION",
         content: "",
       },
-      body: "¡Visítanos en nuestra tienda! Estamos ubicados en {{1}}. Horario de atención: {{2}}",
-      footer: "Te esperamos",
+      body: "Visit us at our store! We are located at {{1}} and would love to welcome you. Our business hours are {{2}}. Come discover our latest products and enjoy personalized service from our friendly team.",
+      footer: "We look forward to seeing you",
       buttons: [
         {
           id: 1,
           type: "PHONE_NUMBER",
-          text: "Llamar tienda",
-          phoneNumber: "+57 300 123 4567"
+          text: "Call Store",
+          phoneNumber: "+1 234 567 8900"
         }
       ],
     };
 
     const locationVariables = {
-      "{{1}}": "Centro Comercial Plaza Mayor",
-      "{{2}}": "Lunes a Sábado 9:00 AM - 8:00 PM"
+      "{{1}}": "123 Main Street, Downtown",
+      "{{2}}": "Monday to Saturday 9:00 AM - 8:00 PM"
     };
 
     setTemplateData(locationTemplate);
@@ -114,30 +273,30 @@ export default function CrearPlantillaWhatsAppPage() {
 
   const createImageExample = () => {
     const imageTemplate = {
-      name: "promocion_producto",
+      name: "special_offer",
       category: "MARKETING",
-      language: "es",
+      language: "en",
       header: {
         type: "IMAGE",
         content: "https://example.com/promo-image.jpg",
       },
-      body: "¡Oferta especial! {{1}} con {{2}}% de descuento. Solo hasta {{3}}. ¡No te lo pierdas!",
-      footer: "Términos y condiciones aplican",
+      body: "Hello {{1}}! We have an exclusive offer for you: Get {{2}} off on {{3}}. This limited-time promotion is our way of thanking you for being a valued customer. Don't miss out on this amazing deal! Visit our store or shop online at {{4}}.",
+      footer: "Terms and conditions apply",
       buttons: [
         {
           id: 1,
           type: "URL",
-          text: "Comprar ahora",
-          url: "https://imagiq-frontend.vercel.app/productos/{{4}}"
+          text: "Shop Now",
+          url: "https://imagiq-frontend.vercel.app/products/{{4}}"
         }
       ],
     };
 
     const imageVariables = {
-      "{{1}}": "iPhone 15 Pro",
-      "{{2}}": "20",
-      "{{3}}": "31 de diciembre",
-      "{{4}}": "iphone-15-pro"
+      "{{1}}": "Maria",
+      "{{2}}": "20%",
+      "{{3}}": "all electronics",
+      "{{4}}": "electronics-sale"
     };
 
     setTemplateData(imageTemplate);
@@ -147,17 +306,54 @@ export default function CrearPlantillaWhatsAppPage() {
 
   const handleSaveTemplate = async () => {
     try {
-      // Validaciones básicas
-      if (!templateData.name || !/^([a-z0-9_]+)$/.test(templateData.name)) {
-        toast.error("Nombre inválido. Usa minúsculas, números y guiones bajos.");
+      // Validación 1: Nombre de plantilla
+      if (!templateData.name || !/^[a-z0-9_]+$/.test(templateData.name)) {
+        toast.error("Nombre inválido. Usa solo minúsculas, números y guiones bajos (_)");
         return;
       }
+      
+      if (templateData.name.length < 3 || templateData.name.length > 512) {
+        toast.error("El nombre debe tener entre 3 y 512 caracteres");
+        return;
+      }
+      
+      // Validación 2: Body requerido
       if (!templateData.body || templateData.body.trim().length === 0) {
-        toast.error("El cuerpo del mensaje es requerido.");
+        toast.error("El cuerpo del mensaje es requerido");
         return;
       }
 
-      // Verificar si ya existe una plantilla con el mismo nombre
+      // Validación 3: Idioma en formato correcto
+      if (!/^[a-z]{2}(_[A-Z]{2})?$/.test(templateData.language)) {
+        toast.error('Formato de idioma inválido. Usa: es, en, pt_BR, es_MX, etc.');
+        return;
+      }
+
+      // Validación 4: Ratio variables vs texto (CRÍTICO para Meta API)
+      const bodyVariables = (templateData.body.match(/\{\{\d+\}\}/g) || []).length;
+      const bodyWordCount = templateData.body.trim().split(/\s+/).length;
+      
+      const minWordsRequired: Record<number, number> = {
+        1: 15,
+        2: 25,
+        3: 40,
+        4: 60,
+        5: 60
+      };
+
+      if (bodyVariables > 0) {
+        const minWords = minWordsRequired[bodyVariables] || 60;
+        if (bodyWordCount < minWords) {
+          toast.error(
+            `El mensaje es muy corto para ${bodyVariables} variable(s). ` +
+            `Necesitas al menos ${minWords} palabras (tienes ${bodyWordCount}). ` +
+            `Agrega más texto descriptivo.`
+          );
+          return;
+        }
+      }
+
+      // Verificar duplicados
       try {
         const existingTemplates = await whatsappTemplateEndpoints.getAll();
         if (existingTemplates.success && existingTemplates.data) {
@@ -165,168 +361,46 @@ export default function CrearPlantillaWhatsAppPage() {
             template.name === templateData.name
           );
           if (nameExists) {
-            toast.error(`Ya existe una plantilla con el nombre "${templateData.name}". Usa un nombre diferente.`);
+            toast.error(`Ya existe una plantilla con el nombre "${templateData.name}".`);
             return;
           }
         }
       } catch (checkError) {
         console.warn("No se pudo verificar plantillas existentes:", checkError);
-        // Continuar con la creación aunque no se pueda verificar
       }
 
-      // Construir components según el esquema del backend con examples
+      // Construir components usando funciones auxiliares
       const components: any[] = [];
 
       // HEADER
-      if (templateData.header?.type && templateData.header.type !== "NONE") {
-        const headerComponent: any = { type: "HEADER", format: templateData.header.type };
-        
-        switch (templateData.header.type) {
-          case "TEXT":
-            headerComponent.text = templateData.header.content || "";
-            // Agregar example para header de texto si tiene variables
-            if (templateData.header.content && templateData.header.content.includes("{{")) {
-              const headerVariables = templateData.header.content.match(/\{\{\d+\}\}/g);
-              if (headerVariables && headerVariables.length > 0) {
-                const headerExampleValues = [];
-                for (let i = 1; i <= headerVariables.length; i++) {
-                  const variableKey = `{{${i}}}`;
-                  if (variableValues[variableKey]) {
-                    headerExampleValues.push(variableValues[variableKey]);
-                  } else {
-                    headerExampleValues.push(`Ejemplo ${i}`);
-                  }
-                }
-                headerComponent.example = {
-                  header_text: headerExampleValues
-                };
-              }
-            }
-            break;
-            
-          case "IMAGE":
-            // Para imágenes, el content puede ser una URL o variable
-            if (templateData.header.content) {
-              if (templateData.header.content.includes("{{")) {
-                headerComponent.example = {
-                  header_handle: ["https://example.com/image.jpg"]
-                };
-              }
-            }
-            break;
-            
-          case "VIDEO":
-            // Para videos, similar a imágenes
-            if (templateData.header.content) {
-              if (templateData.header.content.includes("{{")) {
-                headerComponent.example = {
-                  header_handle: ["https://example.com/video.mp4"]
-                };
-              }
-            }
-            break;
-            
-          case "DOCUMENT":
-            // Para documentos
-            if (templateData.header.content) {
-              if (templateData.header.content.includes("{{")) {
-                headerComponent.example = {
-                  header_handle: ["https://example.com/document.pdf"]
-                };
-              }
-            }
-            break;
-            
-          case "LOCATION":
-            // Para ubicación, no necesita content pero puede tener example
-            headerComponent.example = {
-              header_location: {
-                latitude: 37.7749,
-                longitude: -122.4194,
-                name: "San Francisco, CA",
-                address: "San Francisco, CA, USA"
-              }
-            };
-            break;
-        }
-        
+      const headerComponent = buildHeaderComponent(
+        templateData.header?.type,
+        templateData.header?.content,
+        variableValues
+      );
+      if (headerComponent) {
         components.push(headerComponent);
       }
 
       // BODY (requerido)
-      const bodyComponent: any = { type: "BODY", text: templateData.body };
-      
-      // Agregar examples para el body si tiene variables
-      const bodyVariables = templateData.body.match(/\{\{\d+\}\}/g);
-      if (bodyVariables && bodyVariables.length > 0) {
-        // Crear examples basados en las variables del cuerpo
-        const exampleValues = [];
-        for (let i = 1; i <= bodyVariables.length; i++) {
-          const variableKey = `{{${i}}}`;
-          if (variableValues[variableKey]) {
-            exampleValues.push(variableValues[variableKey]);
-          } else {
-            // Valores de ejemplo por defecto
-            switch (i) {
-              case 1: exampleValues.push("John"); break;
-              case 2: exampleValues.push("compra"); break;
-              case 3: exampleValues.push("12345"); break;
-              case 4: exampleValues.push("2 paquetes de 12 rollos de papel de cocina Jasper's"); break;
-              case 5: exampleValues.push("1 de enero de 2024"); break;
-              default: exampleValues.push(`Ejemplo ${i}`); break;
-            }
-          }
-        }
-        bodyComponent.example = {
-          body_text: [exampleValues]
-        };
-      }
-      
+      const bodyComponent = buildBodyComponent(templateData.body, variableValues);
       components.push(bodyComponent);
 
       // FOOTER
       if (templateData.footer && templateData.footer.trim().length > 0) {
-        components.push({ type: "FOOTER", text: templateData.footer });
-      }
-
-      // BUTTONS (opcionales)
-      if (Array.isArray(templateData.buttons) && templateData.buttons.length > 0) {
-        const buttons = templateData.buttons.map((btn: any) => {
-          const button: any = {
-            type: btn.type,
-            text: btn.text || ""
-          };
-
-          if (btn.type === "URL") {
-            button.url = btn.url || "";
-            // Agregar example para URL si tiene variables
-            if (btn.url && btn.url.includes("{{")) {
-              const urlVariables = btn.url.match(/\{\{\d+\}\}/g);
-              if (urlVariables && urlVariables.length > 0) {
-                // Reemplazar variables en la URL con valores de ejemplo
-                let exampleUrl = btn.url;
-                urlVariables.forEach((varKey: string) => {
-                  const varNum = varKey.match(/\d+/)?.[0];
-                  if (varNum) {
-                    const variableKey = `{{${varNum}}}`;
-                    const exampleValue = variableValues[variableKey] || `ejemplo-${varNum}`;
-                    exampleUrl = exampleUrl.replace(varKey, exampleValue);
-                  }
-                });
-                button.example = [exampleUrl];
-              } else {
-                button.example = [btn.url];
-              }
-            }
-          } else if (btn.type === "PHONE_NUMBER") {
-            button.phone_number = btn.phoneNumber || "";
-          }
-
-          return button;
+        components.push({
+          type: "FOOTER",
+          text: templateData.footer
         });
-        components.push({ type: "BUTTONS", buttons });
       }
 
+      // BUTTONS
+      const buttonsComponent = buildButtonsComponent(templateData.buttons, variableValues);
+      if (buttonsComponent) {
+        components.push(buttonsComponent);
+      }
+
+      // Construir payload final
       const payload = {
         name: templateData.name,
         category: templateData.category as "MARKETING" | "UTILITY" | "AUTHENTICATION",
@@ -334,7 +408,12 @@ export default function CrearPlantillaWhatsAppPage() {
         components,
       };
 
+      // Log para debugging
+      console.log("Payload a enviar:", JSON.stringify(payload, null, 2));
+
+      // Enviar al backend
       const response = await whatsappTemplateEndpoints.create(payload);
+      
       if (response.success) {
         toast.success("Plantilla creada correctamente");
         router.push("/marketing/campaigns/templates/whatsapp");
@@ -342,7 +421,7 @@ export default function CrearPlantillaWhatsAppPage() {
         toast.error(response.message || "No se pudo crear la plantilla");
       }
     } catch (error) {
-      console.error(error);
+      console.error("Error al guardar plantilla:", error);
       toast.error("Error al conectar con el servidor");
     }
   };
