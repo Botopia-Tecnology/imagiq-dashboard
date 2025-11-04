@@ -295,7 +295,7 @@ export function ProductInfo({
               </span>
             </div>
           )}
-          {currentStockEcommerce!== undefined && (
+          {/* {currentStockEcommerce!== undefined && (
             <div className="flex justify-between">
               <span className="text-muted-foreground">
                 Stock e commerce {selectedColor ? `(${selectedColor.label})` : ''}:
@@ -314,7 +314,7 @@ export function ProductInfo({
                 {Object.values(currentStockTiendas).reduce((sum, qty) => sum + qty, 0)} unidades
               </span>
             </div>
-          )}
+          )} */}
           {currentStock !== undefined && (
             <div className="flex justify-between">
               <span className="text-muted-foreground">
