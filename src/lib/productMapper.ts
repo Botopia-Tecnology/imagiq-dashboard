@@ -120,7 +120,7 @@ export function mapApiProductToFrontend(apiProduct: ProductApiData): ProductCard
   
   const capacidadArray = Array.isArray(apiProduct.capacidad) ? apiProduct.capacidad : [];
   const stockArray = Array.isArray(apiProduct.stock) ? apiProduct.stock : [];
-  const stockTotal = apiProduct.stockTotal?.[0] ?? 0;
+  const stockTotal = apiProduct.stockTotal?.reduce((acc, num) => acc + num, 0) ?? 0;
   const skuArray = Array.isArray(apiProduct.sku) ? apiProduct.sku : [];
   const desDetalladaArray = Array.isArray(apiProduct.desDetallada) ? apiProduct.desDetallada : [];
 
