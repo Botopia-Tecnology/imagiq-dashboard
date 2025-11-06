@@ -240,30 +240,30 @@ export const createProductColumns = (
       )
     },
   },
-  {
-    accessorKey: "status",
-    header: "Estado",
-    cell: ({ row }) => {
-      const stock = row.original.stock
-      const status = (stock ?? 0) > 0 ? "active" : "inactive"
-      return (
-        <Badge
-          variant={
-            status === "active"
-              ? "default"
-              : "secondary"
-          }
-        >
-          {status === "active" ? "Activo" : "Inactivo"}
-        </Badge>
-      )
-    },
-    filterFn: (row, id, value) => {
-      const stock = row.original.stock
-      const status = (stock ?? 0) > 0 ? "active" : "inactive"
-      return value.includes(status)
-    },
-  },
+  // {
+  //   accessorKey: "status",
+  //   header: "Estado",
+  //   cell: ({ row }) => {
+  //     const stock = row.original.stock
+  //     const status = (stock ?? 0) > 0 ? "active" : "inactive"
+  //     return (
+  //       <Badge
+  //         variant={
+  //           status === "active"
+  //             ? "default"
+  //             : "secondary"
+  //         }
+  //       >
+  //         {status === "active" ? "Activo" : "Inactivo"}
+  //       </Badge>
+  //     )
+  //   },
+  //   filterFn: (row, id, value) => {
+  //     const stock = row.original.stock
+  //     const status = (stock ?? 0) > 0 ? "active" : "inactive"
+  //     return value.includes(status)
+  //   },
+  // },
   {
     id: "actions",
     enableHiding: false,
