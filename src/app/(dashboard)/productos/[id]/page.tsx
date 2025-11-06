@@ -57,6 +57,7 @@ export default function ProductDetailPage() {
   const currentStockEcommerce = selectedColor?.stock ?? 0
   const currentStockTiendas = selectedColor?.stockTiendas || {}
   const currentImage = selectedColor?.imageUrl || product.image
+  console.log(selectedColor)
 
   return (
     <div className="space-y-6">
