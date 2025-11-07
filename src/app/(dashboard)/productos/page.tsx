@@ -1,9 +1,10 @@
 "use client"
 
 import { lazy, Suspense, useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Plus, Package, DollarSign, AlertTriangle } from "lucide-react"
+import { Plus, Package, DollarSign, AlertTriangle, Heart } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { productEndpoints, ProductSummary, categoryEndpoints } from "@/lib/api"
 
@@ -37,6 +38,7 @@ function TableSkeleton() {
 }
 
 export default function ProductosPage() {
+  const router = useRouter()
   const [summary, setSummary] = useState<ProductSummary | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [menusCount, setMenusCount] = useState(0)
@@ -76,6 +78,13 @@ export default function ProductosPage() {
             Gestiona tu inventario de productos
           </p>
         </div>
+        <Button 
+          className="gap-2"
+          onClick={() => router.push('/productos/notificaciones')}
+        >
+          <Heart className="h-4 w-4" />
+          Productos que tus clientes desean
+        </Button>
       </div>
 
       {/* Métricas de productos */}

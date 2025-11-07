@@ -4,14 +4,19 @@ import { useMemo, useCallback, useState, useEffect } from "react";
 import { DataTable } from "@/components/tables/data-table";
 import { createProductColumns } from "@/components/tables/columns/products-columns";
 import { useProducts } from "@/features/products/useProducts";
-import { categoryEndpoints } from "@/lib/api";
+import { categoryEndpoints, GroupedNotificationsResponse } from "@/lib/api";
 
 const statuses = [
   { label: "Activo", value: "active" },
   { label: "Inactivo", value: "inactive" },
 ];
 
-export function ProductsTableWrapper() {
+interface ProductsTableWrapperProps {
+  filterBySku?: string[];
+  notificationsData?: GroupedNotificationsResponse | null;
+}
+
+export function ProductsTableWrapper({ filterBySku, notificationsData }: ProductsTableWrapperProps = {}) {
   const [pageSize, setPageSize] = useState(10);
 
   // Cargar filtros guardados desde localStorage (antes de cualquier petición)
@@ -73,7 +78,14 @@ export function ProductsTableWrapper() {
   const initialFilters = useMemo(() => {
     const filters: Record<string, any> = { limit: 10, page: 1 };
 
-    // Aplicar filtros guardados desde el inicio
+    // Si hay filtro por SKU, aplicarlo (tiene prioridad sobre todo)
+    if (filterBySku && filterBySku.length > 0) {
+      filters.sku = filterBySku.join(",");
+      filters.limit = 100; // Aumentar límite para mostrar todos los productos con notificaciones
+      return filters; // Retornar solo con filtro de SKU
+    }
+
+    // Aplicar filtros guardados desde el inicio (solo si no hay filtro por SKU)
     const savedFilters = getInitialFilters();
     const savedSearch = typeof window !== 'undefined' ? localStorage.getItem('productsSearchQuery') : null;
 
@@ -102,7 +114,7 @@ export function ProductsTableWrapper() {
     }
 
     return filters;
-  }, []);
+  }, [filterBySku]);
 
   const {
     products,
@@ -375,8 +387,8 @@ export function ProductsTableWrapper() {
   );
 
   const columns = useMemo(
-    () => createProductColumns(handleSortChange),
-    [handleSortChange]
+    () => createProductColumns(handleSortChange, notificationsData),
+    [handleSortChange, notificationsData]
   );
 
   if (error) {
@@ -392,13 +404,13 @@ export function ProductsTableWrapper() {
       columns={columns}
       data={products}
       searchKey="name"
-      filters={tableFilters}
+      filters={filterBySku ? [] : tableFilters} // Deshabilitar filtros si hay filtro por SKU
       pageCount={totalPages}
       pageIndex={currentPage - 1}
       pageSize={pageSize}
       totalItems={totalItems}
       onPaginationChange={handlePaginationChange}
-      onSearchChange={handleSearchChange}
+      onSearchChange={filterBySku ? undefined : handleSearchChange} // Deshabilitar búsqueda si hay filtro por SKU
       onFilterChange={handleFilterChange}
       initialFilterValues={currentFilters}
       initialSearchValue={searchQuery}
