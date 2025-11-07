@@ -82,6 +82,7 @@ export interface ProductFilters {
   color?: string;
   capacity?: string;
   name?: string;
+  sku?: string;
   withDiscount?: boolean;
   minStock?: number;
   maxStock?: number;
@@ -158,6 +159,7 @@ export const useProducts = (
       if (filters.color) params.color = filters.color;
       if (filters.capacity) params.capacidad = filters.capacity;
       if (filters.name) params.query = filters.name;
+      if (filters.sku) params.sku = filters.sku;
       if(filters.stock) params.stock = filters.stock;
       if (filters.withDiscount !== undefined)
         params.conDescuento = filters.withDiscount;

@@ -392,6 +392,7 @@ export interface ProductFilterParams {
   modelo?: string;
   desDetallada?: string;
   codigoMarket?: string;
+  sku?: string;
   filterMode?: string;
   page?: number;
   stock?: number;
@@ -899,7 +900,7 @@ export const multimediaEndpoints = {
 export const whatsappTemplateEndpoints = {
   getAll: async () => {
     const response = await apiClient.get<BackendWhatsAppTemplate[] | { data: BackendWhatsAppTemplate[]; total?: number }>("/api/messaging/templates");
-    
+
     // Handle both response formats: direct array or wrapped in { data: [...] }
     if (response.success && response.data) {
       // Check if data is already an array
@@ -909,7 +910,7 @@ export const whatsappTemplateEndpoints = {
           data: response.data as BackendWhatsAppTemplate[],
         };
       }
-      
+
       // If wrapped in { data: [...] }
       const wrappedData = response.data as { data: BackendWhatsAppTemplate[]; total?: number };
       if (wrappedData.data && Array.isArray(wrappedData.data)) {
@@ -919,7 +920,7 @@ export const whatsappTemplateEndpoints = {
         };
       }
     }
-    
+
     return {
       ...response,
       data: [] as BackendWhatsAppTemplate[],
@@ -941,4 +942,47 @@ export const whatsappTemplateEndpoints = {
   delete: (templateName: string) => apiClient.delete<{ success: boolean; message?: string }>(
     `/api/messaging/templates/${templateName}`
   ),
+};
+
+// Product Notifications API endpoints
+export interface ProductNotification {
+  id: string;
+  productId: string;
+  productName: string;
+  productImage?: string;
+  stock: number;
+  clientEmail?: string;
+  clientPhone?: string;
+  createdAt: string;
+  notified: boolean;
+}
+
+export interface NotificationProducto {
+  sku: string;
+  totalNotificaciones: number;
+  notificacionesPendientes: number;
+  notificacionesEnviadas: number;
+  emails: string[];
+}
+
+export interface NotificationGroup {
+  codigoMarket: string;
+  totalNotificaciones: number;
+  productos: NotificationProducto[];
+}
+
+export interface GroupedNotificationsResponse {
+  total: number;
+  notificaciones: NotificationGroup[];
+}
+
+export const productNotificationEndpoints = {
+  getAll: () => apiClient.get<ProductNotification[]>("/api/products/notifications"),
+  getGrouped: () => apiClient.get<GroupedNotificationsResponse>("/api/messaging/notifications/grouped"),
+  create: (data: { productId: string; clientEmail?: string; clientPhone?: string }) =>
+    apiClient.post<{ success: boolean; message?: string }>("/api/products/notifications", data),
+  delete: (id: string) =>
+    apiClient.delete<{ success: boolean; message?: string }>(`/api/products/notifications/${id}`),
+  markAsNotified: (id: string) =>
+    apiClient.patch<{ success: boolean; message?: string }>(`/api/products/notifications/${id}`, { notified: true }),
 };
