@@ -140,6 +140,49 @@ export class ApiClient {
     });
   }
 
+  async postFormData<T>(endpoint: string, formData: FormData): Promise<ApiResponse<T>> {
+    const url = `${this.baseURL}${endpoint}`;
+    const config: RequestInit = {
+      method: "POST",
+      body: formData,
+      headers: {
+        // No incluir Content-Type para que el browser lo establezca automáticamente con boundary
+      },
+    };
+
+    try {
+      const response = await fetch(url, config);
+
+      // Intentar parsear JSON
+      let data;
+      try {
+        data = await response?.json();
+      } catch (jsonError) {
+        // Si no es JSON válido, retornar error
+        console.error("JSON parsing error:", jsonError);
+        return {
+          data: {} as T,
+          success: false,
+          message: `Error al procesar la respuesta del servidor (Status: ${response.status})`,
+        };
+      }
+
+      return {
+        data: data as T,
+        success: response.ok,
+        message: typeof data?.message === 'string' ? data.message : undefined,
+        errors: data?.errors,
+      };
+    } catch (error) {
+      console.error("API request failed:", error);
+      return {
+        data: {} as T,
+        success: false,
+        message: error instanceof Error ? error.message : "Request failed",
+      };
+    }
+  }
+
   async putFormData<T>(endpoint: string, formData: FormData): Promise<ApiResponse<T>> {
     const url = `${this.baseURL}${endpoint}`;
     const config: RequestInit = {
@@ -987,43 +1030,11 @@ export const bannerEndpoints = {
   getByPlacement: (placement: string) =>
     apiClient.get<BackendBanner[]>(`/api/multimedia/banners/placement/${placement}`),
 
-  create: (formData: FormData) => {
-    const url = `${API_BASE_URL}/api/multimedia/banners`;
-    return fetch(url, {
-      method: "POST",
-      body: formData,
-    }).then(async (response) => {
-      const data = await response.json();
-      return {
-        data,
-        success: response.ok,
-        message: typeof data?.message === 'string' ? data.message : (data?.error || "Error desconocido"),
-      };
-    }).catch((error) => ({
-      data: {},
-      success: false,
-      message: error instanceof Error ? error.message : "Request failed",
-    }));
-  },
+  create: (formData: FormData) =>
+    apiClient.postFormData<BackendBanner>('/api/multimedia/banners', formData),
 
-  update: (formData: FormData) => {
-    const url = `${API_BASE_URL}/api/multimedia/banners`;
-    return fetch(url, {
-      method: "POST",
-      body: formData,
-    }).then(async (response) => {
-      const data = await response.json();
-      return {
-        data,
-        success: response.ok,
-        message: typeof data?.message === 'string' ? data.message : (data?.error || "Error desconocido"),
-      };
-    }).catch((error) => ({
-      data: {},
-      success: false,
-      message: error instanceof Error ? error.message : "Request failed",
-    }));
-  },
+  update: (formData: FormData) =>
+    apiClient.postFormData<BackendBanner>('/api/multimedia/banners', formData),
 
   delete: (id: string) =>
     apiClient.delete<{ success: boolean; message?: string }>(`/api/multimedia/banners/${id}`),

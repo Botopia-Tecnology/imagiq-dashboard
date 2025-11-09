@@ -19,6 +19,13 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import {
   Table,
@@ -36,6 +43,7 @@ export function BannersTable() {
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
+  const [itemsPerPage, setItemsPerPage] = React.useState<number>(10);
 
   const {
     banners,
@@ -44,7 +52,7 @@ export function BannersTable() {
     pagination,
     nextPage,
     previousPage,
-  } = useBanners({ limit: 7 });
+  } = useBanners({ limit: itemsPerPage });
 
   const columns = React.useMemo(() => createBannerColumns(), []);
 
@@ -177,13 +185,31 @@ export function BannersTable() {
       </div>
 
       <div className="flex items-center justify-between space-x-2 py-4">
-        <div className="flex-1 text-sm text-muted-foreground">
-          {table.getFilteredSelectedRowModel().rows.length > 0 && (
-            <span>
-              {table.getFilteredSelectedRowModel().rows.length} de{" "}
-              {pagination.total} fila(s) seleccionadas.
-            </span>
-          )}
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <p className="text-sm text-muted-foreground">Filas por página:</p>
+            <Select
+              value={String(itemsPerPage)}
+              onValueChange={(value) => setItemsPerPage(Number(value))}
+            >
+              <SelectTrigger className="h-8 w-16">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="5">5</SelectItem>
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="15">15</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="text-sm text-muted-foreground">
+            {table.getFilteredSelectedRowModel().rows.length > 0 && (
+              <span>
+                {table.getFilteredSelectedRowModel().rows.length} de{" "}
+                {pagination.total} fila(s) seleccionadas.
+              </span>
+            )}
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <div className="text-sm text-muted-foreground">

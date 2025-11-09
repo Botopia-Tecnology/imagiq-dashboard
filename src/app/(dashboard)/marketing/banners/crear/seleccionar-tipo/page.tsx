@@ -7,8 +7,6 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
   ArrowRight,
-  Monitor,
-  Smartphone,
   LayoutGrid,
   Megaphone,
   ShoppingCart,
@@ -139,7 +137,6 @@ export default function SeleccionarTipoBannerPage() {
   const router = useRouter()
   const [selectedType, setSelectedType] = useState<BannerPlacement | null>(null)
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null)
-  const [deviceType, setDeviceType] = useState<"same" | "different">("same")
 
   const handleContinue = () => {
     if (!selectedType) return
@@ -147,7 +144,6 @@ export default function SeleccionarTipoBannerPage() {
     // Construir query params
     const params = new URLSearchParams({
       type: selectedType,
-      device: deviceType,
     })
 
     if (selectedSubcategory) {
@@ -165,73 +161,14 @@ export default function SeleccionarTipoBannerPage() {
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Crear Nuevo Banner</h1>
         <p className="text-sm text-muted-foreground">
-          Selecciona el tipo de banner y configuración para tu campaña
+          Selecciona el tipo de banner para tu campaña
         </p>
       </div>
 
-      {/* Paso 1: Configuración de dispositivo */}
+      {/* Seleccionar tipo de banner */}
       <Card>
         <CardHeader>
-          <CardTitle>Paso 1: Configuración de dispositivos</CardTitle>
-          <CardDescription>
-            ¿Quieres usar el mismo diseño para móvil y escritorio, o crear versiones separadas?
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-3 md:grid-cols-2">
-            <Card
-              className={`cursor-pointer transition-all hover:border-primary ${
-                deviceType === "same" ? "border-primary bg-primary/5" : ""
-              }`}
-              onClick={() => setDeviceType("same")}
-            >
-              <CardHeader>
-                <div className="flex items-center gap-3">
-                  <Monitor className={`h-5 w-5 ${deviceType === "same" ? "text-primary" : "text-muted-foreground"}`} />
-                  <div>
-                    <CardTitle className="text-base">Mismo diseño</CardTitle>
-                    <CardDescription className="text-xs">
-                      Usar la misma imagen/diseño para todos los dispositivos (responsive)
-                    </CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-            </Card>
-
-            <Card
-              className={`cursor-pointer transition-all hover:border-primary ${
-                deviceType === "different" ? "border-primary bg-primary/5" : ""
-              }`}
-              onClick={() => setDeviceType("different")}
-            >
-              <CardHeader>
-                <div className="flex items-center gap-3">
-                  <div className="flex gap-2">
-                    <Monitor className={`h-5 w-5 ${deviceType === "different" ? "text-primary" : "text-muted-foreground"}`} />
-                    <Smartphone className={`h-5 w-5 ${deviceType === "different" ? "text-primary" : "text-muted-foreground"}`} />
-                  </div>
-                  <div>
-                    <CardTitle className="text-base">Diseños separados</CardTitle>
-                    <CardDescription className="text-xs">
-                      Crear versiones específicas para móvil y escritorio
-                    </CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <Badge variant="outline" className="text-xs">
-                  Máximo control sobre la experiencia
-                </Badge>
-              </CardContent>
-            </Card>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Paso 2: Seleccionar tipo de banner */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Paso 2: Selecciona el tipo de banner</CardTitle>
+          <CardTitle>Selecciona el tipo de banner</CardTitle>
           <CardDescription>
             Elige dónde se mostrará tu banner en la página web
           </CardDescription>
@@ -319,7 +256,6 @@ export default function SeleccionarTipoBannerPage() {
               <div>
                 <h3 className="font-semibold">Resumen de configuración</h3>
                 <div className="mt-2 space-y-1 text-sm text-muted-foreground">
-                  <p>• Dispositivos: {deviceType === "same" ? "Mismo diseño" : "Diseños separados"}</p>
                   <p>• Tipo: {selectedBannerType?.title}</p>
                   {selectedSubcategory && (
                     <p>• Subcategoría: {selectedBannerType?.subcategories?.find(s => s.id === selectedSubcategory)?.title}</p>
