@@ -1,7 +1,7 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
-import { ArrowUpDown, MoreHorizontal, Mail, CheckCircle2, Send, Users, Calendar, Clock } from "lucide-react"
+import { ArrowUpDown, MoreHorizontal, Mail, CheckCircle2, Send, Users, Calendar, Clock, Bell } from "lucide-react"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
@@ -480,6 +480,124 @@ export const createProductColumns = (
           )}
         </div>
       )
+    },
+  },
+  {
+    id: "solicitudes",
+    header: ({ column }) => {
+      return (
+        <div className="flex items-center justify-center w-full">
+          <Button
+            variant="ghost"
+            className="h-8"
+            onClick={() => {
+              const isAsc = column.getIsSorted() === "asc"
+              const newDirection = isAsc ? "desc" : "asc"
+              column.toggleSorting(isAsc)
+            }}
+          >
+            <Bell className="mr-1.5 h-4 w-4" />
+            Solicitudes
+            <ArrowUpDown className="ml-1.5 h-3.5 w-3.5" />
+          </Button>
+        </div>
+      )
+    },
+    cell: ({ row }) => {
+      const product = row.original
+      
+      // Buscar datos de notificaciones para este producto
+      let notificationData: NotificationProducto | null = null
+      if (notificationsData) {
+        // Buscar en todos los grupos de notificaciones
+        for (const group of notificationsData.notificaciones) {
+          // Buscar el producto por SKU en los productos del grupo
+          const foundProduct = group.productos.find(p => 
+            product.sku && p.sku === product.sku
+          )
+          if (foundProduct) {
+            notificationData = foundProduct
+            break
+          }
+        }
+      }
+      
+      const totalSolicitudes = notificationData?.totalNotificaciones || 0
+      const pendientes = notificationData?.notificacionesPendientes || 0
+      const enviadas = notificationData?.notificacionesEnviadas || 0
+      
+      // Si hay datos de notificaciones, mostrar ambos badges (incluso si uno es 0)
+      if (notificationData) {
+        return (
+          <div className="flex items-center justify-center gap-2">
+            <Badge 
+              variant="outline" 
+              className={`flex items-center gap-1 ${
+                pendientes > 0 
+                  ? "border-orange-500 text-orange-600 bg-orange-50 dark:bg-orange-950/20" 
+                  : "border-gray-300 text-gray-500 bg-gray-50 dark:bg-gray-950/20"
+              }`}
+            >
+              <Mail className="h-3 w-3" />
+              <span>Pendiente</span>
+              <span className="font-semibold">{pendientes}</span>
+            </Badge>
+            <Badge 
+              variant="outline" 
+              className={`flex items-center gap-1 ${
+                enviadas > 0 
+                  ? "border-green-500 text-green-600 bg-green-50 dark:bg-green-950/20" 
+                  : "border-gray-300 text-gray-500 bg-gray-50 dark:bg-gray-950/20"
+              }`}
+            >
+              <CheckCircle2 className="h-3 w-3" />
+              <span>Enviada</span>
+              <span className="font-semibold">{enviadas}</span>
+            </Badge>
+          </div>
+        )
+      }
+      
+      // Si no hay datos de notificaciones
+      return (
+        <div className="flex items-center justify-center">
+          <span className="text-sm text-muted-foreground">-</span>
+        </div>
+      )
+    },
+    sortingFn: (rowA, rowB) => {
+      const productA = rowA.original
+      const productB = rowB.original
+      
+      // Buscar datos de notificaciones para cada producto
+      let notificationDataA: NotificationProducto | null = null
+      let notificationDataB: NotificationProducto | null = null
+      
+      if (notificationsData) {
+        for (const group of notificationsData.notificaciones) {
+          const foundA = group.productos.find(p => 
+            productA.sku && p.sku === productA.sku
+          )
+          if (foundA) {
+            notificationDataA = foundA
+            break
+          }
+        }
+        for (const group of notificationsData.notificaciones) {
+          const foundB = group.productos.find(p => 
+            productB.sku && p.sku === productB.sku
+          )
+          if (foundB) {
+            notificationDataB = foundB
+            break
+          }
+        }
+      }
+      
+      const totalA = notificationDataA?.totalNotificaciones || 0
+      const totalB = notificationDataB?.totalNotificaciones || 0
+      
+      return totalA - totalB
     },
   },
   // {

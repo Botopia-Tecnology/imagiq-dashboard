@@ -139,6 +139,11 @@ export function ProductsTableWrapper({ filterBySku, notificationsData, notificat
         sortOrder: direction,
       };
 
+      // Siempre mantener el filtro de SKU si existe (para productos con notificaciones)
+      if (filterBySku && filterBySku.length > 0) {
+        filters.sku = filterBySku.join(",");
+      }
+
       // Aplicar filtros de menú
       if (currentFilters.menu && currentFilters.menu.length > 0) {
         const hasBuds = currentFilters.menu.includes("buds");
@@ -175,7 +180,7 @@ export function ProductsTableWrapper({ filterBySku, notificationsData, notificat
 
       filterProducts(filters);
     },
-    [filterProducts, currentFilters, searchQuery, pageSize]
+    [filterProducts, currentFilters, searchQuery, pageSize, filterBySku]
   );
 
   const handlePaginationChange = useCallback(
@@ -187,6 +192,11 @@ export function ProductsTableWrapper({ filterBySku, notificationsData, notificat
         limit: pagination.pageSize,
         page: newPage,
       };
+
+      // Siempre mantener el filtro de SKU si existe (para productos con notificaciones)
+      if (filterBySku && filterBySku.length > 0) {
+        filters.sku = filterBySku.join(",");
+      }
 
       // Aplicar filtros de menú (separados por comas)
       if (currentFilters.menu && currentFilters.menu.length > 0) {
@@ -230,18 +240,20 @@ export function ProductsTableWrapper({ filterBySku, notificationsData, notificat
 
       filterProducts(filters);
     },
-    [filterProducts, currentFilters, searchQuery, sortBy, sortOrder]
+    [filterProducts, currentFilters, searchQuery, sortBy, sortOrder, filterBySku]
   );
 
   const handleSearchChange = useCallback(
     (search: string) => {
       setSearchQuery(search);
 
-      // Guardar búsqueda en localStorage
-      if (search) {
-        localStorage.setItem('productsSearchQuery', search);
-      } else {
-        localStorage.removeItem('productsSearchQuery');
+      // Guardar búsqueda en localStorage (solo si no hay filtro por SKU)
+      if (!filterBySku || filterBySku.length === 0) {
+        if (search) {
+          localStorage.setItem('productsSearchQuery', search);
+        } else {
+          localStorage.removeItem('productsSearchQuery');
+        }
       }
 
       const filters: Record<string, any> = {
@@ -249,6 +261,11 @@ export function ProductsTableWrapper({ filterBySku, notificationsData, notificat
         limit: pageSize,
         page: 1,
       };
+
+      // Siempre mantener el filtro de SKU si existe (para productos con notificaciones)
+      if (filterBySku && filterBySku.length > 0) {
+        filters.sku = filterBySku.join(",");
+      }
 
       if (currentFilters.menu && currentFilters.menu.length > 0) {
         const hasBuds = currentFilters.menu.includes("buds");
@@ -287,7 +304,7 @@ export function ProductsTableWrapper({ filterBySku, notificationsData, notificat
 
       filterProducts(filters);
     },
-    [filterProducts, pageSize, currentFilters, sortBy, sortOrder]
+    [filterProducts, pageSize, currentFilters, sortBy, sortOrder, filterBySku]
   );
 
   const handleFilterChange = useCallback(
@@ -296,12 +313,14 @@ export function ProductsTableWrapper({ filterBySku, notificationsData, notificat
       console.log(newFilters);
       setCurrentFilters(newFilters);
 
-      // Guardar filtro de menú en localStorage
-      if (filterId === "menu") {
-        if (value.length > 0) {
-          localStorage.setItem('productsMenuFilter', JSON.stringify(value));
-        } else {
-          localStorage.removeItem('productsMenuFilter');
+      // Guardar filtro de menú en localStorage (solo si no hay filtro por SKU)
+      if (!filterBySku || filterBySku.length === 0) {
+        if (filterId === "menu") {
+          if (value.length > 0) {
+            localStorage.setItem('productsMenuFilter', JSON.stringify(value));
+          } else {
+            localStorage.removeItem('productsMenuFilter');
+          }
         }
       }
 
@@ -309,6 +328,11 @@ export function ProductsTableWrapper({ filterBySku, notificationsData, notificat
         limit: pageSize,
         page: 1,
       };
+
+      // Siempre mantener el filtro de SKU si existe (para productos con notificaciones)
+      if (filterBySku && filterBySku.length > 0) {
+        filters.sku = filterBySku.join(",");
+      }
 
       // Manejar filtro de Estado
       if (filterId === "status" && value.length > 0) {
@@ -405,13 +429,13 @@ export function ProductsTableWrapper({ filterBySku, notificationsData, notificat
       columns={columns}
       data={products}
       searchKey="name"
-      filters={filterBySku ? [] : tableFilters} // Deshabilitar filtros si hay filtro por SKU
+      filters={tableFilters} // Permitir filtros (siempre se mantiene el filtro de SKU)
       pageCount={totalPages}
       pageIndex={currentPage - 1}
       pageSize={pageSize}
       totalItems={totalItems}
       onPaginationChange={handlePaginationChange}
-      onSearchChange={filterBySku ? undefined : handleSearchChange} // Deshabilitar búsqueda si hay filtro por SKU
+      onSearchChange={handleSearchChange} // Permitir búsqueda (siempre se mantiene el filtro de SKU)
       onFilterChange={handleFilterChange}
       initialFilterValues={currentFilters}
       initialSearchValue={searchQuery}

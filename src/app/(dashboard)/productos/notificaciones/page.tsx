@@ -160,9 +160,12 @@ export default function ProductosNotificacionesPage() {
               </>
             ) : (
               <>
-                <div className="text-2xl font-bold text-orange-600">{totalPendientes}</div>
+                <div className="flex items-baseline gap-3">
+                  <div className="text-2xl font-bold text-orange-600">{totalPendientes}</div>
+                  <div className="text-lg font-semibold text-green-600">{totalEnviadas}</div>
+                </div>
                 <p className="text-xs text-muted-foreground">
-                  Por enviar
+                  Por enviar <span className="text-green-600">• Enviadas</span>
                 </p>
               </>
             )}
