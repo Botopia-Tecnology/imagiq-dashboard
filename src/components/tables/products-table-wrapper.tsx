@@ -14,9 +14,10 @@ const statuses = [
 interface ProductsTableWrapperProps {
   filterBySku?: string[];
   notificationsData?: GroupedNotificationsResponse | null;
+  notificationsOnly?: boolean;
 }
 
-export function ProductsTableWrapper({ filterBySku, notificationsData }: ProductsTableWrapperProps = {}) {
+export function ProductsTableWrapper({ filterBySku, notificationsData, notificationsOnly = false }: ProductsTableWrapperProps = {}) {
   const [pageSize, setPageSize] = useState(10);
 
   // Cargar filtros guardados desde localStorage (antes de cualquier petición)
@@ -387,7 +388,7 @@ export function ProductsTableWrapper({ filterBySku, notificationsData }: Product
   );
 
   const columns = useMemo(
-    () => createProductColumns(handleSortChange, notificationsData),
+    () => createProductColumns(handleSortChange, notificationsData, notificationsOnly),
     [handleSortChange, notificationsData]
   );
 

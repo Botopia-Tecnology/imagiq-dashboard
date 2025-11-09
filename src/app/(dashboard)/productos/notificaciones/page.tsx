@@ -65,10 +65,26 @@ export default function ProductosNotificacionesPage() {
             })
           })
           setProductsWithNotifications(skus)
+        } else {
+          // Manejar errores del backend
+          const errorMessage = response.message || "Error al cargar las notificaciones desde el servidor"
+          console.error("Error en la respuesta del servidor:", {
+            success: response.success,
+            message: response.message,
+            errors: response.errors,
+            endpoint: "/api/messaging/notifications/grouped",
+          })
+          toast.error(errorMessage)
+          // Establecer datos vacíos para evitar errores en el render
+          setNotificationsData({ total: 0, notificaciones: [] })
+          setProductsWithNotifications([])
         }
       } catch (error) {
         console.error("Error fetching notifications:", error)
-        toast.error("Error al cargar las notificaciones")
+        toast.error("Error de conexión al cargar las notificaciones. Verifica que el servidor esté funcionando.")
+        // Establecer datos vacíos para evitar errores en el render
+        setNotificationsData({ total: 0, notificaciones: [] })
+        setProductsWithNotifications([])
       } finally {
         setIsLoading(false)
       }
@@ -219,6 +235,7 @@ export default function ProductosNotificacionesPage() {
               <ProductsTableWrapper 
                 filterBySku={productsWithNotifications}
                 notificationsData={notificationsData}
+                notificationsOnly={true}
               />
             </Suspense>
           )}

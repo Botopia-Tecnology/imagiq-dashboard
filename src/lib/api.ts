@@ -52,13 +52,26 @@ export class ApiClient {
     try {
       const response = await fetch(url, config);
 
+      // Log errores del servidor para debugging
+      if (!response.ok) {
+        console.error(`[API Error] ${response.status} ${response.statusText}`, {
+          url,
+          status: response.status,
+          statusText: response.statusText,
+        });
+      }
+
       // Intentar parsear JSON
       let data;
       try {
         data = await response?.json();
       } catch (jsonError) {
         // Si no es JSON válido, retornar error
-        console.error("JSON parsing error:", jsonError);
+        console.error("JSON parsing error:", jsonError, {
+          url,
+          status: response.status,
+          statusText: response.statusText,
+        });
         return {
           data: {} as T,
           success: false,
@@ -66,14 +79,28 @@ export class ApiClient {
         };
       }
 
+      // Log errores 500 con más detalle
+      if (!response.ok && response.status >= 500) {
+        console.error(`[Backend Error] ${response.status}`, {
+          url,
+          endpoint,
+          data,
+          message: data?.message || data?.error || 'Error desconocido del servidor',
+        });
+      }
+
       return {
         data: data as T,
         success: response.ok,
-        message: typeof data?.message === 'string' ? data.message : undefined,
+        message: typeof data?.message === 'string' ? data.message : (typeof data?.error === 'string' ? data.error : undefined),
         errors: data?.errors,
       };
     } catch (error) {
-      console.error("API request failed:", error);
+      console.error("API request failed:", error, {
+        url,
+        endpoint,
+        error: error instanceof Error ? error.message : String(error),
+      });
       return {
         data: {} as T,
         success: false,
@@ -963,6 +990,8 @@ export interface NotificationProducto {
   notificacionesPendientes: number;
   notificacionesEnviadas: number;
   emails: string[];
+  fechaCreacion: string | null;
+  fechaActualizacion: string | null;
 }
 
 export interface NotificationGroup {

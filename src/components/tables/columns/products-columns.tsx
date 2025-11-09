@@ -1,10 +1,12 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
-import { ArrowUpDown, MoreHorizontal, Mail, CheckCircle2, Send, Users } from "lucide-react"
+import { ArrowUpDown, MoreHorizontal, Mail, CheckCircle2, Send, Users, Calendar, Clock } from "lucide-react"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
+import { format } from "date-fns"
+import { es } from "date-fns/locale"
 
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -37,10 +39,12 @@ import { GroupedNotificationsResponse, NotificationProducto } from "@/lib/api"
 // Componente separado para la celda de acciones que usa useRouter
 function ActionsCell({ 
   product, 
-  notificationData 
+  notificationData,
+  notificationsOnly = false
 }: { 
   product: ProductCardProps
   notificationData?: NotificationProducto | null
+  notificationsOnly?: boolean
 }) {
   const router = useRouter()
   const [showPendingModal, setShowPendingModal] = useState(false)
@@ -48,6 +52,11 @@ function ActionsCell({
   const [showSendEmailModal, setShowSendEmailModal] = useState(false)
   const [selectedEmails, setSelectedEmails] = useState<string[]>([])
   const [sendToAll, setSendToAll] = useState(false)
+
+  // Si estamos en modo solo notificaciones y no hay datos de notificaciones, no mostrar el menú
+  if (notificationsOnly && !notificationData) {
+    return null
+  }
 
   return (
     <>
@@ -59,24 +68,37 @@ function ActionsCell({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-          <DropdownMenuItem
-            onClick={() => navigator.clipboard.writeText(product.id)}
-          >
-            Copiar ID del producto
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => router.push(`/productos/${product.id}`)}>
-            Ver/Editar detalles
-          </DropdownMenuItem>
-          <DropdownMenuItem>Ver órdenes</DropdownMenuItem>
+          {!notificationsOnly && (
+            <>
+              <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+              <DropdownMenuItem
+                onClick={() => navigator.clipboard.writeText(product.id)}
+              >
+                Copiar ID del producto
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => router.push(`/productos/${product.id}`)}>
+                Ver/Editar detalles
+              </DropdownMenuItem>
+              <DropdownMenuItem>Ver órdenes</DropdownMenuItem>
+              
+              {notificationData && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel className="text-xs text-muted-foreground">
+                    Notificaciones
+                  </DropdownMenuLabel>
+                </>
+              )}
+            </>
+          )}
+          
+          {notificationsOnly && (
+            <DropdownMenuLabel>Notificaciones</DropdownMenuLabel>
+          )}
           
           {notificationData && (
             <>
-              <DropdownMenuSeparator />
-              <DropdownMenuLabel className="text-xs text-muted-foreground">
-                Notificaciones
-              </DropdownMenuLabel>
               {notificationData.notificacionesPendientes > 0 && (
                 <>
                   <DropdownMenuItem onClick={() => setShowPendingModal(true)}>
@@ -113,14 +135,23 @@ function ActionsCell({
               Clientes esperando notificación de disponibilidad para {product.name}
             </DialogDescription>
           </DialogHeader>
+          
           <div className="space-y-2 max-h-[400px] overflow-y-auto">
             {notificationData?.emails.map((email, index) => (
               <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                <div className="flex items-center gap-2">
-                  <Mail className="h-4 w-4 text-muted-foreground" />
+                <div className="flex items-center gap-3 flex-1">
+                  <Mail className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                   <span className="text-sm font-medium">{email}</span>
+                  {notificationData?.fechaActualizacion && (
+                    <div className="flex items-center gap-2 ml-auto mr-4">
+                      <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground">
+                        {format(new Date(notificationData.fechaActualizacion), "dd MMM yyyy, HH:mm", { locale: es })}
+                      </span>
+                    </div>
+                  )}
                 </div>
-                <Badge variant="secondary">Pendiente</Badge>
+                <Badge variant="secondary" className="flex-shrink-0">Pendiente</Badge>
               </div>
             ))}
           </div>
@@ -263,7 +294,8 @@ function ActionsCell({
 
 export const createProductColumns = (
   onSortChange?: (field: string, direction:  "desc" | "asc" ) => void,
-  notificationsData?: GroupedNotificationsResponse | null
+  notificationsData?: GroupedNotificationsResponse | null,
+  notificationsOnly: boolean = false
 ): ColumnDef<ProductCardProps>[] => [
   {
     id: "select",
@@ -496,7 +528,7 @@ export const createProductColumns = (
         }
       }
       
-      return <ActionsCell product={product} notificationData={notificationData} />
+      return <ActionsCell product={product} notificationData={notificationData} notificationsOnly={notificationsOnly} />
     },
   },
 ]
