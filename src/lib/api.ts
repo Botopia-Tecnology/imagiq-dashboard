@@ -488,8 +488,10 @@ export interface ProductApiData {
   precioDescto?: number[];
   fechaInicioVigencia?: string[];
   fechaFinalVigencia?: string[];
-  imagenPremium?: string[][]; // Array de arrays de URLs de imágenes premium
-  videoPremium?: string[][]; // Array de arrays de URLs de videos premium
+  // ✅ NUEVA ARQUITECTURA SIMPLIFICADA
+  imagen_premium?: string[][]; // Array de arrays: Imágenes del CARRUSEL (sin marcadores especiales)
+  imagen_final_premium?: (string | null)[]; // Array de strings: Imagen premium del DISPOSITIVO (una por color)
+  video_premium?: string[][]; // Array de arrays: Videos del carrusel
   segmento?: string[]; // Array de segmentos del producto (ej: ["Premium"])
 }
 

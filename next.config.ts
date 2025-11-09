@@ -27,8 +27,9 @@ const nextConfig: NextConfig = {
             value: [
               "default-src 'self'",
               "script-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:* https://imagiq-backend-production.up.railway.app https://www.clarity.ms https://*.clarity.ms https://scripts.clarity.ms",
-              "connect-src 'self' http://localhost:* https://imagiq-backend-production.up.railway.app https://www.clarity.ms https://*.clarity.ms https://c.clarity.ms",
-              "img-src 'self' data: blob: https: http://localhost:* https://www.clarity.ms https://*.clarity.ms",
+              "connect-src 'self' http://localhost:* https://imagiq-backend-production.up.railway.app https://www.clarity.ms https://*.clarity.ms https://c.clarity.ms https://res.cloudinary.com https://*.cloudinary.com",
+              "img-src 'self' data: blob: https: http://localhost:* https://www.clarity.ms https://*.clarity.ms https://res.cloudinary.com https://*.cloudinary.com",
+              "media-src 'self' blob: data: https://res.cloudinary.com https://*.cloudinary.com http://localhost:*",
               "style-src 'self' 'unsafe-inline'",
               "font-src 'self' data:",
               "frame-src 'self' *",
