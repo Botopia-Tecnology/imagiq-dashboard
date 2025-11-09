@@ -9,6 +9,7 @@
  */
 
 import { BackendCategory, BackendMenu, BackendSubmenu, CreateCategoryRequest, UpdateCategoryRequest, CreateMenuRequest, UpdateMenuRequest, CreateSubmenuRequest, UpdateSubmenuRequest, BackendWhatsAppTemplate } from "@/types";
+import { BackendBanner, BannerPaginationData } from "@/types/banner";
 
 
 // API Client configuration
@@ -971,6 +972,61 @@ export const whatsappTemplateEndpoints = {
   delete: (templateName: string) => apiClient.delete<{ success: boolean; message?: string }>(
     `/api/messaging/templates/${templateName}`
   ),
+};
+
+// Banner API endpoints
+export const bannerEndpoints = {
+  getAll: (params: { page: number; limit: number }) => {
+    const searchParams = new URLSearchParams();
+    searchParams.append('page', String(params.page));
+    searchParams.append('limit', String(params.limit));
+    const url = `/api/multimedia/banners?${searchParams.toString()}`;
+    return apiClient.get<BannerPaginationData>(url);
+  },
+
+  getByPlacement: (placement: string) =>
+    apiClient.get<BackendBanner[]>(`/api/multimedia/banners/placement/${placement}`),
+
+  create: (formData: FormData) => {
+    const url = `${API_BASE_URL}/api/multimedia/banners`;
+    return fetch(url, {
+      method: "POST",
+      body: formData,
+    }).then(async (response) => {
+      const data = await response.json();
+      return {
+        data,
+        success: response.ok,
+        message: typeof data?.message === 'string' ? data.message : (data?.error || "Error desconocido"),
+      };
+    }).catch((error) => ({
+      data: {},
+      success: false,
+      message: error instanceof Error ? error.message : "Request failed",
+    }));
+  },
+
+  update: (formData: FormData) => {
+    const url = `${API_BASE_URL}/api/multimedia/banners`;
+    return fetch(url, {
+      method: "POST",
+      body: formData,
+    }).then(async (response) => {
+      const data = await response.json();
+      return {
+        data,
+        success: response.ok,
+        message: typeof data?.message === 'string' ? data.message : (data?.error || "Error desconocido"),
+      };
+    }).catch((error) => ({
+      data: {},
+      success: false,
+      message: error instanceof Error ? error.message : "Request failed",
+    }));
+  },
+
+  delete: (id: string) =>
+    apiClient.delete<{ success: boolean; message?: string }>(`/api/multimedia/banners/${id}`),
 };
 
 // Product Notifications API endpoints
