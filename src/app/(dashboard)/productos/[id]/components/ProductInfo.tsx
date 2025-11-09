@@ -131,20 +131,14 @@ export function ProductInfo({
 
   // Manejar cambio de color
   const handleColorChange = (hex: string) => {
-    // Buscar la primera variante con este color que coincida con los filtros activos
-    const variant = findVariant(hex, activeCapacityFilter, activeRamFilter);
+    // Resetear los filtros activos para que todas las opciones del nuevo color estén disponibles
+    setActiveCapacityFilter(undefined);
+    setActiveRamFilter(undefined);
 
-    if (variant) {
-      onColorSelect(variant);
-    } else {
-      // Si no hay coincidencia con los filtros, buscar cualquier variante de ese color
-      const anyVariant = product.colors.find((v) => v.hex === hex);
-      if (anyVariant) {
-        onColorSelect(anyVariant);
-        // Actualizar los filtros activos con los valores de la nueva variante
-        setActiveCapacityFilter(anyVariant.capacity);
-        setActiveRamFilter(anyVariant.ram);
-      }
+    // Buscar la primera variante de ese color (sin ningún filtro aplicado)
+    const anyVariant = product.colors.find((v) => v.hex === hex);
+    if (anyVariant) {
+      onColorSelect(anyVariant);
     }
   };
 
@@ -159,6 +153,13 @@ export function ProductInfo({
     const variant = findVariant(selectedColor.hex, capacity, activeRamFilter);
     if (variant) {
       onColorSelect(variant);
+    } else {
+      // Si no hay coincidencia con el filtro de RAM, resetear RAM y buscar solo con capacidad
+      setActiveRamFilter(undefined);
+      const variantWithoutRam = findVariant(selectedColor.hex, capacity, undefined);
+      if (variantWithoutRam) {
+        onColorSelect(variantWithoutRam);
+      }
     }
   };
 
@@ -173,6 +174,13 @@ export function ProductInfo({
     const variant = findVariant(selectedColor.hex, activeCapacityFilter, ram);
     if (variant) {
       onColorSelect(variant);
+    } else {
+      // Si no hay coincidencia con el filtro de capacidad, resetear capacidad y buscar solo con RAM
+      setActiveCapacityFilter(undefined);
+      const variantWithoutCapacity = findVariant(selectedColor.hex, undefined, ram);
+      if (variantWithoutCapacity) {
+        onColorSelect(variantWithoutCapacity);
+      }
     }
   };
 
@@ -233,9 +241,7 @@ export function ProductInfo({
                     }}
                     title={`${colorGroup.label} - ${colorGroup.hasStock ? 'Disponible' : 'Sin stock'}`}
                   />
-                  {!colorGroup.hasStock && (
-                    <span className="text-xs text-muted-foreground">Sin stock</span>
-                  )}
+                 
                 </div>
               ))}
             </div>
