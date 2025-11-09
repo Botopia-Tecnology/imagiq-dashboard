@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import Image from "next/image"
 import { ChevronLeft, ChevronRight, Pencil } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
@@ -45,26 +45,134 @@ export function ProductMultimedia({
   const [isLoadingPremium, setIsLoadingPremium] = useState(false)
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0)
   const [currentPremiumImageIndex, setCurrentPremiumImageIndex] = useState(0)
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const [videoError, setVideoError] = useState<string | null>(null)
+  const [videoLoading, setVideoLoading] = useState(false)
+
+  // Función helper para verificar si el producto es premium (insensible a mayúsculas)
+  const isPremiumProduct = (() => {
+    if (!product.segmento || !Array.isArray(product.segmento)) return false
+    return product.segmento.some(seg => 
+      typeof seg === 'string' && seg.toLowerCase() === 'premium'
+    )
+  })()
 
   // Guardar el estado de isPremiumMode en localStorage (solo para productos premium)
   useEffect(() => {
     if (typeof window === 'undefined') return
     // Evitar que el modo premium "se pegue" a productos no premium
-    if (!product.segmento?.includes("Premium")) {
+    if (!isPremiumProduct) {
       localStorage.setItem('isPremiumMode', 'false')
       return
     }
     localStorage.setItem('isPremiumMode', String(isPremiumMode))
-  }, [isPremiumMode, product.segmento])
+  }, [isPremiumMode, isPremiumProduct])
+
+  // Crear array de items del carrusel (videos + imágenes excepto la última)
+  const carouselItems = (() => {
+    const items: Array<{ type: 'video' | 'image', url: string }> = [];
+    // Agregar todos los videos primero
+    premiumVideos.forEach(url => {
+      items.push({ type: 'video', url });
+    });
+    // Agregar todas las imágenes excepto la última
+    const imagesForCarousel = premiumImages.slice(0, -1);
+    imagesForCarousel.forEach(url => {
+      items.push({ type: 'image', url });
+    });
+    return items;
+  })()
 
   // Reiniciar el índice de imagen cuando cambie el color
   useEffect(() => {
     setCurrentImageIndex(0)
+    setCurrentVideoIndex(0)
   }, [selectedColor])
+
+  // Manejar carga y errores del video cuando cambia la URL
+  useEffect(() => {
+    const video = videoRef.current
+    if (!video || carouselItems[currentVideoIndex]?.type !== 'video') {
+      setVideoLoading(false)
+      setVideoError(null)
+      return
+    }
+
+    setVideoError(null)
+    setVideoLoading(true)
+
+    const handleCanPlay = () => {
+      setVideoLoading(false)
+      setVideoError(null)
+    }
+    
+    const handleError = () => {
+      setVideoLoading(false)
+      const error = video.error
+      if (error) {
+        let errorMessage = 'Error al cargar el video'
+        switch (error.code) {
+          case error.MEDIA_ERR_ABORTED:
+            errorMessage = 'La reproducción del video fue cancelada'
+            break
+          case error.MEDIA_ERR_NETWORK:
+            errorMessage = 'Error de red al cargar el video. Verifica tu conexión.'
+            break
+          case error.MEDIA_ERR_DECODE:
+            errorMessage = 'Error al decodificar el video'
+            break
+          case error.MEDIA_ERR_SRC_NOT_SUPPORTED:
+            errorMessage = 'El formato del video no es compatible'
+            break
+        }
+        setVideoError(errorMessage)
+        console.error('Error de video:', {
+          message: errorMessage,
+          code: error.code,
+          src: video.src,
+          networkState: video.networkState,
+          readyState: video.readyState
+        })
+      }
+    }
+    
+    const handleLoadStart = () => {
+      setVideoLoading(true)
+      setVideoError(null)
+    }
+    
+    const handleLoadedData = () => {
+      setVideoLoading(false)
+    }
+
+    const handleLoadedMetadata = () => {
+      setVideoLoading(false)
+    }
+
+    // Agregar event listeners
+    video.addEventListener('canplay', handleCanPlay)
+    video.addEventListener('error', handleError)
+    video.addEventListener('loadstart', handleLoadStart)
+    video.addEventListener('loadeddata', handleLoadedData)
+    video.addEventListener('loadedmetadata', handleLoadedMetadata)
+
+    // Si el video ya tiene metadata cargada, no mostrar loading
+    if (video.readyState >= 2) {
+      setVideoLoading(false)
+    }
+    
+    return () => {
+      video.removeEventListener('canplay', handleCanPlay)
+      video.removeEventListener('error', handleError)
+      video.removeEventListener('loadstart', handleLoadStart)
+      video.removeEventListener('loadeddata', handleLoadedData)
+      video.removeEventListener('loadedmetadata', handleLoadedMetadata)
+    }
+  }, [currentVideoIndex, carouselItems])
 
   // Cargar contenido premium cuando se activa el switch (solo si el producto es premium)
   useEffect(() => {
-    if (!isPremiumMode || !selectedColor || !(product.segmento?.includes("Premium"))) return
+    if (!isPremiumMode || !selectedColor || !isPremiumProduct) return
 
     setIsLoadingPremium(true)
     console.log("Selected Color Premium Data:", {
@@ -77,17 +185,14 @@ export function ProductMultimedia({
     setPremiumImages(selectedColor.premiumImages || [])
 
     setIsLoadingPremium(false)
-  }, [isPremiumMode, selectedColor])
-
-  // Check if product has premium segment
-  const isPremiumProduct = product.segmento?.includes("Premium") || false;
+  }, [isPremiumMode, selectedColor, isPremiumProduct])
 
   // Si no es premium, forzamos el modo premium a apagado para evitar render incorrecto
   useEffect(() => {
     if (!isPremiumProduct && isPremiumMode) {
       setIsPremiumMode(false)
     }
-  }, [isPremiumProduct])
+  }, [isPremiumProduct, isPremiumMode])
 
   return (
     <Card className="h-fit">
@@ -157,74 +262,108 @@ export function ProductMultimedia({
             {/* Carrusel Premium (Videos + Imágenes excepto la última) */}
             <div className="space-y-2">
               <h3 className="text-sm font-medium text-muted-foreground">Carrusel Premium</h3>
-              {(() => {
-                // Crear array combinado: videos + imágenes (excepto la última)
-                const carouselItems: Array<{ type: 'video' | 'image', url: string }> = [];
-
-                // Agregar todos los videos primero
-                premiumVideos.forEach(url => {
-                  carouselItems.push({ type: 'video', url });
-                });
-
-                // Agregar todas las imágenes excepto la última
-                const imagesForCarousel = premiumImages.slice(0, -1);
-                imagesForCarousel.forEach(url => {
-                  carouselItems.push({ type: 'image', url });
-                });
-
-                return carouselItems.length > 0 ? (
+              {carouselItems.length > 0 ? (
                   <>
-                    <div className="relative w-full h-64 overflow-hidden rounded-lg bg-muted group">
+                    <div className="relative w-full aspect-video overflow-hidden rounded-lg bg-black group">
                       {carouselItems[currentVideoIndex]?.type === 'video' ? (
-                        <video
-                          src={carouselItems[currentVideoIndex].url}
-                          className="w-full h-full object-contain"
-                          controls
-                          key={carouselItems[currentVideoIndex].url}
-                        />
+                        <>
+                          {videoLoading && (
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-20">
+                              <div className="text-center">
+                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-2"></div>
+                                <p className="text-sm text-white">Cargando video...</p>
+                              </div>
+                            </div>
+                          )}
+                          {videoError && (
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-20">
+                              <div className="text-center p-4">
+                                <p className="text-sm text-red-400 mb-2">{videoError}</p>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    if (videoRef.current) {
+                                      videoRef.current.load()
+                                    }
+                                  }}
+                                >
+                                  Reintentar
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+                          <video
+                            ref={videoRef}
+                            src={carouselItems[currentVideoIndex].url}
+                            className="w-full h-full object-contain"
+                            controls
+                            preload="auto"
+                            playsInline
+                            key={`${carouselItems[currentVideoIndex].url}-${currentVideoIndex}`}
+                            style={{ maxHeight: '100%' }}
+                          >
+                            Tu navegador no soporta la reproducción de video.
+                          </video>
+                        </>
                       ) : (
-                        <Image
-                          src={carouselItems[currentVideoIndex]?.url || ''}
-                          alt={`Carrusel ${currentVideoIndex + 1}`}
-                          fill
-                          className="object-contain"
-                        />
+                        <div className="relative w-full h-full">
+                          <Image
+                            src={carouselItems[currentVideoIndex]?.url || ''}
+                            alt={`Carrusel ${currentVideoIndex + 1}`}
+                            fill
+                            className="object-contain"
+                            sizes="(max-width: 768px) 100vw, 50vw"
+                          />
+                        </div>
                       )}
 
-                      {/* Botones de navegación */}
+                      {/* Botones de navegación - Solo mostrar cuando no es video o cuando no se está hover sobre controles */}
                       {carouselItems.length > 1 && (
                         <>
                           <button
-                            onClick={() => setCurrentVideoIndex((prev) =>
-                              prev === 0 ? carouselItems.length - 1 : prev - 1
-                            )}
-                            className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setCurrentVideoIndex((prev) =>
+                                prev === 0 ? carouselItems.length - 1 : prev - 1
+                              )
+                            }}
+                            className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white rounded-full p-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                            aria-label="Anterior"
                           >
                             <ChevronLeft className="h-5 w-5" />
                           </button>
                           <button
-                            onClick={() => setCurrentVideoIndex((prev) =>
-                              prev === carouselItems.length - 1 ? 0 : prev + 1
-                            )}
-                            className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setCurrentVideoIndex((prev) =>
+                                prev === carouselItems.length - 1 ? 0 : prev + 1
+                              )
+                            }}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white rounded-full p-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                            aria-label="Siguiente"
                           >
                             <ChevronRight className="h-5 w-5" />
                           </button>
                         </>
                       )}
 
-                      {/* Indicadores de página */}
+                      {/* Indicadores de página - Posicionados para no interferir con controles de video */}
                       {carouselItems.length > 1 && (
-                        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
+                        <div className="absolute bottom-12 left-1/2 -translate-x-1/2 flex gap-1.5 z-10 pointer-events-none">
                           {carouselItems.map((_, index) => (
                             <button
                               key={index}
-                              onClick={() => setCurrentVideoIndex(index)}
-                              className={`h-2 rounded-full transition-all ${
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setCurrentVideoIndex(index)
+                              }}
+                              className={`h-2 rounded-full transition-all pointer-events-auto ${
                                 index === currentVideoIndex
                                   ? 'w-8 bg-white'
                                   : 'w-2 bg-white/50 hover:bg-white/75'
                               }`}
+                              aria-label={`Ir a item ${index + 1}`}
                             />
                           ))}
                         </div>
@@ -232,27 +371,28 @@ export function ProductMultimedia({
                     </div>
                   </>
                 ) : (
-                  <div className="w-full h-64 flex items-center justify-center rounded-lg bg-muted">
+                  <div className="w-full aspect-video flex items-center justify-center rounded-lg bg-muted">
                     <p className="text-sm text-muted-foreground">No hay contenido premium disponible</p>
                   </div>
-                );
-              })()}
+                )}
             </div>
 
             {/* Imagen Premium del Dispositivo (última imagen) */}
             <div className="mt-6 space-y-2">
               <h3 className="text-sm font-medium text-muted-foreground">Imagen Premium</h3>
               {premiumImages.length > 0 ? (
-                <div className="relative w-full h-64 overflow-hidden rounded-lg bg-muted">
+                <div className="relative w-full aspect-video overflow-hidden rounded-lg bg-black">
                   <Image
                     src={premiumImages[premiumImages.length - 1]}
                     alt="Imagen Premium del Dispositivo"
                     fill
                     className="object-contain"
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                    priority
                   />
                 </div>
               ) : (
-                <div className="w-full h-64 flex items-center justify-center rounded-lg bg-muted">
+                <div className="w-full aspect-video flex items-center justify-center rounded-lg bg-muted">
                   <p className="text-sm text-muted-foreground">No hay imagen premium disponible</p>
                 </div>
               )}

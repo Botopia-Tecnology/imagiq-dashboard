@@ -26,8 +26,10 @@ export interface ProductColor {
   ram?: string; // Memoria RAM específica de esta variante (12GB, 16GB, etc.)
   imageUrl?: string; // URL de la imagen específica de esta variante (opcional)
   imageDetailsUrls?: string[]; // URLs de las imágenes detalladas de esta variante (opcional)
-  premiumImages?: string[]; // URLs de las imágenes premium de esta variante (opcional)
-  premiumVideos?: string[]; // URLs de los videos premium de esta variante (opcional)
+  // ✅ NUEVA ARQUITECTURA SIMPLIFICADA
+  premiumImages?: string[]; // URLs de las imágenes del CARRUSEL premium (sin marcadores especiales)
+  devicePremiumImage?: string | null; // URL de la imagen premium del DISPOSITIVO (puede ser null)
+  premiumVideos?: string[]; // URLs de los videos premium del carrusel
 }
 
 
@@ -313,8 +315,10 @@ function createProductColorsFromArray(apiProduct: ProductApiData): ProductColor[
     const imagePreviewArray = Array.isArray(apiProduct.imagePreviewUrl) ? apiProduct.imagePreviewUrl : [];
     const imageDetailsArray = Array.isArray(apiProduct.imageDetailsUrls) ? apiProduct.imageDetailsUrls : [];
     const urlImagenesArray = Array.isArray(apiProduct.urlImagenes) ? apiProduct.urlImagenes : [];
-    const imagenPremiumArray = Array.isArray(apiProduct.imagenPremium) ? apiProduct.imagenPremium : [];
-    const videoPremiumArray = Array.isArray(apiProduct.videoPremium) ? apiProduct.videoPremium : [];
+    // ✅ NUEVA ARQUITECTURA SIMPLIFICADA
+    const imagenPremiumArray = Array.isArray(apiProduct.imagen_premium) ? apiProduct.imagen_premium : [];
+    const imagenFinalPremiumArray = Array.isArray(apiProduct.imagen_final_premium) ? apiProduct.imagen_final_premium : [];
+    const videoPremiumArray = Array.isArray(apiProduct.video_premium) ? apiProduct.video_premium : [];
 
     // Datos específicos de este índice
     const sku = skuArray[index] || '';
@@ -340,14 +344,26 @@ function createProductColorsFromArray(apiProduct: ProductApiData): ProductColor[
       imageDetailsUrls = [emptyImg.src];
     }
 
-    // Imágenes premium
+    // ✅ NUEVA ARQUITECTURA SIMPLIFICADA
+    // Imágenes premium del CARRUSEL (array simple de strings, sin marcadores especiales)
     const premiumImages = imagenPremiumArray[index] && Array.isArray(imagenPremiumArray[index])
-      ? imagenPremiumArray[index].filter(url => url && url.trim() !== '')
+      ? imagenPremiumArray[index].filter((url): url is string => 
+          typeof url === 'string' && url.trim() !== '' && url.startsWith('http')
+        )
       : undefined;
 
-    // Videos premium
+    // Imagen premium del DISPOSITIVO (string simple o null)
+    const devicePremiumImage = imagenFinalPremiumArray[index] !== undefined && imagenFinalPremiumArray[index] !== null
+      ? (typeof imagenFinalPremiumArray[index] === 'string' && imagenFinalPremiumArray[index].trim() !== '' 
+          ? imagenFinalPremiumArray[index] 
+          : null)
+      : null;
+
+    // Videos premium del CARRUSEL (array simple de strings)
     const premiumVideos = videoPremiumArray[index] && Array.isArray(videoPremiumArray[index])
-      ? videoPremiumArray[index].filter(url => url && url.trim() !== '')
+      ? videoPremiumArray[index].filter((url): url is string => 
+          typeof url === 'string' && url.trim() !== '' && url.startsWith('http')
+        )
       : undefined;
 
     variants.push({
@@ -366,8 +382,9 @@ function createProductColorsFromArray(apiProduct: ProductApiData): ProductColor[
       ram,
       imageUrl,
       imageDetailsUrls,
-      premiumImages,
-      premiumVideos
+      premiumImages, // Imágenes del CARRUSEL premium (array)
+      devicePremiumImage, // Imagen premium del DISPOSITIVO (string|null)
+      premiumVideos // Videos del CARRUSEL premium (array)
     });
   });
 
