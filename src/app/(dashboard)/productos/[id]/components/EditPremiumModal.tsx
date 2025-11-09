@@ -50,81 +50,25 @@ export function EditPremiumModal({
   useEffect(() => {
     if (!isOpen || !selectedColor) return
 
-    // Cargar videos premium (siempre para todos los SKUs del producto)
+    // ✅ NUEVA ARQUITECTURA SIMPLIFICADA
+    // 1. Videos del CARRUSEL (array simple)
     if (selectedColor.premiumVideos && selectedColor.premiumVideos.length > 0) {
       setCarouselVideos(selectedColor.premiumVideos)
     } else {
       setCarouselVideos([])
     }
 
-    // Cargar imágenes premium
-    // IMPORTANTE: Estructura del array imagenPremium desde el backend:
-    // 
-    // REGLAS DEL BACKEND:
-    // 1. Array vacío []: Sin contenido premium
-    // 2. Una sola imagen [premium]: Solo imagen premium (sin carrusel) - string URL
-    // 3. Múltiples imágenes con premium: [carrusel1, carrusel2, ..., "premium.jpg"]
-    //    - Las primeras N-1 son del carrusel (strings)
-    //    - La última es la imagen premium (string URL)
-    // 4. Múltiples imágenes sin premium: [carrusel1, carrusel2, ""]
-    //    - Las primeras N son del carrusel (strings)
-    //    - La última es un string vacío "" (indica que NO hay premium)
-    //
-    // SOLUCIÓN: El backend usa "" al final para indicar que NO hay premium
-    // - Si hay premium: última posición es string URL válida (empieza con http)
-    // - Si NO hay premium: última posición es string vacío ""
-    // - Si no hay contenido: array vacío []
-    // - NO se permiten valores null en el array
-    
+    // 2. Imágenes del CARRUSEL (array simple, sin marcadores especiales)
     if (selectedColor.premiumImages && selectedColor.premiumImages.length > 0) {
-      const allImages = selectedColor.premiumImages
-      const lastItem = allImages[allImages.length - 1]
-      
-      // Verificar si la última posición es un string vacío "" (no hay premium)
-      const isLastItemEmptyString = typeof lastItem === 'string' && lastItem === ''
-      // Verificar si la última posición es una URL string válida (hay premium)
-      const isLastItemUrl = typeof lastItem === 'string' && lastItem.startsWith('http')
-      
-      if (isLastItemEmptyString) {
-        // No hay premium: todas las imágenes (excepto el último "") son del carrusel
-        const imagesForCarousel = allImages.slice(0, -1).filter((img): img is string => 
-          typeof img === 'string' && img !== '' && img !== null
-        )
-        setCarouselImages(imagesForCarousel)
-        setDeviceImage(null)
-      } else if (isLastItemUrl) {
-        // Hay premium: las primeras N-1 son del carrusel, la última es premium
-        const imagesForCarousel = allImages.slice(0, -1).filter((img): img is string => 
-          typeof img === 'string' && img !== '' && img !== null
-        )
-        setCarouselImages(imagesForCarousel)
-        setDeviceImage(lastItem)
-      } else if (allImages.length === 1) {
-        // Caso: Una sola imagen = puede ser solo premium [premium]
-        // Si es string URL válida, asumimos que es premium
-        if (typeof lastItem === 'string' && lastItem.startsWith('http')) {
-          setCarouselImages([])
-          setDeviceImage(lastItem)
-        } else {
-          // Si no es URL válida y no es "", tratar como carrusel (no debería pasar, pero por compatibilidad)
-          const imagesForCarousel = allImages.filter((img): img is string => 
-            typeof img === 'string' && img !== '' && img !== null
-          )
-          setCarouselImages(imagesForCarousel)
-          setDeviceImage(null)
-        }
-      } else {
-        // Caso por defecto: tratar todas como carrusel (por compatibilidad)
-        // Filtrar strings vacíos, null y objetos
-        const imagesForCarousel = allImages.filter((img): img is string => 
-          typeof img === 'string' && img !== '' && img !== null
-        )
-      setCarouselImages(imagesForCarousel)
-        setDeviceImage(null)
-      }
+      setCarouselImages(selectedColor.premiumImages)
     } else {
-      // Caso: Array vacío [] = sin contenido premium
       setCarouselImages([])
+    }
+
+    // 3. Imagen premium del DISPOSITIVO (string | null)
+    if (selectedColor.devicePremiumImage) {
+      setDeviceImage(selectedColor.devicePremiumImage)
+    } else {
       setDeviceImage(null)
     }
 

@@ -37,8 +37,10 @@ export interface ProductColor {
   ram?: string; // Memoria RAM específica de esta variante (12GB, 16GB, etc.)
   imageUrl?: string; // URL de la imagen específica de esta variante (opcional)
   imageDetailsUrls?: string[]; // URLs de las imágenes detalladas de esta variante (opcional)
-  premiumImages?: string[]; // URLs de las imágenes premium de esta variante (opcional)
-  premiumVideos?: string[]; // URLs de los videos premium de esta variante (opcional)
+  // ✅ NUEVA ARQUITECTURA SIMPLIFICADA
+  premiumImages?: string[]; // URLs de las imágenes del CARRUSEL premium (sin marcadores especiales)
+  devicePremiumImage?: string | null; // URL de la imagen premium del DISPOSITIVO (puede ser null)
+  premiumVideos?: string[]; // URLs de los videos premium del carrusel
 }
 
 export interface ProductCardProps {

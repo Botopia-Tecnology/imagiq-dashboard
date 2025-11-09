@@ -156,16 +156,8 @@ export async function reorderCarouselImages(skus: string[], imageArray: string[]
     },
     body: JSON.stringify({ 
       skus, 
-      // Enviar el array completo actualizado para que el backend lo guarde exactamente así
-      imagenPremium: imageArray, // Array completo: [carrusel..., premium] o [carrusel..., ""] o []
-      // El backend debe:
-      // 1. Recibir el array completo imageArray
-      // 2. Guardar exactamente este array en la columna imagen_premium de la base de datos
-      // 3. No modificar el orden, guardar tal cual se envía
-      // 4. Si es [], guardar [] vacío
-      // 5. Si termina con "", mantener "" al final (indica que NO hay premium)
-      // 6. Si termina con string URL válida, mantener string URL al final (indica que HAY premium)
-      // 7. NO permitir valores null en el array
+      // ✅ NUEVA ARQUITECTURA: enviar con el nombre correcto del campo
+      imagen_premium: imageArray // Array simple de strings del carrusel
     }),
   });
 
