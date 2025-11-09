@@ -315,10 +315,19 @@ function createProductColorsFromArray(apiProduct: ProductApiData): ProductColor[
     const imagePreviewArray = Array.isArray(apiProduct.imagePreviewUrl) ? apiProduct.imagePreviewUrl : [];
     const imageDetailsArray = Array.isArray(apiProduct.imageDetailsUrls) ? apiProduct.imageDetailsUrls : [];
     const urlImagenesArray = Array.isArray(apiProduct.urlImagenes) ? apiProduct.urlImagenes : [];
-    // ✅ NUEVA ARQUITECTURA SIMPLIFICADA
-    const imagenPremiumArray = Array.isArray(apiProduct.imagen_premium) ? apiProduct.imagen_premium : [];
-    const imagenFinalPremiumArray = Array.isArray(apiProduct.imagen_final_premium) ? apiProduct.imagen_final_premium : [];
-    const videoPremiumArray = Array.isArray(apiProduct.video_premium) ? apiProduct.video_premium : [];
+    // ✅ NUEVA ARQUITECTURA SIMPLIFICADA (con compatibilidad para formato antiguo)
+    // Intentar primero con el nuevo formato (snake_case), luego con el antiguo (camelCase)
+    const imagenPremiumArray = Array.isArray(apiProduct.imagen_premium) 
+      ? apiProduct.imagen_premium 
+      : (Array.isArray((apiProduct as any).imagenPremium) ? (apiProduct as any).imagenPremium : []);
+    
+    const imagenFinalPremiumArray = Array.isArray(apiProduct.imagen_final_premium) 
+      ? apiProduct.imagen_final_premium 
+      : [];
+    
+    const videoPremiumArray = Array.isArray(apiProduct.video_premium) 
+      ? apiProduct.video_premium 
+      : (Array.isArray((apiProduct as any).videoPremium) ? (apiProduct as any).videoPremium : []);
 
     // Datos específicos de este índice
     const sku = skuArray[index] || '';
@@ -346,18 +355,32 @@ function createProductColorsFromArray(apiProduct: ProductApiData): ProductColor[
 
     // ✅ NUEVA ARQUITECTURA SIMPLIFICADA
     // Imágenes premium del CARRUSEL (array simple de strings, sin marcadores especiales)
+    // IMPORTANTE: Filtrar "" (string vacío) que era el marcador de "sin premium" en la arquitectura antigua
+    // TODAS las imágenes en imagenPremium van al carrusel (excepto "")
     const premiumImages = imagenPremiumArray[index] && Array.isArray(imagenPremiumArray[index])
       ? imagenPremiumArray[index].filter((url): url is string => 
-          typeof url === 'string' && url.trim() !== '' && url.startsWith('http')
+          typeof url === 'string' && 
+          url.trim() !== '' && 
+          url !== '""' && // Filtrar string vacío
+          url.startsWith('http')
         )
       : undefined;
 
     // Imagen premium del DISPOSITIVO (string simple o null)
-    const devicePremiumImage = imagenFinalPremiumArray[index] !== undefined && imagenFinalPremiumArray[index] !== null
-      ? (typeof imagenFinalPremiumArray[index] === 'string' && imagenFinalPremiumArray[index].trim() !== '' 
-          ? imagenFinalPremiumArray[index] 
-          : null)
-      : null;
+    // SOLO usar imagen_final_premium si existe - NO intentar extraer de imagenPremium
+    let devicePremiumImage: string | null = null;
+    
+    if (imagenFinalPremiumArray.length > 0 && 
+        imagenFinalPremiumArray[index] !== undefined && 
+        imagenFinalPremiumArray[index] !== null) {
+      // Usar imagen_final_premium si existe y es válida
+      devicePremiumImage = typeof imagenFinalPremiumArray[index] === 'string' && 
+                          imagenFinalPremiumArray[index].trim() !== '' 
+        ? imagenFinalPremiumArray[index] 
+        : null;
+    }
+    // Si imagen_final_premium NO existe, devicePremiumImage queda en null
+    // TODAS las imágenes de imagenPremium van al carrusel
 
     // Videos premium del CARRUSEL (array simple de strings)
     const premiumVideos = videoPremiumArray[index] && Array.isArray(videoPremiumArray[index])

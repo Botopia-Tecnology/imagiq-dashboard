@@ -42,6 +42,7 @@ export function ProductMultimedia({
   })
   const [premiumVideos, setPremiumVideos] = useState<string[]>([])
   const [premiumImages, setPremiumImages] = useState<string[]>([])
+  const [devicePremiumImage, setDevicePremiumImage] = useState<string | null>(null)
   const [isLoadingPremium, setIsLoadingPremium] = useState(false)
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0)
   const [currentPremiumImageIndex, setCurrentPremiumImageIndex] = useState(0)
@@ -68,16 +69,15 @@ export function ProductMultimedia({
     localStorage.setItem('isPremiumMode', String(isPremiumMode))
   }, [isPremiumMode, isPremiumProduct])
 
-  // Crear array de items del carrusel (videos + imágenes excepto la última)
+  // Crear array de items del carrusel (videos + TODAS las imágenes del carrusel)
   const carouselItems = (() => {
     const items: Array<{ type: 'video' | 'image', url: string }> = [];
     // Agregar todos los videos primero
     premiumVideos.forEach(url => {
       items.push({ type: 'video', url });
     });
-    // Agregar todas las imágenes excepto la última
-    const imagesForCarousel = premiumImages.slice(0, -1);
-    imagesForCarousel.forEach(url => {
+    // ✅ Agregar TODAS las imágenes del carrusel (imagen_premium completo)
+    premiumImages.forEach(url => {
       items.push({ type: 'image', url });
     });
     return items;
@@ -177,12 +177,14 @@ export function ProductMultimedia({
     setIsLoadingPremium(true)
     console.log("Selected Color Premium Data:", {
       premiumVideos: selectedColor.premiumVideos,
-      premiumImages: selectedColor.premiumImages
+      premiumImages: selectedColor.premiumImages,
+      devicePremiumImage: selectedColor.devicePremiumImage
     })
 
     // Los datos premium ya vienen en selectedColor desde el mapper
     setPremiumVideos(selectedColor.premiumVideos || [])
-    setPremiumImages(selectedColor.premiumImages || [])
+    setPremiumImages(selectedColor.premiumImages || []) // TODAS las imágenes del CARRUSEL
+    setDevicePremiumImage(selectedColor.devicePremiumImage || null) // Imagen del DISPOSITIVO
 
     setIsLoadingPremium(false)
   }, [isPremiumMode, selectedColor, isPremiumProduct])
@@ -377,13 +379,13 @@ export function ProductMultimedia({
                 )}
             </div>
 
-            {/* Imagen Premium del Dispositivo (última imagen) */}
+            {/* Imagen Premium del Dispositivo (imagen_final_premium) */}
             <div className="mt-6 space-y-2">
-              <h3 className="text-sm font-medium text-muted-foreground">Imagen Premium</h3>
-              {premiumImages.length > 0 ? (
+              <h3 className="text-sm font-medium text-muted-foreground">Imagen Premium del Dispositivo</h3>
+              {devicePremiumImage ? (
                 <div className="relative w-full aspect-video overflow-hidden rounded-lg bg-black">
                   <Image
-                    src={premiumImages[premiumImages.length - 1]}
+                    src={devicePremiumImage}
                     alt="Imagen Premium del Dispositivo"
                     fill
                     className="object-contain"
@@ -393,7 +395,7 @@ export function ProductMultimedia({
                 </div>
               ) : (
                 <div className="w-full aspect-video flex items-center justify-center rounded-lg bg-muted">
-                  <p className="text-sm text-muted-foreground">No hay imagen premium disponible</p>
+                  <p className="text-sm text-muted-foreground">No hay imagen premium del dispositivo</p>
                 </div>
               )}
             </div>
