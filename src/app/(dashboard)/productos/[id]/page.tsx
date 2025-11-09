@@ -23,11 +23,41 @@ export default function ProductDetailPage() {
   console.log("ProductDetailPage render", { product})
   const [selectedColor, setSelectedColor] = useState<ProductColor | null>(null)
 
-  // Establecer el primer color como seleccionado por defecto
+  /**
+   * Helper function para encontrar la mejor variante a mostrar inicialmente
+   * Prioriza: mayor stock > menor precio > características más comunes
+   */
+  const findBestVariantToDisplay = (variants: ProductColor[]): ProductColor | null => {
+    if (variants.length === 0) return null;
+    if (variants.length === 1) return variants[0];
+
+    // Ordenar por stock (mayor a menor)
+    const sortedByStock = [...variants].sort((a, b) =>
+      (b.stockTotal || 0) - (a.stockTotal || 0)
+    );
+
+    // Tomar top 30% o al menos 3 variantes con mejor stock
+    const topStockCount = Math.max(3, Math.ceil(sortedByStock.length * 0.3));
+    const topStockVariants = sortedByStock.slice(0, topStockCount);
+
+    // Ordenar por precio (menor primero)
+    const sortedByPrice = [...topStockVariants].sort((a, b) => {
+      const priceA = a.price ? parseFloat(a.price.replace(/[^0-9.-]+/g, "")) : 0;
+      const priceB = b.price ? parseFloat(b.price.replace(/[^0-9.-]+/g, "")) : 0;
+      return priceA - priceB;
+    });
+
+    return sortedByPrice[0];
+  };
+
+  // Establecer la mejor variante como seleccionada por defecto
   useEffect(() => {
     if (product && product.colors.length > 0 && !selectedColor) {
-      setSelectedColor(product.colors[0])
-      console.log("Setting default selected color", { selectedColor})
+      const bestVariant = findBestVariantToDisplay(product.colors);
+      if (bestVariant) {
+        setSelectedColor(bestVariant);
+        console.log("Setting best variant as default", { bestVariant });
+      }
     }
   }, [product, selectedColor])
 
