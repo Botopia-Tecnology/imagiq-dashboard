@@ -20,6 +20,9 @@ import {
 
 type BannerPlacement =
   | "hero"
+  | "home-2"
+  | "home-3"
+  | "home-4"
   | "subheader"
   | "category-top"
   | "product-grid"
@@ -53,6 +56,30 @@ const bannerTypes: BannerType[] = [
     icon: LayoutGrid,
     placement: "Homepage - Superior",
     bestFor: ["Promociones principales", "Nuevos productos", "Mensaje de marca"],
+  },
+  {
+    id: "home-2",
+    title: "Banner Home 2",
+    description: "Segundo banner en la homepage. Ideal para promociones secundarias o destacar categorías.",
+    icon: Sparkles,
+    placement: "Homepage - Sección 2",
+    bestFor: ["Categorías destacadas", "Ofertas especiales", "Nuevas colecciones"],
+  },
+  {
+    id: "home-3",
+    title: "Banner Home 3",
+    description: "Tercer banner en la homepage. Perfecto para mostrar beneficios o servicios adicionales.",
+    icon: Tag,
+    placement: "Homepage - Sección 3",
+    bestFor: ["Beneficios del servicio", "Garantías", "Envío gratis"],
+  },
+  {
+    id: "home-4",
+    title: "Banner Home 4",
+    description: "Cuarto banner en la homepage. Excelente para contenido complementario o llamadas a la acción finales.",
+    icon: Bell,
+    placement: "Homepage - Sección 4",
+    bestFor: ["Newsletter", "Redes sociales", "App download"],
   },
   {
     id: "subheader",
@@ -202,8 +229,8 @@ export default function SeleccionarTipoBannerPage() {
                       <span>{type.placement}</span>
                     </div>
                     <div className="flex flex-wrap gap-1">
-                      {type.bestFor.slice(0, 2).map((item, idx) => (
-                        <Badge key={idx} variant="outline" className="text-xs">
+                      {type.bestFor.slice(0, 2).map((item) => (
+                        <Badge key={item} variant="outline" className="text-xs">
                           {item}
                         </Badge>
                       ))}

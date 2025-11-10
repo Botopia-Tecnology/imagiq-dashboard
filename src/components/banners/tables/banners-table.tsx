@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
 import {
   ColumnFiltersState,
   SortingState,
@@ -11,22 +12,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { ChevronDown, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
+import { Loader2 } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -37,25 +23,70 @@ import {
 } from "@/components/ui/table";
 import { useBanners } from "@/hooks/use-banners";
 import { createBannerColumns } from "./banner-columns";
+import { useBannerTableActions } from "./hooks/use-banner-table-actions";
+import { BannerTableToolbar } from "./components/banner-table-toolbar";
+import { BannerTablePagination } from "./components/banner-table-pagination";
+import { BannerDeleteDialogs } from "./components/banner-delete-dialogs";
 
+/**
+ * Componente principal de la tabla de banners
+ * Orquesta todos los subcomponentes y hooks
+ */
 export function BannersTable() {
+  const router = useRouter();
+
+  // Estado de la tabla
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
+  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({
+    color_font: false,
+    coordinates: false,
+    coordinates_mobile: false,
+  });
   const [rowSelection, setRowSelection] = React.useState({});
   const [itemsPerPage, setItemsPerPage] = React.useState<number>(10);
 
+  // Datos de la tabla
+  const { banners, isLoading, error, pagination, nextPage, previousPage, refetch } = useBanners({
+    limit: itemsPerPage,
+  });
+
+  // Acciones de la tabla (delete, status change, etc.)
   const {
-    banners,
-    isLoading,
-    error,
-    pagination,
-    nextPage,
-    previousPage,
-  } = useBanners({ limit: itemsPerPage });
+    bannerToDelete,
+    bannersToDelete,
+    isDeleting,
+    handleStatusChange,
+    handleDelete,
+    handleBulkDelete,
+    confirmDelete,
+    confirmBulkDelete,
+    cancelDelete,
+    cancelBulkDelete,
+  } = useBannerTableActions({
+    onSuccess: () => {
+      refetch();
+      setRowSelection({});
+    },
+  });
 
-  const columns = React.useMemo(() => createBannerColumns(), []);
+  // Navegación a editar
+  const handleEdit = (banner: any) => {
+    router.push(`/marketing/banners/${banner.id}/editar`);
+  };
 
+  // Definición de columnas
+  const columns = React.useMemo(
+    () =>
+      createBannerColumns({
+        onEdit: handleEdit,
+        onDelete: handleDelete,
+        onStatusChange: (banner, status) => void handleStatusChange(banner, status),
+      }),
+    [handleDelete, handleStatusChange]
+  );
+
+  // Configuración de la tabla
   const table = useReactTable({
     data: banners,
     columns,
@@ -76,6 +107,14 @@ export function BannersTable() {
     pageCount: pagination.totalPages,
   });
 
+  // Handler para eliminación masiva
+  const handleBulkDeleteClick = () => {
+    const selectedRows = table.getFilteredSelectedRowModel().rows;
+    const selectedBanners = selectedRows.map((row) => row.original);
+    handleBulkDelete(selectedBanners);
+  };
+
+  // Error state
   if (error) {
     return (
       <div className="w-full">
@@ -87,8 +126,7 @@ export function BannersTable() {
     );
   }
 
-  // Extract conditional rendering into a variable to avoid nested ternary operations
-  // (SonarQube rule). We set `bodyContent` with plain if/else blocks.
+  // Contenido del body de la tabla
   let bodyContent: React.ReactNode;
   if (isLoading) {
     bodyContent = (
@@ -123,60 +161,22 @@ export function BannersTable() {
 
   return (
     <div className="w-full">
-      <div className="flex items-center py-4 gap-2">
-        <Input
-          placeholder="Filtrar banners..."
-          value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
-          onChange={(event) =>
-            table.getColumn("name")?.setFilterValue(event.target.value)
-          }
-          className="max-w-sm"
-        />
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="ml-auto">
-              Columnas <ChevronDown className="ml-2 h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {table
-              .getAllColumns()
-              .filter((column) => column.getCanHide())
-              .map((column) => {
-                return (
-                  <DropdownMenuCheckboxItem
-                    key={column.id}
-                    className="capitalize"
-                    checked={column.getIsVisible()}
-                    onCheckedChange={(value) =>
-                      column.toggleVisibility(!!value)
-                    }
-                  >
-                    {column.id}
-                  </DropdownMenuCheckboxItem>
-                );
-              })}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+      {/* Toolbar: filtros y acciones */}
+      <BannerTableToolbar table={table} onBulkDelete={handleBulkDeleteClick} />
 
+      {/* Tabla */}
       <div className="rounded-md border">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => {
-                  return (
-                    <TableHead key={header.id}>
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                    </TableHead>
-                  );
-                })}
+                {headerGroup.headers.map((header) => (
+                  <TableHead key={header.id}>
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(header.column.columnDef.header, header.getContext())}
+                  </TableHead>
+                ))}
               </TableRow>
             ))}
           </TableHeader>
@@ -184,59 +184,27 @@ export function BannersTable() {
         </Table>
       </div>
 
-      <div className="flex items-center justify-between space-x-2 py-4">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <p className="text-sm text-muted-foreground">Filas por página:</p>
-            <Select
-              value={String(itemsPerPage)}
-              onValueChange={(value) => setItemsPerPage(Number(value))}
-            >
-              <SelectTrigger className="h-8 w-16">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="5">5</SelectItem>
-                <SelectItem value="10">10</SelectItem>
-                <SelectItem value="15">15</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="text-sm text-muted-foreground">
-            {table.getFilteredSelectedRowModel().rows.length > 0 && (
-              <span>
-                {table.getFilteredSelectedRowModel().rows.length} de{" "}
-                {pagination.total} fila(s) seleccionadas.
-              </span>
-            )}
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="text-sm text-muted-foreground">
-            Página {pagination.currentPage} de {pagination.totalPages}
-          </div>
-          <div className="space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={previousPage}
-              disabled={pagination.currentPage === 1 || isLoading}
-            >
-              Anterior
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={nextPage}
-              disabled={
-                pagination.currentPage === pagination.totalPages || isLoading
-              }
-            >
-              Siguiente
-            </Button>
-          </div>
-        </div>
-      </div>
+      {/* Paginación */}
+      <BannerTablePagination
+        table={table}
+        pagination={pagination}
+        itemsPerPage={itemsPerPage}
+        onItemsPerPageChange={setItemsPerPage}
+        onNextPage={nextPage}
+        onPreviousPage={previousPage}
+        isLoading={isLoading}
+      />
+
+      {/* Diálogos de confirmación */}
+      <BannerDeleteDialogs
+        bannerToDelete={bannerToDelete}
+        onCancelDelete={cancelDelete}
+        onConfirmDelete={confirmDelete}
+        bannersToDelete={bannersToDelete}
+        onCancelBulkDelete={cancelBulkDelete}
+        onConfirmBulkDelete={confirmBulkDelete}
+        isDeleting={isDeleting}
+      />
     </div>
   );
 }
