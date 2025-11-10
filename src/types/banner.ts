@@ -47,6 +47,7 @@ export interface BackendBanner {
   cta?: string;
   color_font?: string;
   coordinates?: string;
+  coordinates_mobile?: string;
   created_at: string;
   updated_at: string;
   created_by?: string;
