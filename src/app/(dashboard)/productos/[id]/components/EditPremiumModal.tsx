@@ -384,82 +384,43 @@ export function EditPremiumModal({
       }
 
       // 1.2. Subir imágenes de carrusel (nuevas)
-      // IMPORTANTE: SÍ se pueden subir imágenes del carrusel sin imagen premium
-      // Si no hay premium, el array puede tener solo carrusel con "" al final: [carrusel1, carrusel2, ""]
-      // Si hay premium, el array tiene: [carrusel1, carrusel2, premium]
+      // ✅ NUEVA ARQUITECTURA: imagen_premium contiene SOLO imágenes del carrusel
+      // - NO incluye la imagen del dispositivo (se maneja en imagen_final_premium)
+      // - Array simple de strings (sin marcadores especiales)
       const newImageFiles = carouselImages.filter(img => img instanceof File) as File[]
       if (newImageFiles.length > 0) {
         const result = await uploadCarouselImages(newImageFiles)
         if (!result) hasErrors = true
-        // NOTA: El backend debería devolver las nuevas URLs de imágenes, pero por ahora
-        // confiamos en que el backend las agregue correctamente antes de la última (premium o "")
       }
 
       // 1.3. Subir/actualizar imagen premium del dispositivo (si es nueva o cambiada)
-      // Esta siempre va en la última posición del array
+      // ✅ NUEVA ARQUITECTURA: Se guarda en imagen_final_premium (campo separado)
+      // - NO afecta imagen_premium (carrusel)
+      // - Se aplica a todos los SKUs del mismo color
       if (deviceImageFile) {
         const result = await uploadDeviceImage(deviceImageFile)
         if (!result) hasErrors = true
-        // NOTA: El backend debería devolver la nueva URL de la imagen premium
       }
 
       // ==================== PASO 2: REORDENAR ====================
-      // Después de subir todo, reordenar el array completo si es necesario
-      // IMPORTANTE: El backend ya agregó las nuevas imágenes/videos, ahora solo necesitamos
-      // reordenar si el usuario cambió el orden de las imágenes del carrusel
+      // ✅ NUEVA ARQUITECTURA SIMPLIFICADA:
+      // - imagen_premium: SOLO imágenes del carrusel (array simple)
+      // - imagen_final_premium: imagen del dispositivo (string | null, se maneja separado)
+      // - video_premium: videos del carrusel (array simple)
       
-      // Construir el array final completo con carrusel + premium o ""
-      // Este array refleja el estado DESEADO después de todas las operaciones
-      const finalImageArray: string[] = []
-      
-      // Obtener imágenes del carrusel en el orden actual (después de subir nuevas)
-      // Incluye: imágenes existentes (strings) + archivos nuevos que se subieron
-      // Excluye: imágenes marcadas para eliminación
+      // Construir el array final SOLO con imágenes del carrusel
+      // NO incluye la imagen del dispositivo (se maneja en imagen_final_premium)
       const currentCarouselImageUrls = carouselImages
-        .filter((img): img is string => typeof img === 'string' && img !== '' && img !== null)
+        .filter((img): img is string => typeof img === 'string' && img.trim() !== '')
         .filter(img => !deletedCarouselImages.includes(img))
       
-      // Agregar imágenes del carrusel en el orden actual
-      currentCarouselImageUrls.forEach(url => finalImageArray.push(url))
+      // Verificar si el orden cambió comparado con el original
+      const originalCarouselImages = selectedColor.premiumImages || []
+      const orderChanged = JSON.stringify(currentCarouselImageUrls) !== JSON.stringify(originalCarouselImages)
       
-      // Determinar si hay imagen premium después de todas las operaciones
-      const hasPremiumImage = deviceImage !== null && deviceImage !== undefined && 
-                              deviceImageFile === null && // No hay nueva para subir (ya se subió en PASO 1.3)
-                              typeof deviceImage === 'string' && 
-                              deviceImage.startsWith('http')
-      const willHavePremiumImage = hasPremiumImage || deviceImageFile !== null
-      
-      // Agregar última posición: premium (string URL válida) o "" (string vacío)
-      if (willHavePremiumImage) {
-        if (hasPremiumImage) {
-          // Si hay premium existente, agregarla al final
-          finalImageArray.push(deviceImage as string)
-        }
-        // Si se subió deviceImageFile en PASO 1.3, el backend ya la agregó al final
-        // En este caso, necesitamos la URL que el backend devolvió, pero como no la tenemos,
-        // confiamos en que el backend la agregó correctamente
-        // Por ahora, no agregamos nada aquí si solo hay deviceImageFile (sin deviceImage)
-      } else if (finalImageArray.length > 0) {
-        // NO hay premium pero SÍ hay carrusel → agregar "" al final
-        finalImageArray.push('')
-      }
-      // Si no hay carrusel ni premium, el array queda vacío []
-
-      // Verificar si el array necesita reordenarse (comparar con el original)
-      const originalCompleteArray = selectedColor.premiumImages || []
-      const normalizedOriginal = originalCompleteArray.filter((item): item is string => 
-        item !== null && item !== undefined
-      )
-      const orderChanged = JSON.stringify(finalImageArray) !== JSON.stringify(normalizedOriginal)
-      
-      // Solo reordenar si hay cambios Y el array tiene contenido
-      // Esto actualiza el orden después de agregar nuevas imágenes
-      if (orderChanged && finalImageArray.length > 0) {
-        const success = await reorderCarouselImages(finalImageArray)
-        if (!success) hasErrors = true
-      } else if (finalImageArray.length === 0 && originalCompleteArray.length > 0) {
-        // Si el array final está vacío pero había contenido, enviar [] vacío
-        const success = await reorderCarouselImages([])
+      // Solo reordenar si hay cambios
+      if (orderChanged) {
+        const success = await reorderCarouselImages(currentCarouselImageUrls)
         if (!success) hasErrors = true
       }
 
@@ -468,74 +429,41 @@ export function EditPremiumModal({
       // IMPORTANTE: Las eliminaciones se hacen DESPUÉS de crear y reordenar
       
       // 3.1. Eliminar imagen premium del dispositivo SI el usuario la eliminó
-      // IMPORTANTE: Cuando se elimina la imagen premium, SIEMPRE se debe enviar [] (vacío)
-      const originalImages = selectedColor.premiumImages || []
-      const lastItem = originalImages.length > 0 ? originalImages[originalImages.length - 1] : null
-      const hadPremiumImage = typeof lastItem === 'string' && lastItem.startsWith('http')
-      const hasPremiumImageNow = deviceImage !== null && deviceImage !== undefined
-      const isUploadingNewPremium = deviceImageFile !== null
+      // ✅ NUEVA ARQUITECTURA: imagen_final_premium es un campo separado
+      const hadDeviceImage = selectedColor.devicePremiumImage !== null && selectedColor.devicePremiumImage !== undefined
+      const hasDeviceImageNow = deviceImage !== null && deviceImage !== undefined
+      const isUploadingNewDevice = deviceImageFile !== null
       
-      // Si había premium y ahora no hay (y no se está subiendo una nueva), eliminarla
-      if (hadPremiumImage && !hasPremiumImageNow && !isUploadingNewPremium) {
+      // Si había imagen del dispositivo y ahora no hay (y no se está subiendo una nueva), eliminarla
+      if (hadDeviceImage && !hasDeviceImageNow && !isUploadingNewDevice) {
         try {
-          // IMPORTANTE: Cuando se elimina la imagen premium, SIEMPRE se envía [] (vacío)
-          // El backend debe limpiar todo el array imagenPremium
+          // ✅ Elimina SOLO imagen_final_premium (la pone en null)
+          // NO afecta imagen_premium (carrusel)
           const result = await multimediaApi.deleteDeviceImageForColor(skusByColor, [])
           
           if (!result.success) {
-            toast.error(`Error al eliminar imagen premium: ${result.message}`)
+            toast.error(`Error al eliminar imagen del dispositivo: ${result.message}`)
             hasErrors = true
           }
-          // No mostrar toast de éxito aquí, se mostrará al final si todo fue exitoso
         } catch (error) {
           console.error('Error deleting device image:', error)
-          toast.error('Error al eliminar imagen premium')
+          toast.error('Error al eliminar imagen del dispositivo')
           hasErrors = true
         }
       }
 
       // 3.2. Eliminar imágenes de carrusel que el usuario borró
+      // ✅ NUEVA ARQUITECTURA: imagen_premium contiene SOLO imágenes del carrusel
       if (deletedCarouselImages.length > 0) {
-        // Construir el nuevo array sin las imágenes eliminadas
-        const remainingCarouselImages = carouselImages
-          .filter(img => {
-            if (typeof img === 'string') {
-              return !deletedCarouselImages.includes(img)
-            }
-            return true // Mantener archivos nuevos (aunque no debería haber, ya se subieron)
-          })
-          .filter((img): img is string => typeof img === 'string' && img !== '' && img !== null)
-
-        // Determinar si hay premium después de todas las operaciones
-        const hasPremium = deviceImage !== null && deviceImage !== undefined && 
-                          typeof deviceImage === 'string' && 
-                          deviceImage.startsWith('http')
-        const finalArray: string[] = []
-        
-        // Agregar imágenes del carrusel que quedan
-        remainingCarouselImages.forEach(img => finalArray.push(img))
-
-        // Agregar última posición: premium (string URL) o "" (string vacío)
-        if (hasPremium && deviceImage) {
-          finalArray.push(deviceImage as string)
-        } else if (finalArray.length > 0) {
-          finalArray.push('')
-        }
+        // Construir el array final SOLO con imágenes del carrusel (sin imagen del dispositivo)
+        const finalArray = carouselImages
+          .filter((img): img is string => typeof img === 'string' && img.trim() !== '')
+          .filter(img => !deletedCarouselImages.includes(img))
 
         // Eliminar cada imagen del carrusel
         for (const imageUrl of deletedCarouselImages) {
           try {
-            // Verificar que no sea la última imagen si es premium (string URL)
-            const originalImages = selectedColor.premiumImages || []
-            if (originalImages.length > 0) {
-              const lastItem = originalImages[originalImages.length - 1]
-              if (typeof lastItem === 'string' && lastItem.startsWith('http') && lastItem === imageUrl) {
-                toast.warning('No se puede eliminar la imagen premium desde el carrusel. Usa la sección "Imagen Premium" para eliminarla.')
-                continue
-              }
-            }
-
-            // Enviar el array actualizado al backend
+            // Enviar el array actualizado (SOLO carrusel) al backend
             const result = await multimediaApi.deleteCarouselImage(skus, imageUrl, finalArray)
             if (!result.success) {
               toast.error(`Error al eliminar imagen de carrusel: ${result.message}`)
