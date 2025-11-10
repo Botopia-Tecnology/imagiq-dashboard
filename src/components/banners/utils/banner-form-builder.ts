@@ -60,35 +60,23 @@ function appendTextFields(
 
 /**
  * Agrega archivos nuevos al FormData
- * Los archivos se renombran según la convención del backend: "desktop_image", "mobile_image", etc.
+ * Los archivos mantienen su nombre original con extensión
  */
 function appendNewFiles(formData: FormData, files: BannerMediaFiles): void {
   if (files.desktop_image) {
-    const file = new File([files.desktop_image], "desktop_image", {
-      type: files.desktop_image.type,
-    });
-    formData.append("files", file);
+    formData.append("files", files.desktop_image, files.desktop_image.name);
   }
 
   if (files.mobile_image) {
-    const file = new File([files.mobile_image], "mobile_image", {
-      type: files.mobile_image.type,
-    });
-    formData.append("files", file);
+    formData.append("files", files.mobile_image, files.mobile_image.name);
   }
 
   if (files.desktop_video) {
-    const file = new File([files.desktop_video], "desktop_video", {
-      type: files.desktop_video.type,
-    });
-    formData.append("files", file);
+    formData.append("files", files.desktop_video, files.desktop_video.name);
   }
 
   if (files.mobile_video) {
-    const file = new File([files.mobile_video], "mobile_video", {
-      type: files.mobile_video.type,
-    });
-    formData.append("files", file);
+    formData.append("files", files.mobile_video, files.mobile_video.name);
   }
 }
 
