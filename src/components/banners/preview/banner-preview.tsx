@@ -8,10 +8,10 @@ import { BannerContentOverlay } from "./banner-content-overlay";
 import { BannerPositionControls } from "./banner-position-controls";
 
 interface BannerPreviewProps {
-  desktop_image?: File;
-  desktop_video?: File;
-  mobile_image?: File;
-  mobile_video?: File;
+  desktop_image?: File | string;
+  desktop_video?: File | string;
+  mobile_image?: File | string;
+  mobile_video?: File | string;
   title?: string;
   description?: string;
   cta?: string;
@@ -24,8 +24,8 @@ interface BannerPreviewProps {
 }
 
 interface BannerContentProps {
-  image?: File;
-  video?: File;
+  image?: File | string;
+  video?: File | string;
   title?: string;
   description?: string;
   cta?: string;
@@ -53,18 +53,35 @@ function BannerContent({
 
   useEffect(() => {
     if (image) {
-      const url = URL.createObjectURL(image);
-      setImageUrl(url);
-      return () => URL.revokeObjectURL(url);
+      // Si es string (URL del backend), usar directamente
+      if (typeof image === "string") {
+        setImageUrl(image);
+      } else {
+        // Si es File (nuevo upload), crear objeto URL
+        const url = URL.createObjectURL(image);
+        setImageUrl(url);
+        return () => URL.revokeObjectURL(url);
+      }
+    } else {
+      setImageUrl(undefined);
     }
   }, [image]);
 
   useEffect(() => {
     if (video) {
-      const url = URL.createObjectURL(video);
-      setVideoUrl(url);
-      setShowContent(false);
-      return () => URL.revokeObjectURL(url);
+      // Si es string (URL del backend), usar directamente
+      if (typeof video === "string") {
+        setVideoUrl(video);
+        setShowContent(false);
+      } else {
+        // Si es File (nuevo upload), crear objeto URL
+        const url = URL.createObjectURL(video);
+        setVideoUrl(url);
+        setShowContent(false);
+        return () => URL.revokeObjectURL(url);
+      }
+    } else {
+      setVideoUrl(undefined);
     }
   }, [video]);
 

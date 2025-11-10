@@ -1033,6 +1033,7 @@ export const bannerEndpoints = {
   create: (formData: FormData) =>
     apiClient.postFormData<BackendBanner>('/api/multimedia/banners', formData),
 
+  // Update usa el mismo endpoint POST pero con el campo 'id' en el FormData
   update: (formData: FormData) =>
     apiClient.postFormData<BackendBanner>('/api/multimedia/banners', formData),
 
