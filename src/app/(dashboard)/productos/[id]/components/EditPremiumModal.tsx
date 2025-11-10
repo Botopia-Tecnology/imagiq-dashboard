@@ -525,18 +525,17 @@ export function EditPremiumModal({
         <DialogHeader>
           <DialogTitle>Editar Contenido Premium</DialogTitle>
           <DialogDescription>
-            Gestiona videos, imágenes del carrusel y la imagen premium de {product.name}
+            Gestiona videos e imágenes del carrusel premium de {product.name}
             {selectedColor && ` - ${selectedColor.label}`}
             <br />
             <span className="text-xs">
-              <strong>Carrusel:</strong> Se aplica a todos los SKUs del producto ({getAllSkus().length} SKU(s)).{' '}
-              <strong>Imagen Premium:</strong> Se aplica a todos los SKUs del mismo color ({getSkusByColor().length} SKU(s)).
+              <strong>Carrusel:</strong> Se aplica a todos los SKUs del producto ({getAllSkus().length} SKU(s)).
             </span>
           </DialogDescription>
         </DialogHeader>
 
         <Tabs defaultValue="carousel-images" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="carousel-images" className="gap-2">
               <ImageIcon className="h-4 w-4" />
               Imágenes Carrusel
@@ -544,10 +543,6 @@ export function EditPremiumModal({
             <TabsTrigger value="carousel-videos" className="gap-2">
               <Video className="h-4 w-4" />
               Videos Carrusel
-            </TabsTrigger>
-            <TabsTrigger value="device-image" className="gap-2">
-              <ImageIcon className="h-4 w-4" />
-              Imagen Premium
             </TabsTrigger>
           </TabsList>
 
@@ -690,58 +685,6 @@ export function EditPremiumModal({
                   Los videos siempre aparecen primero en el carrusel premium, antes que las imágenes. Se aplican a todos los SKUs del producto ({getAllSkus().length} SKU(s)).
                 </p>
               </div>
-            </div>
-          </TabsContent>
-
-          {/* Tab de Imagen Premium del Dispositivo */}
-          <TabsContent value="device-image" className="space-y-6 py-4">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <Label>Imagen Premium del Dispositivo</Label>
-                <span className="text-xs text-muted-foreground">Una sola imagen</span>
-              </div>
-
-              {deviceImage ? (
-                <div className="space-y-3">
-                  <div className="relative w-full h-64 rounded-lg border overflow-hidden bg-muted">
-                    <Image
-                      src={deviceImage}
-                      alt="Imagen Premium del Dispositivo"
-                      fill
-                      className="object-contain"
-                    />
-                  </div>
-                  <Button
-                    variant="outline"
-                    onClick={handleDeleteDeviceImage}
-                    className="w-full"
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Eliminar imagen premium
-                  </Button>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <input
-                    type="file"
-                    id="device-image-upload"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleDeviceImageUpload}
-                  />
-                  <Button
-                    variant="outline"
-                    onClick={() => document.getElementById("device-image-upload")?.click()}
-                    className="w-full"
-                  >
-                    <Upload className="h-4 w-4 mr-2" />
-                    Subir imagen premium
-                  </Button>
-                  <p className="text-xs text-muted-foreground text-center">
-                    Esta es la imagen destacada del dispositivo que se muestra separada del carrusel. Se aplica a todos los SKUs del mismo color ({getSkusByColor().length} SKU(s)).
-                  </p>
-                </div>
-              )}
             </div>
           </TabsContent>
         </Tabs>

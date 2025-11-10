@@ -378,27 +378,6 @@ export function ProductMultimedia({
                   </div>
                 )}
             </div>
-
-            {/* Imagen Premium del Dispositivo (imagen_final_premium) */}
-            <div className="mt-6 space-y-2">
-              <h3 className="text-sm font-medium text-muted-foreground">Imagen Premium del Dispositivo</h3>
-              {devicePremiumImage ? (
-                <div className="relative w-full aspect-video overflow-hidden rounded-lg bg-black">
-                  <Image
-                    src={devicePremiumImage}
-                    alt="Imagen Premium del Dispositivo"
-                    fill
-                    className="object-contain"
-                    sizes="(max-width: 768px) 100vw, 50vw"
-                    priority
-                  />
-                </div>
-              ) : (
-                <div className="w-full aspect-video flex items-center justify-center rounded-lg bg-muted">
-                  <p className="text-sm text-muted-foreground">No hay imagen premium del dispositivo</p>
-                </div>
-              )}
-            </div>
           </>
         ) : (
           /* Contenido Normal */
