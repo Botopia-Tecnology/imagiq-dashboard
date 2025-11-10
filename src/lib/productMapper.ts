@@ -283,6 +283,49 @@ function createProductColorsFromArray(apiProduct: ProductApiData): ProductColor[
     }
   });
 
+  // ✅ PASO 1: Crear mapa de imagen_final_premium por color (hex)
+  // La imagen premium del dispositivo se aplica a TODOS los SKUs del mismo color
+  const devicePremiumImageByColor = new Map<string, string | null>();
+  
+  // Primero, buscar la imagen_final_premium para cada color único
+  const imagenFinalPremiumArray = Array.isArray(apiProduct.imagen_final_premium) 
+    ? apiProduct.imagen_final_premium 
+    : [];
+  
+  // Iterar sobre todos los índices originales para encontrar imágenes por color
+  // Tomar la primera imagen válida encontrada para cada color único (por hex)
+  const colorArray = Array.isArray(apiProduct.color) ? apiProduct.color : [];
+  colorArray.forEach((color, idx) => {
+    if (idx < imagenFinalPremiumArray.length) {
+      const colorInfo = getColorInfo(color);
+      const hex = colorInfo.hex;
+      
+      // Si este color aún no tiene imagen asignada, buscar la primera imagen válida
+      if (!devicePremiumImageByColor.has(hex)) {
+        const imageValue = imagenFinalPremiumArray[idx];
+        // Solo asignar si es una URL válida (no null, no undefined, no string vacío)
+        if (imageValue !== undefined && imageValue !== null && 
+            typeof imageValue === 'string' && imageValue.trim() !== '' &&
+            imageValue.startsWith('http')) {
+          devicePremiumImageByColor.set(hex, imageValue);
+        } else {
+          // Si no hay imagen válida, marcar como null
+          devicePremiumImageByColor.set(hex, null);
+        }
+      }
+    }
+  });
+  
+  // Si algún color no se encontró en el array, marcarlo como null por defecto
+  variantMap.forEach((variantData) => {
+    const { color } = variantData;
+    const colorInfo = getColorInfo(color);
+    const hex = colorInfo.hex;
+    if (!devicePremiumImageByColor.has(hex)) {
+      devicePremiumImageByColor.set(hex, null);
+    }
+  });
+
   // Convertir el mapa a array de ProductColor
   variantMap.forEach((variantData) => {
     const { color, capacity, ram, precioNormal, precioDescto, index } = variantData;
@@ -320,10 +363,6 @@ function createProductColorsFromArray(apiProduct: ProductApiData): ProductColor[
     const imagenPremiumArray = Array.isArray(apiProduct.imagen_premium) 
       ? apiProduct.imagen_premium 
       : (Array.isArray((apiProduct as any).imagenPremium) ? (apiProduct as any).imagenPremium : []);
-    
-    const imagenFinalPremiumArray = Array.isArray(apiProduct.imagen_final_premium) 
-      ? apiProduct.imagen_final_premium 
-      : [];
     
     const videoPremiumArray = Array.isArray(apiProduct.video_premium) 
       ? apiProduct.video_premium 
@@ -366,21 +405,9 @@ function createProductColorsFromArray(apiProduct: ProductApiData): ProductColor[
         )
       : undefined;
 
-    // Imagen premium del DISPOSITIVO (string simple o null)
-    // SOLO usar imagen_final_premium si existe - NO intentar extraer de imagenPremium
-    let devicePremiumImage: string | null = null;
-    
-    if (imagenFinalPremiumArray.length > 0 && 
-        imagenFinalPremiumArray[index] !== undefined && 
-        imagenFinalPremiumArray[index] !== null) {
-      // Usar imagen_final_premium si existe y es válida
-      devicePremiumImage = typeof imagenFinalPremiumArray[index] === 'string' && 
-                          imagenFinalPremiumArray[index].trim() !== '' 
-        ? imagenFinalPremiumArray[index] 
-        : null;
-    }
-    // Si imagen_final_premium NO existe, devicePremiumImage queda en null
-    // TODAS las imágenes de imagenPremium van al carrusel
+    // ✅ Imagen premium del DISPOSITIVO agrupada por COLOR (hex)
+    // La misma imagen se aplica a TODOS los SKUs del mismo color
+    const devicePremiumImage = devicePremiumImageByColor.get(colorInfo.hex) || null;
 
     // Videos premium del CARRUSEL (array simple de strings)
     const premiumVideos = videoPremiumArray[index] && Array.isArray(videoPremiumArray[index])

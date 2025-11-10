@@ -125,28 +125,17 @@ export async function deleteCarouselImage(skus: string[], imageUrl: string, upda
 }
 
 /**
- * Reordenar/Actualizar array completo de imágenes premium para TODOS los SKUs
- * IMPORTANTE: 
- * - Recibe el array COMPLETO actualizado: [carrusel1, carrusel2, ..., premium] o [carrusel1, carrusel2, ""]
- * - El backend debe guardar exactamente este array en la base de datos
- * - La última posición puede ser:
- *   - String URL válida (empieza con http): imagen premium (si existe)
- *   - String vacío "": NO hay premium (solo carrusel)
- * - Si el array está vacío [], el backend debe guardar [] vacío
- * - NO se permiten valores null en el array
+ * Reordenar/Actualizar array completo de imágenes del carrusel para TODOS los SKUs
  * 
- * Esta función se usa para:
- * - Reordenar imágenes del carrusel (manteniendo premium o "" al final)
- * - Actualizar el array completo después de eliminar/agregar imágenes
- * - Enviar [] vacío cuando se elimina todo
- * - Enviar [carrusel..., ""] cuando no hay premium pero hay carrusel
+ * ✅ NUEVA ARQUITECTURA SIMPLIFICADA:
+ * - Actualiza SOLO el array `imagen_premium` (carrusel)
+ * - NO afecta `imagen_final_premium` (imagen del dispositivo)
+ * - Array simple de strings (sin marcadores especiales)
+ * - Si el array está vacío [], el backend guarda [] vacío
+ * - NO se permiten valores null o undefined en el array
  * 
  * @param skus - Array de SKUs en los que se actualizará el array
- * @param imageArray - Array COMPLETO en el orden final: [carrusel..., premium] o [carrusel..., ""] o []
- *                    - Si está vacío [], se guarda [] vacío
- *                    - Si tiene solo premium: [premium]
- *                    - Si tiene carrusel + premium: [carrusel..., premium]
- *                    - Si tiene solo carrusel: [carrusel..., ""] (con "" al final)
+ * @param imageArray - Array de URLs de imágenes del carrusel en el orden final
  */
 export async function reorderCarouselImages(skus: string[], imageArray: string[]) {
   const response = await fetch(`${API_BASE_URL}/api/multimedia/producto/carrusel/reordenar`, {
@@ -156,8 +145,8 @@ export async function reorderCarouselImages(skus: string[], imageArray: string[]
     },
     body: JSON.stringify({ 
       skus, 
-      // ✅ NUEVA ARQUITECTURA: enviar con el nombre correcto del campo
-      imagen_premium: imageArray // Array simple de strings del carrusel
+      // ✅ Backend espera camelCase: imagenPremium
+      imagenPremium: imageArray // Array simple de strings del carrusel
     }),
   });
 
@@ -225,21 +214,58 @@ export async function deleteDeviceImage(sku: string) {
  * @param file - Archivo de imagen a subir
  */
 export async function uploadDeviceImageForColor(skus: string[], file: File) {
+  // 🔍 Debug: Verificar datos antes de enviar
+  if (process.env.NODE_ENV === 'development') {
+    console.log('📤 [uploadDeviceImageForColor] Enviando:', {
+      skus,
+      skusLength: skus.length,
+      file: {
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        sizeMB: (file.size / (1024 * 1024)).toFixed(2) + ' MB'
+      }
+    });
+  }
+
   const formData = new FormData();
   formData.append('file', file);
   formData.append('skus', JSON.stringify(skus));
 
-  const response = await fetch(`${API_BASE_URL}/api/multimedia/producto/imagen-dispositivo-color`, {
-    method: 'PUT',
-    body: formData,
-  });
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/multimedia/producto/imagen-dispositivo-color`, {
+      method: 'PUT',
+      body: formData,
+    });
 
-  const data = await response.json();
-  return {
-    success: response.ok,
-    data,
-    message: data.message,
-  };
+    const data = await response.json();
+
+    // 🔍 Debug: Verificar respuesta
+    if (process.env.NODE_ENV === 'development') {
+      console.log('📥 [uploadDeviceImageForColor] Respuesta:', {
+        status: response.status,
+        ok: response.ok,
+        data
+      });
+    }
+
+    if (!response.ok) {
+      console.error('❌ [uploadDeviceImageForColor] Error:', {
+        status: response.status,
+        statusText: response.statusText,
+        data
+      });
+    }
+
+    return {
+      success: response.ok,
+      data,
+      message: data.message,
+    };
+  } catch (error) {
+    console.error('❌ [uploadDeviceImageForColor] Excepción:', error);
+    throw error;
+  }
 }
 
 /**
