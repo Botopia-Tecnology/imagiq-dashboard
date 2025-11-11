@@ -1,26 +1,103 @@
-import type {
-  CoverageZone,
-  CoverageZoneDTO,
-  CreateCoverageZoneRequest,
-  UpdateCoverageZoneRequest,
-  CoverageCheckRequest,
-  CoverageCheckResponse,
-  APIResponse,
-} from "@/types/coverage-zones"
-import { coverageZoneToDTO, dtoToCoverageZone } from "@/lib/utils/geojson"
+// ============================================
+// API CLIENT PARA ZONAS DE COBERTURA
+// Basado en la documentación del backend
+// ============================================
 
 // ============================================
 // Configuration
 // ============================================
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api"
-const COVERAGE_ZONES_ENDPOINT = `${API_BASE_URL}/coverage-zones`
+const BASE_ENDPOINT = `${API_BASE_URL}/addresses/zonas-cobertura`
+
+// ============================================
+// Types según documentación del backend
+// ============================================
+
+export interface Coordenada {
+  lat: number
+  lon: number
+}
+
+export enum TipoGeometria {
+  POLYGON = "polygon",
+  CIRCLE = "circle",
+  RECTANGLE = "rectangle",
+}
+
+export enum EstadoZona {
+  ACTIVA = "activa",
+  INACTIVA = "inactiva",
+}
+
+export interface CreateZonaCoberturaDto {
+  nombre: string
+  ciudad: string
+  tipo: TipoGeometria
+  coordenadas: Coordenada[]
+  estado?: EstadoZona
+}
+
+export interface UpdateZonaCoberturaDto {
+  nombre?: string
+  tipo?: TipoGeometria
+  coordenadas?: Coordenada[]
+  estado?: EstadoZona
+}
+
+export interface ZonaCobertura {
+  id: string
+  nombre: string
+  ciudad: string
+  tipo: TipoGeometria
+  estado: EstadoZona
+  creado_en: string
+  actualizado_en: string
+  geometria: {
+    type: string
+    coordinates: number[][][]
+  }
+}
+
+export interface VerificarCoberturaDto {
+  lat: number
+  lon: number
+  ciudad?: string
+}
+
+export interface ResultadoCobertura {
+  en_cobertura: boolean
+  zona?: {
+    id: string
+    nombre: string
+    ciudad: string
+  }
+}
+
+export interface GeoJSONFeatureCollection {
+  type: "FeatureCollection"
+  features: Array<{
+    type: "Feature"
+    id: string
+    properties: {
+      id: string
+      nombre: string
+      ciudad: string
+      tipo: string
+      estado: string
+    }
+    geometry: {
+      type: string
+      coordinates: number[][][]
+    }
+  }>
+}
 
 // ============================================
 // HTTP Client Helper
 // ============================================
 
-class APIError extends Error {
+export class APIError extends Error {
   constructor(
     message: string,
     public status: number,
@@ -71,153 +148,78 @@ async function fetchAPI<T>(
 
 export const coverageZonesAPI = {
   /**
-   * Get all coverage zones for a city
+   * POST /addresses/zonas-cobertura
+   * Crea una nueva zona de cobertura
    */
-  async getZonesByCity(cityId: string): Promise<CoverageZone[]> {
-    const url = `${COVERAGE_ZONES_ENDPOINT}?cityId=${encodeURIComponent(cityId)}`
-    const response = await fetchAPI<APIResponse<CoverageZoneDTO[]>>(url)
-
-    return response.data.map(dtoToCoverageZone)
-  },
-
-  /**
-   * Get a single coverage zone by ID
-   */
-  async getZoneById(id: string): Promise<CoverageZone> {
-    const url = `${COVERAGE_ZONES_ENDPOINT}/${id}`
-    const response = await fetchAPI<APIResponse<CoverageZoneDTO>>(url)
-
-    return dtoToCoverageZone(response.data)
-  },
-
-  /**
-   * Create a new coverage zone
-   */
-  async createZone(zone: CoverageZone): Promise<CoverageZone> {
-    const dto = coverageZoneToDTO(zone)
-
-    const payload: CreateCoverageZoneRequest = {
-      cityId: dto.cityId,
-      name: dto.name,
-      geometry: dto.geometry,
-      properties: dto.properties,
-    }
-
-    const response = await fetchAPI<APIResponse<CoverageZoneDTO>>(COVERAGE_ZONES_ENDPOINT, {
+  async createZona(data: CreateZonaCoberturaDto): Promise<ZonaCobertura> {
+    return await fetchAPI<ZonaCobertura>(BASE_ENDPOINT, {
       method: "POST",
-      body: JSON.stringify(payload),
+      body: JSON.stringify(data),
     })
-
-    return dtoToCoverageZone(response.data)
   },
 
   /**
-   * Update an existing coverage zone
+   * GET /addresses/zonas-cobertura?ciudad={ciudad}
+   * Obtiene todas las zonas, opcionalmente filtradas por ciudad
    */
-  async updateZone(id: string, updates: Partial<CoverageZone>): Promise<CoverageZone> {
-    const payload: UpdateCoverageZoneRequest = {}
+  async getZonas(ciudad?: string): Promise<ZonaCobertura[]> {
+    const url = ciudad
+      ? `${BASE_ENDPOINT}?ciudad=${encodeURIComponent(ciudad)}`
+      : BASE_ENDPOINT
 
-    if (updates.name !== undefined) {
-      payload.name = updates.name
-    }
-
-    if (updates.coordinates !== undefined || updates.type !== undefined) {
-      // If coordinates changed, rebuild geometry
-      const tempZone: CoverageZone = {
-        id,
-        cityId: updates.cityId || "",
-        name: updates.name || "",
-        type: updates.type || "polygon",
-        coordinates: updates.coordinates || [],
-        radius: updates.radius,
-        color: updates.color,
-        isActive: updates.isActive ?? true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      }
-      const dto = coverageZoneToDTO(tempZone)
-      payload.geometry = dto.geometry
-    }
-
-    if (
-      updates.color !== undefined ||
-      updates.isActive !== undefined ||
-      updates.deliveryFee !== undefined ||
-      updates.estimatedTime !== undefined
-    ) {
-      payload.properties = {
-        color: updates.color,
-        isActive: updates.isActive,
-        deliveryFee: updates.deliveryFee,
-        estimatedTime: updates.estimatedTime,
-      }
-    }
-
-    const response = await fetchAPI<APIResponse<CoverageZoneDTO>>(
-      `${COVERAGE_ZONES_ENDPOINT}/${id}`,
-      {
-        method: "PATCH",
-        body: JSON.stringify(payload),
-      }
-    )
-
-    return dtoToCoverageZone(response.data)
+    return await fetchAPI<ZonaCobertura[]>(url)
   },
 
   /**
-   * Delete a coverage zone
+   * GET /addresses/zonas-cobertura/:zonaId
+   * Obtiene una zona específica por ID
    */
-  async deleteZone(id: string): Promise<void> {
-    await fetchAPI<APIResponse<void>>(`${COVERAGE_ZONES_ENDPOINT}/${id}`, {
+  async getZonaById(zonaId: string): Promise<ZonaCobertura> {
+    return await fetchAPI<ZonaCobertura>(`${BASE_ENDPOINT}/${zonaId}`)
+  },
+
+  /**
+   * PUT /addresses/zonas-cobertura/:zonaId
+   * Actualiza una zona de cobertura
+   */
+  async updateZona(
+    zonaId: string,
+    data: UpdateZonaCoberturaDto
+  ): Promise<ZonaCobertura> {
+    return await fetchAPI<ZonaCobertura>(`${BASE_ENDPOINT}/${zonaId}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    })
+  },
+
+  /**
+   * DELETE /addresses/zonas-cobertura/:zonaId
+   * Elimina una zona de cobertura
+   */
+  async deleteZona(zonaId: string): Promise<{ message: string }> {
+    return await fetchAPI<{ message: string }>(`${BASE_ENDPOINT}/${zonaId}`, {
       method: "DELETE",
     })
   },
 
   /**
-   * Check if a point is covered by any zone
+   * POST /addresses/zonas-cobertura/verificar
+   * Verifica si un punto está en cobertura
    */
-  async checkCoverage(
-    lat: number,
-    lng: number,
-    cityId: string
-  ): Promise<CoverageCheckResponse> {
-    const payload: CoverageCheckRequest = {
-      point: { lat, lng },
-      cityId,
-    }
-
-    const response = await fetchAPI<APIResponse<CoverageCheckResponse>>(
-      `${COVERAGE_ZONES_ENDPOINT}/check`,
-      {
-        method: "POST",
-        body: JSON.stringify(payload),
-      }
-    )
-
-    return response.data
+  async verificarCobertura(data: VerificarCoberturaDto): Promise<ResultadoCobertura> {
+    return await fetchAPI<ResultadoCobertura>(`${BASE_ENDPOINT}/verificar`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    })
   },
 
   /**
-   * Batch check multiple addresses
+   * GET /addresses/zonas-cobertura/ciudad/:ciudad/geojson
+   * Obtiene zonas de una ciudad en formato GeoJSON
    */
-  async batchCheckCoverage(
-    points: Array<{ lat: number; lng: number }>,
-    cityId: string
-  ): Promise<CoverageCheckResponse[]> {
-    const response = await fetchAPI<APIResponse<CoverageCheckResponse[]>>(
-      `${COVERAGE_ZONES_ENDPOINT}/batch-check`,
-      {
-        method: "POST",
-        body: JSON.stringify({ points, cityId }),
-      }
+  async getZonasCiudadGeoJSON(ciudad: string): Promise<GeoJSONFeatureCollection> {
+    return await fetchAPI<GeoJSONFeatureCollection>(
+      `${BASE_ENDPOINT}/ciudad/${encodeURIComponent(ciudad)}/geojson`
     )
-
-    return response.data
   },
 }
-
-// ============================================
-// Export Error Class
-// ============================================
-
-export { APIError }

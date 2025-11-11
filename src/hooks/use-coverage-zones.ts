@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from "react"
-import type { CoverageZone } from "@/types/coverage-zones"
-import { coverageZonesAPI, APIError } from "@/lib/api/coverage-zones"
+import { coverageZonesAPI, ZonaCobertura, CreateZonaCoberturaDto, UpdateZonaCoberturaDto, APIError, ResultadoCobertura } from "@/lib/api/coverage-zones"
 import { toast } from "sonner"
 
 // ============================================
@@ -8,28 +7,29 @@ import { toast } from "sonner"
 // ============================================
 
 interface UseCoverageZonesOptions {
-  cityId: string
+  ciudad: string
   autoFetch?: boolean
-  onSuccess?: (zones: CoverageZone[]) => void
+  onSuccess?: (zones: ZonaCobertura[]) => void
   onError?: (error: APIError) => void
 }
 
 interface UseCoverageZonesReturn {
   // State
-  zones: CoverageZone[]
+  zones: ZonaCobertura[]
   isLoading: boolean
   error: APIError | null
 
   // Actions
   fetchZones: () => Promise<void>
-  createZone: (zone: CoverageZone) => Promise<CoverageZone | null>
-  updateZone: (id: string, updates: Partial<CoverageZone>) => Promise<CoverageZone | null>
+  createZone: (zone: CreateZonaCoberturaDto) => Promise<ZonaCobertura | null>
+  updateZone: (id: string, updates: UpdateZonaCoberturaDto) => Promise<ZonaCobertura | null>
   deleteZone: (id: string) => Promise<boolean>
   refreshZones: () => Promise<void>
+  checkCoverage: (lat: number, lon: number, ciudad?: string) => Promise<ResultadoCobertura | null>
 
   // Local state management (optimistic updates)
-  addZoneLocally: (zone: CoverageZone) => void
-  updateZoneLocally: (id: string, updates: Partial<CoverageZone>) => void
+  addZoneLocally: (zone: ZonaCobertura) => void
+  updateZoneLocally: (id: string, updates: Partial<ZonaCobertura>) => void
   deleteZoneLocally: (id: string) => void
 }
 
@@ -38,12 +38,12 @@ interface UseCoverageZonesReturn {
 // ============================================
 
 export function useCoverageZones({
-  cityId,
+  ciudad,
   autoFetch = true,
   onSuccess,
   onError,
 }: UseCoverageZonesOptions): UseCoverageZonesReturn {
-  const [zones, setZones] = useState<CoverageZone[]>([])
+  const [zones, setZones] = useState<ZonaCobertura[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<APIError | null>(null)
 
@@ -56,36 +56,40 @@ export function useCoverageZones({
     setError(null)
 
     try {
-      const data = await coverageZonesAPI.getZonesByCity(cityId)
+      const data = await coverageZonesAPI.getZonas(ciudad)
       setZones(data)
       onSuccess?.(data)
     } catch (err) {
       const apiError = err instanceof APIError ? err : new APIError("Unknown error", 0, err)
       setError(apiError)
       onError?.(apiError)
-      toast.error(`Error al cargar zonas: ${apiError.message}`)
+
+      // Solo mostrar toast si es un error real, no si el backend no está disponible
+      if (apiError.status !== 0) {
+        toast.error(`Error al cargar zonas: ${apiError.message}`)
+      }
     } finally {
       setIsLoading(false)
     }
-  }, [cityId, onSuccess, onError])
+  }, [ciudad, onSuccess, onError])
 
-  // Auto-fetch on mount and when cityId changes
+  // Auto-fetch on mount and when ciudad changes
   useEffect(() => {
-    if (autoFetch) {
+    if (autoFetch && ciudad) {
       fetchZones()
     }
-  }, [autoFetch, fetchZones])
+  }, [autoFetch, ciudad, fetchZones])
 
   // ============================================
   // Create Zone
   // ============================================
 
   const createZone = useCallback(
-    async (zone: CoverageZone): Promise<CoverageZone | null> => {
+    async (zoneData: CreateZonaCoberturaDto): Promise<ZonaCobertura | null> => {
       try {
-        const createdZone = await coverageZonesAPI.createZone(zone)
+        const createdZone = await coverageZonesAPI.createZona(zoneData)
         setZones((prev) => [...prev, createdZone])
-        toast.success(`Zona "${createdZone.name}" creada exitosamente`)
+        toast.success(`Zona "${createdZone.nombre}" creada exitosamente`)
         return createdZone
       } catch (err) {
         const apiError = err instanceof APIError ? err : new APIError("Unknown error", 0, err)
@@ -101,26 +105,35 @@ export function useCoverageZones({
   // ============================================
 
   const updateZone = useCallback(
-    async (id: string, updates: Partial<CoverageZone>): Promise<CoverageZone | null> => {
+    async (id: string, updates: UpdateZonaCoberturaDto): Promise<ZonaCobertura | null> => {
       // Optimistic update
+      const previousZones = zones
       setZones((prev) =>
-        prev.map((zone) => (zone.id === id ? { ...zone, ...updates } : zone))
+        prev.map((zone) =>
+          zone.id === id
+            ? {
+                ...zone,
+                ...updates,
+                actualizado_en: new Date().toISOString(),
+              }
+            : zone
+        )
       )
 
       try {
-        const updatedZone = await coverageZonesAPI.updateZone(id, updates)
+        const updatedZone = await coverageZonesAPI.updateZona(id, updates)
         setZones((prev) => prev.map((zone) => (zone.id === id ? updatedZone : zone)))
         toast.success("Zona actualizada exitosamente")
         return updatedZone
       } catch (err) {
         // Rollback on error
-        await fetchZones()
+        setZones(previousZones)
         const apiError = err instanceof APIError ? err : new APIError("Unknown error", 0, err)
         toast.error(`Error al actualizar zona: ${apiError.message}`)
         return null
       }
     },
-    [fetchZones]
+    [zones]
   )
 
   // ============================================
@@ -131,17 +144,16 @@ export function useCoverageZones({
     async (id: string): Promise<boolean> => {
       // Optimistic delete
       const deletedZone = zones.find((z) => z.id === id)
+      const previousZones = zones
       setZones((prev) => prev.filter((zone) => zone.id !== id))
 
       try {
-        await coverageZonesAPI.deleteZone(id)
-        toast.success(`Zona "${deletedZone?.name}" eliminada exitosamente`)
+        await coverageZonesAPI.deleteZona(id)
+        toast.success(`Zona "${deletedZone?.nombre}" eliminada exitosamente`)
         return true
       } catch (err) {
         // Rollback on error
-        if (deletedZone) {
-          setZones((prev) => [...prev, deletedZone])
-        }
+        setZones(previousZones)
         const apiError = err instanceof APIError ? err : new APIError("Unknown error", 0, err)
         toast.error(`Error al eliminar zona: ${apiError.message}`)
         return false
@@ -154,13 +166,21 @@ export function useCoverageZones({
   // Local State Management (for offline mode)
   // ============================================
 
-  const addZoneLocally = useCallback((zone: CoverageZone) => {
+  const addZoneLocally = useCallback((zone: ZonaCobertura) => {
     setZones((prev) => [...prev, zone])
   }, [])
 
-  const updateZoneLocally = useCallback((id: string, updates: Partial<CoverageZone>) => {
+  const updateZoneLocally = useCallback((id: string, updates: Partial<ZonaCobertura>) => {
     setZones((prev) =>
-      prev.map((zone) => (zone.id === id ? { ...zone, ...updates } : zone))
+      prev.map((zone) =>
+        zone.id === id
+          ? {
+              ...zone,
+              ...updates,
+              actualizado_en: new Date().toISOString(),
+            }
+          : zone
+      )
     )
   }, [])
 
@@ -171,6 +191,28 @@ export function useCoverageZones({
   const refreshZones = useCallback(async () => {
     await fetchZones()
   }, [fetchZones])
+
+  // ============================================
+  // Check Coverage
+  // ============================================
+
+  const checkCoverage = useCallback(
+    async (lat: number, lon: number, ciudadParam?: string): Promise<ResultadoCobertura | null> => {
+      try {
+        const result = await coverageZonesAPI.verificarCobertura({
+          lat,
+          lon,
+          ciudad: ciudadParam || ciudad,
+        })
+        return result
+      } catch (err) {
+        const apiError = err instanceof APIError ? err : new APIError("Unknown error", 0, err)
+        toast.error(`Error al verificar cobertura: ${apiError.message}`)
+        return null
+      }
+    },
+    [ciudad]
+  )
 
   // ============================================
   // Return
@@ -188,44 +230,11 @@ export function useCoverageZones({
     updateZone,
     deleteZone,
     refreshZones,
+    checkCoverage,
 
     // Local state
     addZoneLocally,
     updateZoneLocally,
     deleteZoneLocally,
-  }
-}
-
-// ============================================
-// Coverage Check Hook
-// ============================================
-
-interface UseCoverageCheckOptions {
-  cityId: string
-}
-
-export function useCoverageCheck({ cityId }: UseCoverageCheckOptions) {
-  const [isChecking, setIsChecking] = useState(false)
-
-  const checkCoverage = useCallback(
-    async (lat: number, lng: number) => {
-      setIsChecking(true)
-      try {
-        const result = await coverageZonesAPI.checkCoverage(lat, lng, cityId)
-        return result
-      } catch (err) {
-        const apiError = err instanceof APIError ? err : new APIError("Unknown error", 0, err)
-        toast.error(`Error al verificar cobertura: ${apiError.message}`)
-        return null
-      } finally {
-        setIsChecking(false)
-      }
-    },
-    [cityId]
-  )
-
-  return {
-    checkCoverage,
-    isChecking,
   }
 }
