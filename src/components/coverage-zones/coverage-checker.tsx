@@ -22,7 +22,10 @@ interface PlacePrediction {
   secondaryText: string
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api"
+// Usar la misma configuración que el resto de la aplicación
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"
+// Asegurar que la URL tenga /api si no lo tiene
+const baseUrl = API_BASE_URL.endsWith('/api') ? API_BASE_URL : `${API_BASE_URL}/api`
 
 export function CoverageChecker({ ciudad, onCheckCoverage }: CoverageCheckerProps) {
   const [address, setAddress] = useState("")
@@ -56,10 +59,53 @@ export function CoverageChecker({ ciudad, onCheckCoverage }: CoverageCheckerProp
         types: "address",
       })
 
-      const response = await fetch(`${API_BASE_URL}/places/autocomplete?${params}`)
+      const response = await fetch(`${baseUrl}/places/autocomplete?${params}`)
 
       if (!response.ok) {
-        throw new Error("Error al buscar direcciones")
+        // Intentar obtener el mensaje de error del servidor
+        let errorMessage = "Error al buscar direcciones"
+        let errorDetails: any = null
+
+        try {
+          errorDetails = await response.json().catch(() => null)
+          if (errorDetails?.message) {
+            errorMessage = errorDetails.message
+          } else if (errorDetails?.error) {
+            errorMessage = errorDetails.error
+          }
+        } catch {
+          // Si no se puede parsear el JSON, usar el mensaje por defecto
+        }
+
+        // Log detallado del error para debugging
+        console.error("Error al buscar direcciones:", {
+          status: response.status,
+          statusText: response.statusText,
+          url: `${baseUrl}/places/autocomplete`,
+          errorDetails,
+          input: input.trim(),
+        })
+
+        // Mostrar mensaje de error más específico
+        const finalErrorMessage = 
+          response.status === 404
+            ? "El servicio de búsqueda de direcciones no está disponible"
+            : response.status === 500
+            ? "Error en el servidor al buscar direcciones"
+            : response.status === 400
+            ? "Solicitud inválida. Por favor, verifica la dirección"
+            : errorMessage
+
+        // Solo mostrar toast para errores críticos, no para errores de red menores
+        if (response.status >= 500) {
+          toast.error(finalErrorMessage)
+        }
+
+        // Limpiar predicciones y retornar sin lanzar error
+        // El error ya fue loggeado con detalles arriba
+        setPredictions([])
+        setShowPredictions(false)
+        return
       }
 
       const data = await response.json()
@@ -74,7 +120,17 @@ export function CoverageChecker({ ciudad, onCheckCoverage }: CoverageCheckerProp
         setShowPredictions(false)
       }
     } catch (error) {
-      console.error("Error searching places:", error)
+      // Manejar errores de red u otros errores no relacionados con HTTP
+      console.error("Error searching places (network/other):", error)
+      
+      // Solo mostrar toast para errores de red
+      if (error instanceof Error) {
+        if (error.message.includes("Failed to fetch") || error.name === "TypeError") {
+          // No mostrar toast para errores de red en búsquedas automáticas
+          // Solo limpiar predicciones silenciosamente
+        }
+      }
+      
       // Forzar limpieza en caso de error
       setPredictions([])
       setShowPredictions(false)
@@ -90,10 +146,46 @@ export function CoverageChecker({ ciudad, onCheckCoverage }: CoverageCheckerProp
         language: "es",
       })
 
-      const response = await fetch(`${API_BASE_URL}/places/details?${params}`)
+      const response = await fetch(`${baseUrl}/places/details?${params}`)
 
       if (!response.ok) {
-        throw new Error("Error al obtener detalles del lugar")
+        // Intentar obtener el mensaje de error del servidor
+        let errorMessage = "Error al obtener detalles del lugar"
+        let errorDetails: any = null
+
+        try {
+          errorDetails = await response.json().catch(() => null)
+          if (errorDetails?.message) {
+            errorMessage = errorDetails.message
+          } else if (errorDetails?.error) {
+            errorMessage = errorDetails.error
+          }
+        } catch {
+          // Si no se puede parsear el JSON, usar el mensaje por defecto
+        }
+
+        // Log detallado del error para debugging
+        console.error("Error al obtener detalles del lugar:", {
+          status: response.status,
+          statusText: response.statusText,
+          url: `${baseUrl}/places/details`,
+          errorDetails,
+          placeId,
+        })
+
+        // Mostrar mensaje de error más específico
+        const finalErrorMessage = 
+          response.status === 404
+            ? "No se encontraron detalles para esta dirección"
+            : response.status === 500
+            ? "Error en el servidor al obtener detalles"
+            : response.status === 400
+            ? "Solicitud inválida"
+            : errorMessage
+
+        toast.error(finalErrorMessage)
+        // Retornar null en lugar de lanzar error para evitar mostrar toast duplicado
+        return null
       }
 
       const data = await response.json()
@@ -107,8 +199,22 @@ export function CoverageChecker({ ciudad, onCheckCoverage }: CoverageCheckerProp
 
       return null
     } catch (error) {
+      // Log detallado del error
       console.error("Error getting place details:", error)
-      toast.error("Error al obtener detalles de la dirección")
+      
+      // Solo mostrar toast para errores de red u otros errores no manejados
+      // Los errores HTTP ya fueron manejados arriba y retornaron null
+      if (error instanceof Error) {
+        // Si es un error de red, mostrar toast
+        if (error.message.includes("Failed to fetch") || error.name === "TypeError") {
+          toast.error("Error de conexión. Por favor, verifica tu conexión a internet")
+        } else if (!error.message.includes("Error al obtener detalles")) {
+          // Solo mostrar toast si no es un error que ya fue manejado
+          toast.error("Error al obtener detalles de la dirección")
+        }
+      } else {
+        toast.error("Error al obtener detalles de la dirección")
+      }
       return null
     }
   }
