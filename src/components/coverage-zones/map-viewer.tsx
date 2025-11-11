@@ -260,21 +260,25 @@ export const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
 
           try {
             // Manejar diferentes formatos de coordenadas
-            let coordinateRing = zone.geometria.coordinates
+            let coordinateRing: number[][] | number[][][] = zone.geometria.coordinates
 
             // Si es un array de arrays de arrays (Polygon con múltiples anillos)
-            if (Array.isArray(coordinateRing[0]) && Array.isArray(coordinateRing[0][0])) {
-              coordinateRing = coordinateRing[0] // Tomar el primer anillo (exterior)
+            if (Array.isArray(coordinateRing[0]) && Array.isArray(coordinateRing[0][0]) && Array.isArray(coordinateRing[0][0][0])) {
+              coordinateRing = coordinateRing[0] as number[][] // Tomar el primer anillo (exterior)
             }
 
-            // Si no hay coordenadas válidas, saltar
+            // Asegurar que coordinateRing es number[][]
             if (!Array.isArray(coordinateRing) || coordinateRing.length === 0) {
               console.warn("Invalid coordinates for zone:", zone.id)
               return null
             }
+            if (!Array.isArray(coordinateRing[0])) {
+              console.warn("Invalid coordinates format for zone:", zone.id)
+              return null
+            }
 
-            const coordinates: LatLngExpression[] = coordinateRing.map(
-              (coord: [number, number]) => [coord[1], coord[0]] as LatLngExpression // GeoJSON es [lon, lat], Leaflet es [lat, lon]
+            const coordinates: LatLngExpression[] = (coordinateRing as number[][]).map(
+              (coord: number[]) => [coord[1], coord[0]] as LatLngExpression // GeoJSON es [lon, lat], Leaflet es [lat, lon]
             )
 
             // Determinar color según estado

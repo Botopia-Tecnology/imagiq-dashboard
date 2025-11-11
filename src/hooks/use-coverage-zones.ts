@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react"
-import { coverageZonesAPI, ZonaCobertura, CreateZonaCoberturaDto, UpdateZonaCoberturaDto, APIError } from "@/lib/api/coverage-zones"
+import { coverageZonesAPI, ZonaCobertura, CreateZonaCoberturaDto, UpdateZonaCoberturaDto, APIError, ResultadoCobertura } from "@/lib/api/coverage-zones"
 import { toast } from "sonner"
 
 // ============================================
