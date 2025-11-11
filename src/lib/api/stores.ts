@@ -2,7 +2,8 @@
 // API CLIENT PARA TIENDAS
 // ============================================
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api"
+// Usar la misma configuración que el resto de la aplicación
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"
 
 // ============================================
 // Types
@@ -38,7 +39,9 @@ export interface StoresResponse {
 
 export async function getStores(): Promise<Store[]> {
   try {
-    const response = await fetch(`${API_BASE_URL}/stores`)
+    // Asegurar que la URL tenga /api si no lo tiene
+    const baseUrl = API_BASE_URL.endsWith('/api') ? API_BASE_URL : `${API_BASE_URL}/api`
+    const response = await fetch(`${baseUrl}/stores`)
     
     if (!response.ok) {
       throw new Error(`Error al obtener tiendas: ${response.statusText}`)

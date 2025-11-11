@@ -7,8 +7,11 @@
 // Configuration
 // ============================================
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api"
-const BASE_ENDPOINT = `${API_BASE_URL}/addresses/zonas-cobertura`
+// Usar la misma configuración que el resto de la aplicación
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"
+// Asegurar que la URL tenga /api si no lo tiene
+const baseUrl = API_BASE_URL.endsWith('/api') ? API_BASE_URL : `${API_BASE_URL}/api`
+const BASE_ENDPOINT = `${baseUrl}/addresses/zonas-cobertura`
 
 // ============================================
 // Types según documentación del backend
