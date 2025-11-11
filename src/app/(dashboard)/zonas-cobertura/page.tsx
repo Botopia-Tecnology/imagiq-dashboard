@@ -151,7 +151,11 @@ export default function ZonasCoberturaPage() {
       estado: EstadoZona.ACTIVA,
     }
 
-    await createZone(newZone)
+    const created = await createZone(newZone)
+    if (created) {
+      // Refrescar las zonas para asegurar que se muestren en el mapa
+      await refreshZones()
+    }
   }
 
   const handleToggleZone = async (zoneId: string) => {

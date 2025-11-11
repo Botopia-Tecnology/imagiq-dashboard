@@ -256,30 +256,51 @@ export const MapViewer = forwardRef<MapViewerRef, MapViewerProps>(
         {/* Renderizar zonas existentes */}
         {zones.map((zone) => {
           // Convertir geometría GeoJSON a formato Leaflet
-          if (!zone.geometria || !zone.geometria.coordinates) return null
+          if (!zone.geometria || !zone.geometria.coordinates) {
+            console.warn("Zone missing geometry:", zone.id)
+            return null
+          }
 
           try {
             // Manejar diferentes formatos de coordenadas
-            let coordinateRing: number[][] | number[][][] = zone.geometria.coordinates
+            let coordinateRing: any = zone.geometria.coordinates
 
-            // Si es un array de arrays de arrays (Polygon con múltiples anillos)
-            if (Array.isArray(coordinateRing[0]) && Array.isArray(coordinateRing[0][0]) && Array.isArray(coordinateRing[0][0][0])) {
-              coordinateRing = coordinateRing[0] as number[][] // Tomar el primer anillo (exterior)
+            // GeoJSON Polygon tiene formato: [[[lon, lat], [lon, lat], ...]]
+            // Necesitamos extraer el primer anillo (exterior)
+            if (Array.isArray(coordinateRing) && coordinateRing.length > 0) {
+              // Si el primer elemento es un array de arrays, es number[][][]
+              if (Array.isArray(coordinateRing[0]) && Array.isArray(coordinateRing[0][0])) {
+                // Es number[][][] - tomar el primer anillo (exterior)
+                coordinateRing = coordinateRing[0]
+              }
+              // Si no, ya es number[][] y está bien
             }
 
-            // Asegurar que coordinateRing es number[][]
+            // Asegurar que coordinateRing es un array válido
             if (!Array.isArray(coordinateRing) || coordinateRing.length === 0) {
-              console.warn("Invalid coordinates for zone:", zone.id)
-              return null
-            }
-            if (!Array.isArray(coordinateRing[0])) {
-              console.warn("Invalid coordinates format for zone:", zone.id)
+              console.warn("Invalid coordinates for zone:", zone.id, "coordinateRing:", coordinateRing)
               return null
             }
 
-            const coordinates: LatLngExpression[] = (coordinateRing as number[][]).map(
-              (coord: number[]) => [coord[1], coord[0]] as LatLngExpression // GeoJSON es [lon, lat], Leaflet es [lat, lon]
-            )
+            // Convertir coordenadas GeoJSON [lon, lat] a Leaflet [lat, lon]
+            const coordinates: LatLngExpression[] = coordinateRing
+              .map((coord: any) => {
+                // GeoJSON es [lon, lat], Leaflet es [lat, lon]
+                if (Array.isArray(coord) && coord.length >= 2) {
+                  const lon = typeof coord[0] === 'number' ? coord[0] : Number(coord[0])
+                  const lat = typeof coord[1] === 'number' ? coord[1] : Number(coord[1])
+                  if (!Number.isNaN(lat) && !Number.isNaN(lon)) {
+                    return [lat, lon] as LatLngExpression
+                  }
+                }
+                return null
+              })
+              .filter((coord): coord is LatLngExpression => coord !== null)
+
+            if (coordinates.length < 3) {
+              console.warn("Zone has less than 3 coordinates (minimum for polygon):", zone.id, "coordinates:", coordinates.length)
+              return null
+            }
 
             // Determinar color según estado
             const fillColor = zone.estado === "activa" ? "#10b981" : "#ef4444"
