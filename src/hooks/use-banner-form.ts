@@ -68,6 +68,26 @@ export function useBannerForm({ mode, bannerId, initialPlacement }: UseBannerFor
               mobile_video_url: banner.mobile_video_url,
             });
 
+            // Parsear placement para extraer category_id y subcategory_id
+            // Formato: "banner-{categoria}" o "banner-{categoria}-{subcategoria}"
+            let parsedCategoryId = "";
+            let parsedSubcategoryId = "none";
+
+            if (banner.placement?.startsWith("banner-")) {
+              // Usar optional chaining para evitar warnings y manejar undefined de forma segura
+              const parts = banner.placement?.replace("banner-", "")?.split("-") ?? [];
+              // El primer elemento es el nombre de la categoría
+              if (parts.length > 0) parsedCategoryId = parts[0];
+              // Si hay más elementos, los demás son la subcategoría (unidos por -)
+              if (parts.length > 1) parsedSubcategoryId = parts.slice(1).join("-");
+            }
+
+            console.log("Banner cargado del backend:", {
+              placement: banner.placement,
+              parsedCategoryName: parsedCategoryId,
+              parsedSubcategoryName: parsedSubcategoryId,
+            });
+
             // Cargar datos del formulario
             setFormData({
               name: banner.name || "",
@@ -79,8 +99,8 @@ export function useBannerForm({ mode, bannerId, initialPlacement }: UseBannerFor
               color_font: banner.color_font || "#000000",
               coordinates: banner.coordinates || "4-4",
               coordinates_mobile: banner.coordinates_mobile || "4-4",
-              category_id: banner.category_id || "",
-              subcategory_id: banner.subcategory_id || "none",
+              category_id: parsedCategoryId,
+              subcategory_id: parsedSubcategoryId,
             });
           } else {
             alert("No se pudo cargar el banner");
