@@ -150,6 +150,22 @@ export function ValueConfigurator({
     onValueChange({ ...value, selectedValues: newSelected });
   };
 
+  const toggleSelectAllDynamicValues = () => {
+    if (value.type !== "dynamic") return;
+
+    // Check if all values are already selected
+    const allSelected = dynamicValues.length > 0 && 
+      dynamicValues.every(val => value.selectedValues.includes(val));
+
+    if (allSelected) {
+      // Deselect all
+      onValueChange({ ...value, selectedValues: [] });
+    } else {
+      // Select all
+      onValueChange({ ...value, selectedValues: [...dynamicValues] });
+    }
+  };
+
   if (!column) {
     return (
       <div className="space-y-2">
@@ -304,7 +320,21 @@ export function ValueConfigurator({
               </p>
             ) : (
               <div className="space-y-2">
-                <Label>Selecciona los valores a incluir en el filtro</Label>
+                <div className="flex items-center justify-between">
+                  <Label>Selecciona los valores a incluir en el filtro</Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={toggleSelectAllDynamicValues}
+                    disabled={disabled || dynamicValues.length === 0}
+                  >
+                    {dynamicValues.length > 0 && 
+                     dynamicValues.every(val => value.selectedValues.includes(val))
+                      ? "Deseleccionar todo"
+                      : "Seleccionar todo"}
+                  </Button>
+                </div>
                 <div className="grid grid-cols-2 gap-2 max-h-64 overflow-y-auto">
                   {dynamicValues.map((val) => (
                     <div
