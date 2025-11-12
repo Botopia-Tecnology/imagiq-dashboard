@@ -15,6 +15,8 @@ export interface BackendBanner {
   color_font?: string;
   coordinates?: string;
   coordinates_mobile?: string;
+  category_id?: string;
+  subcategory_id?: string;
   created_at: string;
   updated_at: string;
   created_by?: string;

@@ -41,6 +41,8 @@ export function useBannerForm({ mode, bannerId, initialPlacement }: UseBannerFor
     color_font: "#000000",
     coordinates: "4-4",
     coordinates_mobile: "4-4",
+    category_id: "",
+    subcategory_id: "none",
   });
 
   const [existingUrls, setExistingUrls] = useState<ExistingMediaUrls>({});
@@ -77,6 +79,8 @@ export function useBannerForm({ mode, bannerId, initialPlacement }: UseBannerFor
               color_font: banner.color_font || "#000000",
               coordinates: banner.coordinates || "4-4",
               coordinates_mobile: banner.coordinates_mobile || "4-4",
+              category_id: banner.category_id || "",
+              subcategory_id: banner.subcategory_id || "none",
             });
           } else {
             alert("No se pudo cargar el banner");
@@ -137,6 +141,8 @@ export function useBannerForm({ mode, bannerId, initialPlacement }: UseBannerFor
         color_font: formData.color_font,
         coordinates: formData.coordinates,
         coordinates_mobile: formData.coordinates_mobile,
+        category_id: formData.category_id,
+        subcategory_id: formData.subcategory_id === "none" ? "" : formData.subcategory_id,
       };
 
       const files: BannerMediaFiles = {
