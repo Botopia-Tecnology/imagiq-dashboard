@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -29,6 +29,9 @@ export function BannerCategoryFields({
   const [categories, setCategories] = useState<BackendCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentCategoryUuid, setCurrentCategoryUuid] = useState<string>("");
+  const [currentSubcategoryUuid, setCurrentSubcategoryUuid] = useState<string>("");
+  const initializedRef = useRef<string>("");
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -37,6 +40,8 @@ export function BannerCategoryFields({
         const response = await categoryEndpoints.getVisibleCompletas();
 
         if (response.success && response.data) {
+          console.log("Categorías cargadas:", response.data.length, "categorías");
+          console.log("UUIDs de categorías:", response.data.map(c => ({ uuid: c.uuid, nombre: c.nombreVisible || c.nombre })));
           setCategories(response.data);
         } else {
           setError("Error al cargar categorías");
@@ -52,11 +57,68 @@ export function BannerCategoryFields({
     fetchCategories();
   }, []);
 
-  const selectedCategory = categories.find((cat) => cat.uuid === categoryId);
+  // Cuando se cargan las categorías y hay un categoryId (nombre), buscar por nombre y notificar con UUID
+  useEffect(() => {
+    // Evitar reinicializar si ya se procesó este categoryId
+    const currentKey = `${categoryId}-${subcategoryId}`;
+    if (initializedRef.current === currentKey) return;
+
+    if (categories.length === 0 || !categoryId || categoryId === "") return;
+
+    // Buscar categoría por nombre (categoryId es el nombre de la categoría)
+    const category = categories.find((cat) => {
+      const catName = cat.nombreVisible || cat.nombre || "";
+      return catName === categoryId;
+    });
+
+    if (!category) {
+      console.warn("Categoría no encontrada por nombre:", categoryId);
+      return;
+    }
+
+    console.log("Inicializando categoría:", category.nombreVisible || category.nombre, "UUID:", category.uuid);
+
+    // Actualizar estado interno con UUID
+    setCurrentCategoryUuid(category.uuid);
+
+    // Notificar con el UUID y el nombre de categoría
+    const categoryName = category.nombreVisible || category.nombre || "";
+    if (categoryName) {
+      onCategoryChange(category.uuid, categoryName);
+    }
+
+    // Buscar subcategoría por nombre si existe
+    if (subcategoryId && subcategoryId !== "none" && category.menus) {
+      const menu = category.menus.find((m) => {
+        const menuName = m.nombreVisible || m.nombre || "";
+        return menuName === subcategoryId;
+      });
+
+      if (menu) {
+        const menuName = menu.nombreVisible || menu.nombre || "";
+        console.log("Inicializando subcategoría:", menuName, "UUID:", menu.uuid);
+        setCurrentSubcategoryUuid(menu.uuid);
+        if (menuName) {
+          onSubcategoryChange(menu.uuid, menuName);
+        }
+      }
+    }
+
+    // Marcar como inicializado para este par específico
+    initializedRef.current = currentKey;
+  }, [categories, categoryId, subcategoryId, onCategoryChange, onSubcategoryChange]);
+
+  // Usar el UUID interno si está disponible, sino buscar por nombre
+  const selectedCategory = categories.find((cat) =>
+    cat.uuid === currentCategoryUuid ||
+    (cat.nombreVisible || cat.nombre) === categoryId
+  );
 
   const handleCategoryChange = (newCategoryId: string) => {
     const category = categories.find((cat) => cat.uuid === newCategoryId);
     const categoryName = category?.nombreVisible || category?.nombre || "";
+    setCurrentCategoryUuid(newCategoryId);
+    setCurrentSubcategoryUuid("");
     onCategoryChange(newCategoryId, categoryName);
     onSubcategoryChange("none", "");
   };
@@ -78,7 +140,7 @@ export function BannerCategoryFields({
     <div className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor="category">Categoría *</Label>
-        <Select value={categoryId} onValueChange={handleCategoryChange}>
+        <Select value={currentCategoryUuid || categoryId} onValueChange={handleCategoryChange}>
           <SelectTrigger id="category">
             <SelectValue placeholder="Selecciona una categoría" />
           </SelectTrigger>
@@ -96,10 +158,11 @@ export function BannerCategoryFields({
         <div className="space-y-2">
           <Label htmlFor="subcategory">Subcategoría (Opcional)</Label>
           <Select
-            value={subcategoryId}
+            value={currentSubcategoryUuid || subcategoryId}
             onValueChange={(value) => {
               const menu = selectedCategory.menus.find((m) => m.uuid === value);
               const menuName = menu?.nombreVisible || menu?.nombre || "";
+              setCurrentSubcategoryUuid(value);
               onSubcategoryChange(value, menuName);
             }}
           >
