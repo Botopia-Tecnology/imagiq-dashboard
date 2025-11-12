@@ -8,6 +8,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Info } from "lucide-react";
 import { useProductColumns } from "@/hooks/use-product-columns";
 
 interface ColumnSelectorProps {
@@ -26,7 +33,22 @@ export function ColumnSelector({
 
   return (
     <div className="space-y-2">
-      <Label htmlFor="column-selector">Columna de Producto</Label>
+      <div className="flex items-center gap-2">
+        <Label htmlFor="column-selector">Columna de Producto</Label>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="max-w-xs">
+                La columna de producto que se usará para tomar en cuenta el filtrado. 
+                Define qué propiedad del producto se evaluará al aplicar este filtro.
+              </p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
       <Select value={value} onValueChange={onValueChange} disabled={disabled || isLoading}>
         <SelectTrigger id="column-selector">
           <SelectValue placeholder={isLoading ? "Cargando..." : "Selecciona una columna"} />

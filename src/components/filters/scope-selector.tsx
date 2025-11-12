@@ -5,8 +5,21 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { ChevronDown, ChevronRight, CheckSquare, MoreVertical, Layers, Info } from "lucide-react";
 import { FilterScope } from "@/types/filters";
 import { WebsiteCategory } from "@/types";
 
@@ -93,6 +106,159 @@ export function ScopeSelector({
     onValueChange(newScope);
   };
 
+  // Bulk selection functions (toggle behavior)
+  const selectAllCategories = (includeMenus: boolean = false, includeSubmenus: boolean = false) => {
+    const newScope = { ...value };
+    
+    // Collect all items that should be selected
+    const allCategoryIds: string[] = [];
+    const allMenuIds: string[] = [];
+    const allSubmenuIds: string[] = [];
+    
+    categories.forEach((category) => {
+      allCategoryIds.push(category.id);
+      
+      if (includeMenus) {
+        category.menus.forEach((menu) => {
+          allMenuIds.push(menu.id);
+          
+          if (includeSubmenus) {
+            menu.submenus.forEach((submenu) => {
+              allSubmenuIds.push(submenu.id);
+            });
+          }
+        });
+      }
+    });
+    
+    // Check if all are already selected
+    const allCategoriesSelected = allCategoryIds.every(id => newScope.categories.includes(id));
+    const allMenusSelected = includeMenus ? allMenuIds.every(id => newScope.menus.includes(id)) : true;
+    const allSubmenusSelected = includeSubmenus ? allSubmenuIds.every(id => newScope.submenus.includes(id)) : true;
+    const allSelected = allCategoriesSelected && allMenusSelected && allSubmenusSelected;
+    
+    if (allSelected) {
+      // Deselect all
+      newScope.categories = newScope.categories.filter(id => !allCategoryIds.includes(id));
+      if (includeMenus) {
+        newScope.menus = newScope.menus.filter(id => !allMenuIds.includes(id));
+      }
+      if (includeSubmenus) {
+        newScope.submenus = newScope.submenus.filter(id => !allSubmenuIds.includes(id));
+      }
+    } else {
+      // Select all
+      allCategoryIds.forEach((id) => {
+        if (!newScope.categories.includes(id)) {
+          newScope.categories = [...newScope.categories, id];
+        }
+      });
+      
+      if (includeMenus) {
+        allMenuIds.forEach((id) => {
+          if (!newScope.menus.includes(id)) {
+            newScope.menus = [...newScope.menus, id];
+          }
+        });
+      }
+      
+      if (includeSubmenus) {
+        allSubmenuIds.forEach((id) => {
+          if (!newScope.submenus.includes(id)) {
+            newScope.submenus = [...newScope.submenus, id];
+          }
+        });
+      }
+    }
+    
+    onValueChange(newScope);
+  };
+
+  const selectAllMenusInCategory = (categoryId: string, includeSubmenus: boolean = false) => {
+    const category = categories.find((c) => c.id === categoryId);
+    if (!category) return;
+
+    const newScope = { ...value };
+    
+    // Collect all items that should be selected
+    const allMenuIds: string[] = [];
+    const allSubmenuIds: string[] = [];
+    
+    category.menus.forEach((menu) => {
+      allMenuIds.push(menu.id);
+      
+      if (includeSubmenus) {
+        menu.submenus.forEach((submenu) => {
+          allSubmenuIds.push(submenu.id);
+        });
+      }
+    });
+    
+    // Check if all are already selected
+    const allMenusSelected = allMenuIds.every(id => newScope.menus.includes(id));
+    const allSubmenusSelected = includeSubmenus ? allSubmenuIds.every(id => newScope.submenus.includes(id)) : true;
+    const allSelected = allMenusSelected && allSubmenusSelected;
+    
+    if (allSelected) {
+      // Deselect all
+      newScope.menus = newScope.menus.filter(id => !allMenuIds.includes(id));
+      if (includeSubmenus) {
+        newScope.submenus = newScope.submenus.filter(id => !allSubmenuIds.includes(id));
+      }
+    } else {
+      // Select all
+      allMenuIds.forEach((id) => {
+        if (!newScope.menus.includes(id)) {
+          newScope.menus = [...newScope.menus, id];
+        }
+      });
+      
+      if (includeSubmenus) {
+        allSubmenuIds.forEach((id) => {
+          if (!newScope.submenus.includes(id)) {
+            newScope.submenus = [...newScope.submenus, id];
+          }
+        });
+      }
+    }
+    
+    onValueChange(newScope);
+  };
+
+  const selectAllSubmenusInMenu = (menuId: string) => {
+    const newScope = { ...value };
+    
+    // Find the menu and collect all submenu IDs
+    const allSubmenuIds: string[] = [];
+    
+    categories.forEach((category) => {
+      category.menus.forEach((menu) => {
+        if (menu.id === menuId) {
+          menu.submenus.forEach((submenu) => {
+            allSubmenuIds.push(submenu.id);
+          });
+        }
+      });
+    });
+    
+    // Check if all are already selected
+    const allSelected = allSubmenuIds.length > 0 && allSubmenuIds.every(id => newScope.submenus.includes(id));
+    
+    if (allSelected) {
+      // Deselect all
+      newScope.submenus = newScope.submenus.filter(id => !allSubmenuIds.includes(id));
+    } else {
+      // Select all
+      allSubmenuIds.forEach((id) => {
+        if (!newScope.submenus.includes(id)) {
+          newScope.submenus = [...newScope.submenus, id];
+        }
+      });
+    }
+    
+    onValueChange(newScope);
+  };
+
   const selectedCount =
     value.categories.length + value.menus.length + value.submenus.length;
 
@@ -100,14 +266,63 @@ export function ScopeSelector({
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <div>
-          <Label>Alcance del Filtro</Label>
+          <div className="flex items-center gap-2">
+            <Label>Alcance del Filtro</Label>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="max-w-xs">
+                    Seleccionar una categoría, menú o submenú hará que el filtro se muestre en el panel de filtros de esa categoría, menú o submenú de forma independiente. Puede seleccionar más de una categoría, menú o submenú para hacer el filtro disponible en múltiples categorías, menús o submenús.
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
           <p className="text-xs text-muted-foreground mt-1">
-            Selecciona categorías, menús o submenús de forma independiente
+            Define dónde se mostrará este filtro en el sitio web
           </p>
         </div>
-        {selectedCount > 0 && (
-          <Badge variant="secondary">{selectedCount} seleccionado(s)</Badge>
-        )}
+        <div className="flex items-center gap-2">
+          {selectedCount > 0 && (
+            <Badge variant="secondary">{selectedCount} seleccionado(s)</Badge>
+          )}
+          {categories && categories.length > 0 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" disabled={disabled}>
+                  <Layers className="h-4 w-4 mr-1" />
+                  Seleccionar todo
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  onClick={() => selectAllCategories(false, false)}
+                  disabled={disabled}
+                >
+                  <CheckSquare className="h-4 w-4 mr-2" />
+                  Solo categorías
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => selectAllCategories(true, false)}
+                  disabled={disabled}
+                >
+                  <CheckSquare className="h-4 w-4 mr-2" />
+                  Categorías + Menús
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => selectAllCategories(true, true)}
+                  disabled={disabled}
+                >
+                  <CheckSquare className="h-4 w-4 mr-2" />
+                  Categorías + Menús + Submenús
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
       </div>
       <Card>
         <CardContent className="pt-4">
@@ -142,24 +357,54 @@ export function ScopeSelector({
                       {category.nombreVisible || category.name}
                     </Label>
                     {category.menus.length > 0 && (
-                      <Collapsible
-                        open={expandedCategories.has(category.id)}
-                        onOpenChange={() => toggleCategory(category.id)}
-                      >
-                        <CollapsibleTrigger asChild>
-                          <button
-                            type="button"
-                            className="p-1 hover:bg-muted rounded"
-                            disabled={disabled}
-                          >
-                            {expandedCategories.has(category.id) ? (
-                              <ChevronDown className="h-4 w-4" />
-                            ) : (
-                              <ChevronRight className="h-4 w-4" />
-                            )}
-                          </button>
-                        </CollapsibleTrigger>
-                      </Collapsible>
+                      <>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button
+                              type="button"
+                              className="p-1 hover:bg-muted rounded"
+                              disabled={disabled}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <MoreVertical className="h-4 w-4 text-muted-foreground" />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={() => selectAllMenusInCategory(category.id, false)}
+                              disabled={disabled}
+                            >
+                              <CheckSquare className="h-4 w-4 mr-2" />
+                              Seleccionar todos los menús
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => selectAllMenusInCategory(category.id, true)}
+                              disabled={disabled}
+                            >
+                              <CheckSquare className="h-4 w-4 mr-2" />
+                              Seleccionar menús + submenús
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                        <Collapsible
+                          open={expandedCategories.has(category.id)}
+                          onOpenChange={() => toggleCategory(category.id)}
+                        >
+                          <CollapsibleTrigger asChild>
+                            <button
+                              type="button"
+                              className="p-1 hover:bg-muted rounded"
+                              disabled={disabled}
+                            >
+                              {expandedCategories.has(category.id) ? (
+                                <ChevronDown className="h-4 w-4" />
+                              ) : (
+                                <ChevronRight className="h-4 w-4" />
+                              )}
+                            </button>
+                          </CollapsibleTrigger>
+                        </Collapsible>
+                      </>
                     )}
                   </div>
                   
@@ -190,24 +435,47 @@ export function ScopeSelector({
                                   {menu.nombreVisible || menu.name}
                                 </Label>
                                 {menu.submenus.length > 0 && (
-                                  <Collapsible
-                                    open={expandedMenus.has(menu.id)}
-                                    onOpenChange={() => toggleMenu(menu.id)}
-                                  >
-                                    <CollapsibleTrigger asChild>
-                                      <button
-                                        type="button"
-                                        className="p-1 hover:bg-muted rounded"
-                                        disabled={disabled}
-                                      >
-                                        {expandedMenus.has(menu.id) ? (
-                                          <ChevronDown className="h-3 w-3" />
-                                        ) : (
-                                          <ChevronRight className="h-3 w-3" />
-                                        )}
-                                      </button>
-                                    </CollapsibleTrigger>
-                                  </Collapsible>
+                                  <>
+                                    <DropdownMenu>
+                                      <DropdownMenuTrigger asChild>
+                                        <button
+                                          type="button"
+                                          className="p-1 hover:bg-muted rounded"
+                                          disabled={disabled}
+                                          onClick={(e) => e.stopPropagation()}
+                                        >
+                                          <MoreVertical className="h-3 w-3 text-muted-foreground" />
+                                        </button>
+                                      </DropdownMenuTrigger>
+                                      <DropdownMenuContent align="end">
+                                        <DropdownMenuItem
+                                          onClick={() => selectAllSubmenusInMenu(menu.id)}
+                                          disabled={disabled}
+                                        >
+                                          <CheckSquare className="h-4 w-4 mr-2" />
+                                          Seleccionar todos los submenús
+                                        </DropdownMenuItem>
+                                      </DropdownMenuContent>
+                                    </DropdownMenu>
+                                    <Collapsible
+                                      open={expandedMenus.has(menu.id)}
+                                      onOpenChange={() => toggleMenu(menu.id)}
+                                    >
+                                      <CollapsibleTrigger asChild>
+                                        <button
+                                          type="button"
+                                          className="p-1 hover:bg-muted rounded"
+                                          disabled={disabled}
+                                        >
+                                          {expandedMenus.has(menu.id) ? (
+                                            <ChevronDown className="h-3 w-3" />
+                                          ) : (
+                                            <ChevronRight className="h-3 w-3" />
+                                          )}
+                                        </button>
+                                      </CollapsibleTrigger>
+                                    </Collapsible>
+                                  </>
                                 )}
                               </div>
                               
