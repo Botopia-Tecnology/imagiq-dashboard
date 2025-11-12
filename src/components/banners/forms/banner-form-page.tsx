@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Save, Send, Eye, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,12 +9,13 @@ import { Badge } from "@/components/ui/badge";
 import { useBannerForm } from "@/hooks/use-banner-form";
 import { BannerFormFields } from "./banner-form-fields";
 import { BannerMediaUpload } from "./banner-media-upload";
+import { BannerCategoryFields } from "./banner-category-fields";
 import { BannerPreview } from "../preview/banner-preview";
 
 interface BannerFormPageProps {
-  mode: "create" | "edit";
-  bannerId?: string;
-  initialPlacement: string;
+  readonly mode: "create" | "edit";
+  readonly bannerId?: string;
+  readonly initialPlacement: string;
 }
 
 /**
@@ -22,6 +24,9 @@ interface BannerFormPageProps {
  */
 export function BannerFormPage({ mode, bannerId, initialPlacement }: BannerFormPageProps) {
   const router = useRouter();
+
+  // Estado local para guardar los nombres de categoría y subcategoría
+  const [categoryName, setCategoryName] = useState("");
 
   const {
     formData,
@@ -86,13 +91,46 @@ export function BannerFormPage({ mode, bannerId, initialPlacement }: BannerFormP
             </CardContent>
           </Card>
 
+          {/* Campos de categoría (solo para category-top o banners de categoría) */}
+          {(formData.placement === "category-top" || formData.placement.startsWith("banner-")) && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Ubicación en Categoría</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <BannerCategoryFields
+                  categoryId={formData.category_id}
+                  subcategoryId={formData.subcategory_id}
+                  onCategoryChange={(categoryId, newCategoryName) => {
+                    handleFieldChange("category_id", categoryId);
+                    setCategoryName(newCategoryName);
+                    // Actualizar placement solo con la categoría
+                    handleFieldChange("placement", `banner-${newCategoryName}`);
+                  }}
+                  onSubcategoryChange={(subcategoryId, newSubcategoryName) => {
+                    handleFieldChange("subcategory_id", subcategoryId);
+                    // Actualizar placement con categoría y subcategoría
+                    const newPlacement = subcategoryId === "none" || !subcategoryId
+                      ? `banner-${categoryName}`
+                      : `banner-${categoryName}-${newSubcategoryName}`;
+                    handleFieldChange("placement", newPlacement);
+                  }}
+                />
+              </CardContent>
+            </Card>
+          )}
+
           {/* Upload de archivos */}
           <Card>
             <CardHeader>
               <CardTitle>Archivos Multimedia</CardTitle>
             </CardHeader>
             <CardContent>
-              <BannerMediaUpload files={formData} onFileChange={handleFileChange} />
+              <BannerMediaUpload
+                files={formData}
+                placement={formData.placement}
+                onFileChange={handleFileChange}
+              />
             </CardContent>
           </Card>
 
@@ -104,12 +142,30 @@ export function BannerFormPage({ mode, bannerId, initialPlacement }: BannerFormP
               disabled={isLoading}
               className="flex-1"
             >
-              <Save className="mr-2 h-4 w-4" />
-              Guardar Borrador
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Guardando...
+                </>
+              ) : (
+                <>
+                  <Save className="mr-2 h-4 w-4" />
+                  Guardar Borrador
+                </>
+              )}
             </Button>
             <Button onClick={() => handleSubmit("active")} disabled={isLoading} className="flex-1">
-              <Send className="mr-2 h-4 w-4" />
-              Publicar Banner
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Publicando...
+                </>
+              ) : (
+                <>
+                  <Send className="mr-2 h-4 w-4" />
+                  Publicar Banner
+                </>
+              )}
             </Button>
           </div>
         </div>
@@ -135,6 +191,7 @@ export function BannerFormPage({ mode, bannerId, initialPlacement }: BannerFormP
               link_url={formData.link_url}
               coordinates={formData.coordinates}
               coordinatesMobile={formData.coordinates_mobile}
+              placement={formData.placement}
               onCoordinatesChange={handleCoordinatesChange}
               onCoordinatesMobileChange={handleCoordinatesMobileChange}
             />

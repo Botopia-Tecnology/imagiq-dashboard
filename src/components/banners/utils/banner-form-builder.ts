@@ -13,6 +13,8 @@ export interface BannerFormFields {
   color_font: string;
   coordinates: string;
   coordinates_mobile: string;
+  category_id?: string;
+  subcategory_id?: string;
 }
 
 export interface BannerMediaFiles {
@@ -56,27 +58,29 @@ function appendTextFields(
   if (fields.color_font) formData.append("color_font", fields.color_font);
   if (fields.coordinates) formData.append("coordinates", fields.coordinates);
   if (fields.coordinates_mobile) formData.append("coordinates_mobile", fields.coordinates_mobile);
+  if (fields.category_id) formData.append("category_id", fields.category_id);
+  if (fields.subcategory_id) formData.append("subcategory_id", fields.subcategory_id);
 }
 
 /**
- * Agrega archivos nuevos al FormData
- * Los archivos mantienen su nombre original con extensión
+ * Agrega archivos nuevos al FormData con sus keys específicas
+ * Cada archivo se envía con su propia key para permitir actualizaciones independientes
  */
 function appendNewFiles(formData: FormData, files: BannerMediaFiles): void {
   if (files.desktop_image) {
-    formData.append("files", files.desktop_image, files.desktop_image.name);
+    formData.append("desktop_image", files.desktop_image, files.desktop_image.name);
   }
 
   if (files.mobile_image) {
-    formData.append("files", files.mobile_image, files.mobile_image.name);
+    formData.append("mobile_image", files.mobile_image, files.mobile_image.name);
   }
 
   if (files.desktop_video) {
-    formData.append("files", files.desktop_video, files.desktop_video.name);
+    formData.append("desktop_video", files.desktop_video, files.desktop_video.name);
   }
 
   if (files.mobile_video) {
-    formData.append("files", files.mobile_video, files.mobile_video.name);
+    formData.append("mobile_video", files.mobile_video, files.mobile_video.name);
   }
 }
 
