@@ -18,7 +18,8 @@ interface BannerPreviewProps {
   color_font?: string;
   link_url?: string;
   coordinates?: string;
-  coordinatesMobile?: string; // Mantener camelCase en el prop para compatibilidad
+  coordinatesMobile?: string;
+  placement?: string;
   onCoordinatesChange?: (coordinates: string) => void;
   onCoordinatesMobileChange?: (coordinates: string) => void;
 }
@@ -33,7 +34,28 @@ interface BannerContentProps {
   linkUrl?: string;
   coordinates?: string;
   device: "desktop" | "mobile";
+  placement?: string;
 }
+
+const getMediaUrl = (media: File | string | undefined): string | undefined => {
+  if (!media) return undefined;
+  return typeof media === "string" ? media : URL.createObjectURL(media);
+};
+
+const getContentStyles = (placement: string | undefined, device: "desktop" | "mobile") => {
+  const isFlexibleSize = placement === "category-top" || placement === "product-detail" || placement?.startsWith("banner-");
+  
+  if (isFlexibleSize) {
+    return { aspectRatio: "", maxWidth: "max-w-full", isFlexibleSize };
+  }
+  
+  const isDesktop = device === "desktop";
+  return {
+    aspectRatio: isDesktop ? "aspect-[16/9]" : "aspect-[9/16]",
+    maxWidth: isDesktop ? "max-w-2xl" : "max-w-sm",
+    isFlexibleSize,
+  };
+};
 
 function BannerContent({
   image,
@@ -45,6 +67,7 @@ function BannerContent({
   coordinates,
   linkUrl,
   device,
+  placement,
 }: Readonly<BannerContentProps>) {
   const [showContent, setShowContent] = useState(!video);
   const [imageUrl, setImageUrl] = useState<string>();
@@ -52,99 +75,60 @@ function BannerContent({
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
-    if (image) {
-      // Si es string (URL del backend), usar directamente
-      if (typeof image === "string") {
-        setImageUrl(image);
-      } else {
-        // Si es File (nuevo upload), crear objeto URL
-        const url = URL.createObjectURL(image);
-        setImageUrl(url);
-        return () => URL.revokeObjectURL(url);
-      }
-    } else {
-      setImageUrl(undefined);
-    }
+    const url = getMediaUrl(image);
+    setImageUrl(url);
+    if (url && image instanceof File) return () => URL.revokeObjectURL(url);
   }, [image]);
 
   useEffect(() => {
-    if (video) {
-      // Si es string (URL del backend), usar directamente
-      if (typeof video === "string") {
-        setVideoUrl(video);
-        setShowContent(false);
-      } else {
-        // Si es File (nuevo upload), crear objeto URL
-        const url = URL.createObjectURL(video);
-        setVideoUrl(url);
-        setShowContent(false);
-        return () => URL.revokeObjectURL(url);
-      }
-    } else {
-      setVideoUrl(undefined);
+    const url = getMediaUrl(video);
+    setVideoUrl(url);
+    if (url) {
+      setShowContent(false);
+      if (video instanceof File) return () => URL.revokeObjectURL(url);
     }
   }, [video]);
 
-  const handleVideoEnd = () => {
-    setShowContent(true);
-  };
-
-  const aspectRatio = device === "desktop" ? "aspect-[16/9]" : "aspect-[9/16]";
-  const maxWidth = device === "desktop" ? "max-w-2xl" : "max-w-sm";
+  const { aspectRatio, maxWidth, isFlexibleSize } = getContentStyles(placement, device);
+  const mediaClass = isFlexibleSize ? "w-full h-auto pointer-events-none" : "absolute inset-0 w-full h-full object-cover pointer-events-none";
 
   if (!image && !video) {
     return (
-      <div className={`relative ${aspectRatio} ${maxWidth} w-full rounded-lg border-2 border-dashed bg-muted flex items-center justify-center`}>
+      <div className={`relative ${aspectRatio} ${maxWidth} w-full rounded-lg border-2 border-dashed bg-muted flex items-center justify-center ${isFlexibleSize ? "min-h-[200px]" : ""}`}>
         <div className="text-center p-4">
-          <p className="text-muted-foreground text-sm">
-            {device === "desktop" ? "Preview Desktop" : "Preview Mobile"}
-          </p>
-          <p className="text-muted-foreground text-xs mt-1">
-            Sube una imagen o video
-          </p>
+          <p className="text-muted-foreground text-sm">{`Preview ${device === "desktop" ? "Desktop" : "Mobile"}`}</p>
+          <p className="text-muted-foreground text-xs mt-1">Sube una imagen o video</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div
-      className={`relative ${aspectRatio} ${maxWidth} w-full rounded-lg overflow-hidden bg-black`}
-    >
-      {/* Video (se reproduce primero si existe) */}
+    <div className={`relative ${aspectRatio} ${maxWidth} w-full rounded-lg overflow-hidden bg-black`}>
       {video && videoUrl && !showContent && (
         <video
           ref={videoRef}
           src={videoUrl}
-          className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+          className={mediaClass}
           autoPlay
           muted
           playsInline
-          onEnded={handleVideoEnd}
+          onEnded={() => setShowContent(true)}
         />
       )}
 
-      {/* Imagen con contenido (se muestra después del video o inmediatamente si no hay video) */}
-      {showContent && imageUrl && (
+      {(showContent || !video) && imageUrl && (
         <>
-          <img
-            src={imageUrl}
-            alt="Banner preview"
-            className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-          />
+          <img src={imageUrl} alt="Banner preview" className={mediaClass} />
 
-          {/* Visible 9x9 helper grid */}
           <div className="absolute inset-0 pointer-events-none">
             <div className="w-full h-full grid grid-cols-9 grid-rows-9">
-              {Array.from({ length: 81 }).map((_, i) => {
-                const r = Math.floor(i / 9);
-                const c = i % 9;
-                return <div key={`g-r${r}-c${c}`} className="border border-dashed border-white/10" />;
-              })}
+              {Array.from({ length: 81 }).map((_, i) => (
+                <div key={`g-r${Math.floor(i / 9)}-c${i % 9}`} className="border border-dashed border-white/10" />
+              ))}
             </div>
           </div>
 
-          {/* Overlay con contenido */}
           {(title || description || cta || linkUrl) && (
             <BannerContentOverlay
               title={title}
@@ -159,7 +143,6 @@ function BannerContent({
         </>
       )}
 
-      {/* Badge indicador */}
       <div className="absolute top-4 left-4 pointer-events-none">
         <Badge variant="secondary" className="gap-1">
           {device === "desktop" ? <Monitor className="h-3 w-3" /> : <Smartphone className="h-3 w-3" />}
@@ -167,7 +150,6 @@ function BannerContent({
         </Badge>
       </div>
 
-      {/* Badge de video si hay video */}
       {video && !showContent && (
         <div className="absolute top-4 right-4 pointer-events-none">
           <Badge variant="destructive">Video reproduciendo</Badge>
@@ -190,87 +172,91 @@ export function BannerPreview(props: Readonly<BannerPreviewProps>) {
     link_url,
     coordinates,
     coordinatesMobile,
+    placement,
     onCoordinatesChange,
     onCoordinatesMobileChange,
   } = props;
   const [viewMode, setViewMode] = useState<"desktop" | "mobile">("desktop");
   const [reloadKey, setReloadKey] = useState(0);
 
-  // Usar las coordenadas correctas según el modo
-  const currentCoordinates = viewMode === "desktop" ? coordinates : coordinatesMobile;
-  const currentOnCoordinatesChange = viewMode === "desktop" ? onCoordinatesChange : onCoordinatesMobileChange;
-  const handleReload = () => {
-    setReloadKey(prev => prev + 1);
-  };
+  const isSingleView = placement === "product-detail" || placement === "category-top" || placement?.startsWith("banner-");
+  const isDesktop = viewMode === "desktop";
+  const currentCoordinates = isDesktop ? coordinates : coordinatesMobile;
+  const currentOnCoordinatesChange = isDesktop ? onCoordinatesChange : onCoordinatesMobileChange;
+  const currentImage = isDesktop ? desktop_image : mobile_image;
+  const currentVideo = isDesktop ? desktop_video : mobile_video;
+
+  const renderPreviewContent = (mode: "desktop" | "mobile", key: string) => (
+    <>
+      <div className="flex justify-center">
+        <BannerContent
+          key={key}
+          image={mode === "desktop" ? desktop_image : mobile_image}
+          video={mode === "desktop" ? desktop_video : mobile_video}
+          title={title}
+          description={description}
+          cta={cta}
+          colorFont={color_font}
+          linkUrl={link_url}
+          coordinates={mode === "desktop" ? coordinates : currentCoordinates}
+          device={mode}
+          placement={placement}
+        />
+      </div>
+      <div className="flex justify-center">
+        <BannerPositionControls
+          coordinates={mode === "desktop" ? coordinates : currentCoordinates}
+          onCoordinatesChange={mode === "desktop" ? onCoordinatesChange : currentOnCoordinatesChange}
+        />
+      </div>
+    </>
+  );
+
+  if (isSingleView) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between gap-2">
+          <Badge variant="outline">Vista General</Badge>
+          <Button variant="outline" size="sm" onClick={() => setReloadKey(prev => prev + 1)} title="Recargar preview">
+            <RotateCcw className="h-4 w-4" />
+          </Button>
+        </div>
+        <div className="space-y-4">{renderPreviewContent("desktop", `general-${reloadKey}`)}</div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
-      {/* Toggle buttons y controles */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 p-1 bg-muted rounded-lg flex-1">
-          <Button
-            variant={viewMode === "desktop" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => setViewMode("desktop")}
-            className="flex-1"
-          >
-            <Monitor className="h-4 w-4 mr-2" />
-            Desktop
-          </Button>
-          <Button
-            variant={viewMode === "mobile" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => setViewMode("mobile")}
-            className="flex-1"
-          >
-            <Smartphone className="h-4 w-4 mr-2" />
-            Mobile
-          </Button>
+          {(["desktop", "mobile"] as const).map((mode) => (
+            <Button
+              key={mode}
+              variant={viewMode === mode ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode(mode)}
+              className="flex-1"
+            >
+              {mode === "desktop" ? <Monitor className="h-4 w-4 mr-2" /> : <Smartphone className="h-4 w-4 mr-2" />}
+              {mode === "desktop" ? "Desktop" : "Mobile"}
+            </Button>
+          ))}
         </div>
-
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleReload}
-          title="Recargar preview"
-        >
+        <Button variant="outline" size="sm" onClick={() => setReloadKey(prev => prev + 1)} title="Recargar preview">
           <RotateCcw className="h-4 w-4" />
         </Button>
       </div>
 
-      {/* Layout condicional basado en el viewMode */}
-      {viewMode === "desktop" ? (
-        // Desktop: Preview arriba, controles abajo
-        <div className="space-y-4">
-          <div className="flex justify-center">
-            <BannerContent
-              key={`desktop-${reloadKey}`}
-              image={desktop_image}
-              video={desktop_video}
-              title={title}
-              description={description}
-              cta={cta}
-              colorFont={color_font}
-              linkUrl={link_url}
-              coordinates={currentCoordinates}
-              device="desktop"
-            />
-          </div>
-          <div className="flex justify-center">
-            <BannerPositionControls
-              coordinates={currentCoordinates}
-              onCoordinatesChange={currentOnCoordinatesChange}
-            />
-          </div>
-        </div>
+      {isDesktop ? (
+        <div className="space-y-4">{renderPreviewContent("desktop", `desktop-${reloadKey}`)}</div>
       ) : (
-        // Mobile: Preview al lado izquierdo, controles al lado derecho
         <div className="grid gap-4 lg:grid-cols-[1fr_auto] items-start">
           <div className="flex justify-center">
             <BannerContent
               key={`mobile-${reloadKey}`}
-              image={mobile_image}
-              video={mobile_video}
+              image={currentImage}
+              video={currentVideo}
               title={title}
               description={description}
               cta={cta}
@@ -278,6 +264,7 @@ export function BannerPreview(props: Readonly<BannerPreviewProps>) {
               linkUrl={link_url}
               coordinates={currentCoordinates}
               device="mobile"
+              placement={placement}
             />
           </div>
           <BannerPositionControls

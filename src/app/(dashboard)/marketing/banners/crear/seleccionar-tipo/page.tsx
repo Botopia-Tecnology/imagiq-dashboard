@@ -275,27 +275,29 @@ export default function SeleccionarTipoBannerPage() {
         </Card>
       )}
 
-      {/* Resumen y botón de continuar */}
+      {/* Resumen y botón de continuar - Sticky */}
       {selectedType && (
-        <Card className="border-primary/50 bg-primary/5">
-          <CardContent className="pt-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-semibold">Resumen de configuración</h3>
-                <div className="mt-2 space-y-1 text-sm text-muted-foreground">
-                  <p>• Tipo: {selectedBannerType?.title}</p>
-                  {selectedSubcategory && (
-                    <p>• Subcategoría: {selectedBannerType?.subcategories?.find(s => s.id === selectedSubcategory)?.title}</p>
-                  )}
+        <div className="sticky bottom-0 z-10 pt-6 pb-6">
+          <Card className="border-primary/50 bg-primary/5 shadow-2xl backdrop-blur-sm">
+            <CardContent className="pt-4">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex-1">
+                  <h3 className="font-semibold">Resumen de configuración</h3>
+                  <div className="mt-2 space-y-1 text-sm text-muted-foreground">
+                    <p>• Tipo: {selectedBannerType?.title}</p>
+                    {selectedSubcategory && (
+                      <p>• Subcategoría: {selectedBannerType?.subcategories?.find(s => s.id === selectedSubcategory)?.title}</p>
+                    )}
+                  </div>
                 </div>
+                <Button onClick={handleContinue} size="lg" className="shrink-0">
+                  Continuar
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
               </div>
-              <Button onClick={handleContinue} size="lg">
-                Continuar
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
       )}
     </div>
   )
