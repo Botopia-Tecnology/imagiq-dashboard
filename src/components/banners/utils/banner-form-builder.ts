@@ -50,14 +50,16 @@ function appendTextFields(
   formData.append("placement", fields.placement);
   formData.append("status", status);
 
-  // Campos opcionales
-  if (fields.link_url) formData.append("link_url", fields.link_url);
-  if (fields.title) formData.append("title", fields.title);
-  if (fields.description) formData.append("description", fields.description);
-  if (fields.cta) formData.append("cta", fields.cta);
-  if (fields.color_font) formData.append("color_font", fields.color_font);
-  if (fields.coordinates) formData.append("coordinates", fields.coordinates);
-  if (fields.coordinates_mobile) formData.append("coordinates_mobile", fields.coordinates_mobile);
+  // Campos opcionales - Siempre se envían para permitir borrado (strings vacíos)
+  formData.append("link_url", fields.link_url || "");
+  formData.append("title", fields.title || "");
+  formData.append("description", fields.description || "");
+  formData.append("cta", fields.cta || "");
+  formData.append("color_font", fields.color_font || "");
+  formData.append("coordinates", fields.coordinates || "");
+  formData.append("coordinates_mobile", fields.coordinates_mobile || "");
+
+  // Solo enviar category_id y subcategory_id si tienen valor
   if (fields.category_id) formData.append("category_id", fields.category_id);
   if (fields.subcategory_id) formData.append("subcategory_id", fields.subcategory_id);
 }

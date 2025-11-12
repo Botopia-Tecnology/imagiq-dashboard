@@ -60,33 +60,38 @@ export function BannerFormPage({ mode, bannerId, initialPlacement }: BannerFormP
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 px-4 sm:px-0">
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="sm" onClick={() => router.push(backRoute)}>
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => router.push(backRoute)}
+          className="self-start"
+        >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Volver
         </Button>
-        <div className="flex-1">
-          <div className="flex items-center gap-2">
-            <h1 className="text-3xl font-bold tracking-tight">{pageTitle}</h1>
-            <Badge variant="secondary" className="capitalize">
+        <div className="flex-1 min-w-0">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight truncate">{pageTitle}</h1>
+            <Badge variant="secondary" className="capitalize self-start">
               {formData.placement}
             </Badge>
           </div>
-          <p className="text-muted-foreground">{pageDescription}</p>
+          <p className="text-sm text-muted-foreground mt-1">{pageDescription}</p>
         </div>
       </div>
 
       {/* Formulario */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        <div className="space-y-4">
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
+        <div className="space-y-3 sm:space-y-4">
           {/* Campos del formulario */}
           <Card>
-            <CardHeader>
-              <CardTitle>Información del Banner</CardTitle>
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="text-lg sm:text-xl">Información del Banner</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-4 sm:p-6">
               <BannerFormFields formData={formData} onFieldChange={handleFieldChange} />
             </CardContent>
           </Card>
@@ -94,10 +99,10 @@ export function BannerFormPage({ mode, bannerId, initialPlacement }: BannerFormP
           {/* Campos de categoría (solo para category-top o banners de categoría) */}
           {(formData.placement === "category-top" || formData.placement.startsWith("banner-")) && (
             <Card>
-              <CardHeader>
-                <CardTitle>Ubicación en Categoría</CardTitle>
+              <CardHeader className="p-4 sm:p-6">
+                <CardTitle className="text-lg sm:text-xl">Ubicación en Categoría</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-4 sm:p-6">
                 <BannerCategoryFields
                   categoryId={formData.category_id}
                   subcategoryId={formData.subcategory_id}
@@ -122,12 +127,13 @@ export function BannerFormPage({ mode, bannerId, initialPlacement }: BannerFormP
 
           {/* Upload de archivos */}
           <Card>
-            <CardHeader>
-              <CardTitle>Archivos Multimedia</CardTitle>
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="text-lg sm:text-xl">Archivos Multimedia</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-4 sm:p-6">
               <BannerMediaUpload
                 files={formData}
+                existingUrls={existingUrls}
                 placement={formData.placement}
                 onFileChange={handleFileChange}
               />
@@ -135,7 +141,7 @@ export function BannerFormPage({ mode, bannerId, initialPlacement }: BannerFormP
           </Card>
 
           {/* Botones de acción */}
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
             <Button
               variant="outline"
               onClick={() => handleSubmit("draft")}
@@ -145,12 +151,14 @@ export function BannerFormPage({ mode, bannerId, initialPlacement }: BannerFormP
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Guardando...
+                  <span className="hidden sm:inline">Guardando...</span>
+                  <span className="sm:hidden">Guardando...</span>
                 </>
               ) : (
                 <>
                   <Save className="mr-2 h-4 w-4" />
-                  Guardar Borrador
+                  <span className="hidden sm:inline">Guardar Borrador</span>
+                  <span className="sm:hidden">Borrador</span>
                 </>
               )}
             </Button>
@@ -158,12 +166,14 @@ export function BannerFormPage({ mode, bannerId, initialPlacement }: BannerFormP
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Publicando...
+                  <span className="hidden sm:inline">Publicando...</span>
+                  <span className="sm:hidden">Publicando...</span>
                 </>
               ) : (
                 <>
                   <Send className="mr-2 h-4 w-4" />
-                  Publicar Banner
+                  <span className="hidden sm:inline">Publicar Banner</span>
+                  <span className="sm:hidden">Publicar</span>
                 </>
               )}
             </Button>
@@ -171,14 +181,14 @@ export function BannerFormPage({ mode, bannerId, initialPlacement }: BannerFormP
         </div>
 
         {/* Preview */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Eye className="h-5 w-5" />
+        <Card className="lg:sticky lg:top-4">
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+              <Eye className="h-4 w-4 sm:h-5 sm:w-5" />
               Vista Previa
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4 sm:p-6">
             <BannerPreview
               desktop_image={formData.desktop_image || existingUrls.desktop_image_url}
               desktop_video={formData.desktop_video || existingUrls.desktop_video_url}
