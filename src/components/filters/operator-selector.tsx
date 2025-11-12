@@ -14,7 +14,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { FILTER_OPERATORS, FilterOperator, ProductColumn } from "@/types/filters";
+import { FilterOperator, ProductColumn } from "@/types/filters";
 import { Info } from "lucide-react";
 
 interface OperatorSelectorProps {
@@ -30,14 +30,11 @@ export function OperatorSelector({
   selectedColumn,
   disabled = false,
 }: OperatorSelectorProps) {
-  // Filter operators based on selected column type
-  const availableOperators = selectedColumn
-    ? FILTER_OPERATORS.filter((op) =>
-        op.supportedTypes.includes(selectedColumn.type)
-      )
-    : FILTER_OPERATORS;
+  // Get operators from selected column (from API)
+  const availableOperators = selectedColumn?.operators || [];
+  const isDisabled = disabled || !selectedColumn || availableOperators.length === 0;
 
-  const selectedOperator = FILTER_OPERATORS.find((op) => op.value === value);
+  const selectedOperator = availableOperators.find((op) => op.value === value);
 
   return (
     <div className="space-y-2">
@@ -57,21 +54,35 @@ export function OperatorSelector({
           </Tooltip>
         </TooltipProvider>
       </div>
-      <Select value={value} onValueChange={onValueChange} disabled={disabled}>
+      <Select value={value} onValueChange={onValueChange} disabled={isDisabled}>
         <SelectTrigger id="operator-selector">
-          <SelectValue placeholder="Selecciona un operador" />
+          <SelectValue 
+            placeholder={
+              !selectedColumn 
+                ? "Selecciona una columna primero" 
+                : availableOperators.length === 0
+                ? "No hay operadores disponibles"
+                : "Selecciona un operador"
+            } 
+          />
         </SelectTrigger>
         <SelectContent>
-          {availableOperators.map((operator) => (
-            <SelectItem key={operator.value} value={operator.value}>
-              <div className="flex flex-col">
-                <span>{operator.label}</span>
-                <span className="text-xs text-muted-foreground">
-                  {operator.description}
-                </span>
-              </div>
-            </SelectItem>
-          ))}
+          {availableOperators.length > 0 ? (
+            availableOperators.map((operator) => (
+              <SelectItem key={operator.value} value={operator.value}>
+                <div className="flex flex-col">
+                  <span>{operator.label}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {operator.description}
+                  </span>
+                </div>
+              </SelectItem>
+            ))
+          ) : (
+            <div className="px-2 py-1.5 text-sm text-muted-foreground">
+              No hay operadores disponibles para esta columna
+            </div>
+          )}
         </SelectContent>
       </Select>
       {selectedOperator && (

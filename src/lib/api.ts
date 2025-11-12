@@ -10,6 +10,7 @@
 
 import { BackendCategory, BackendMenu, BackendSubmenu, CreateCategoryRequest, UpdateCategoryRequest, CreateMenuRequest, UpdateMenuRequest, CreateSubmenuRequest, UpdateSubmenuRequest, BackendWhatsAppTemplate } from "@/types";
 import { BackendBanner, BannerPaginationData } from "@/types/banner";
+import { ProductColumn } from "@/types/filters";
 
 
 // API Client configuration
@@ -270,6 +271,7 @@ export const productEndpoints = {
   search: (query: string) =>
     apiClient.get<ProductApiResponse>(`/api/products/filtered?nombre=${query}`),
   getSummary: () => apiClient.get<ProductSummary>("/api/products/summary"),
+  getColumnNames: () => apiClient.get<ProductColumn[]>("/api/products/columns/metadata"),
   updateMedia: (id: string, data: ProductMediaUpdateData) =>
     apiClient.put<ProductMediaUpdateResponse>(`/api/products/${id}/media`, data),
   getMultimedia: (sku: string) =>

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { DynamicFilter, FilterScope, FilterOperator, FilterDisplayType, PRODUCT_COLUMNS, FilterOrderConfig } from "@/types/filters";
+import { DynamicFilter, FilterScope, FilterOperator, FilterDisplayType, FilterOrderConfig } from "@/types/filters";
 import { WebsiteCategory } from "@/types";
 import { ScopeSelector } from "./scope-selector";
 import { ColumnSelector } from "./column-selector";
@@ -14,6 +14,7 @@ import { OperatorSelector } from "./operator-selector";
 import { ValueConfigurator } from "./value-configurator";
 import { DisplayTypeSelector } from "./display-type-selector";
 import { toast } from "sonner";
+import { useProductColumns } from "@/hooks/use-product-columns";
 
 interface FilterFormProps {
   filter?: DynamicFilter;
@@ -61,7 +62,8 @@ export function FilterForm({
   );
   const [isActive, setIsActive] = useState(filter?.isActive ?? true);
 
-  const selectedColumn = PRODUCT_COLUMNS.find((col) => col.key === column);
+  const { columns } = useProductColumns();
+  const selectedColumn = columns.find((col) => col.key === column);
 
   // Reset display type when operator changes if incompatible
   useEffect(() => {

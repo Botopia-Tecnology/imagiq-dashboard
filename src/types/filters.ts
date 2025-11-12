@@ -101,6 +101,15 @@ export interface DynamicFilter {
 }
 
 /**
+ * Operator metadata for filter configuration
+ */
+export interface OperatorMetadata {
+  value: FilterOperator;
+  label: string;
+  description: string;
+}
+
+/**
  * Product column metadata for filter configuration
  */
 export interface ProductColumn {
@@ -109,168 +118,7 @@ export interface ProductColumn {
   type: "string" | "number" | "array" | "boolean"; // Data type
   supportsRange: boolean; // Whether it supports range operations
   supportsDynamic: boolean; // Whether it supports dynamic value fetching
+  operators?: OperatorMetadata[]; // Supported operators for this column
 }
 
-/**
- * Available product columns for filtering
- * Based on ProductApiData interface
- */
-export const PRODUCT_COLUMNS: ProductColumn[] = [
-  {
-    key: "precioNormal",
-    label: "Precio Normal",
-    type: "number",
-    supportsRange: true,
-    supportsDynamic: false,
-  },
-  {
-    key: "precioDescto",
-    label: "Precio con Descuento",
-    type: "number",
-    supportsRange: true,
-    supportsDynamic: false,
-  },
-  {
-    key: "color",
-    label: "Color",
-    type: "array",
-    supportsRange: false,
-    supportsDynamic: true,
-  },
-  {
-    key: "capacidad",
-    label: "Capacidad/Almacenamiento",
-    type: "array",
-    supportsRange: false,
-    supportsDynamic: true,
-  },
-  {
-    key: "memoriaram",
-    label: "Memoria RAM",
-    type: "array",
-    supportsRange: false,
-    supportsDynamic: true,
-  },
-  {
-    key: "categoria",
-    label: "Categoría",
-    type: "string",
-    supportsRange: false,
-    supportsDynamic: true,
-  },
-  {
-    key: "menu",
-    label: "Menú",
-    type: "string",
-    supportsRange: false,
-    supportsDynamic: true,
-  },
-  {
-    key: "modelo",
-    label: "Modelo",
-    type: "string",
-    supportsRange: false,
-    supportsDynamic: true,
-  },
-  {
-    key: "stock",
-    label: "Stock",
-    type: "number",
-    supportsRange: true,
-    supportsDynamic: false,
-  },
-  {
-    key: "stockTotal",
-    label: "Stock Total",
-    type: "number",
-    supportsRange: true,
-    supportsDynamic: false,
-  },
-  {
-    key: "segmento",
-    label: "Segmento",
-    type: "array",
-    supportsRange: false,
-    supportsDynamic: true,
-  },
-];
-
-/**
- * Operator metadata with descriptions
- */
-export interface OperatorMetadata {
-  value: FilterOperator;
-  label: string;
-  description: string;
-  supportedTypes: ("string" | "number" | "array" | "boolean")[];
-}
-
-export const FILTER_OPERATORS: OperatorMetadata[] = [
-  {
-    value: "equal",
-    label: "Igual a",
-    description: "Coincidencia exacta del valor",
-    supportedTypes: ["string", "number", "boolean"],
-  },
-  {
-    value: "includes",
-    label: "Incluye",
-    description: "El array incluye el valor",
-    supportedTypes: ["array"],
-  },
-  {
-    value: "range",
-    label: "Rango",
-    description: "Valor entre mínimo y máximo",
-    supportedTypes: ["number"],
-  },
-  {
-    value: "greater_than",
-    label: "Mayor que",
-    description: "Valor mayor que el especificado",
-    supportedTypes: ["number"],
-  },
-  {
-    value: "less_than",
-    label: "Menor que",
-    description: "Valor menor que el especificado",
-    supportedTypes: ["number"],
-  },
-  {
-    value: "contains",
-    label: "Contiene",
-    description: "El texto contiene la cadena especificada",
-    supportedTypes: ["string"],
-  },
-  {
-    value: "starts_with",
-    label: "Comienza con",
-    description: "El texto comienza con la cadena especificada",
-    supportedTypes: ["string"],
-  },
-  {
-    value: "ends_with",
-    label: "Termina con",
-    description: "El texto termina con la cadena especificada",
-    supportedTypes: ["string"],
-  },
-  {
-    value: "not_equal",
-    label: "No igual a",
-    description: "Valor diferente al especificado",
-    supportedTypes: ["string", "number", "boolean"],
-  },
-  {
-    value: "in",
-    label: "En lista",
-    description: "Valor está en la lista especificada",
-    supportedTypes: ["string", "number"],
-  },
-  {
-    value: "not_in",
-    label: "No en lista",
-    description: "Valor no está en la lista especificada",
-    supportedTypes: ["string", "number"],
-  },
-];
 

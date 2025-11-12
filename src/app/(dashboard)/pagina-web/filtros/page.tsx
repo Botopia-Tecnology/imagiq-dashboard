@@ -17,9 +17,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { GripVertical, Edit, Trash2, Copy, Filter, Plus, ChevronDown, ChevronRight } from "lucide-react";
-import { DynamicFilter, PRODUCT_COLUMNS, FilterOrderConfig } from "@/types/filters";
+import { DynamicFilter, FilterOrderConfig } from "@/types/filters";
 import { WebsiteCategory, WebsiteMenu, WebsiteSubmenu } from "@/types";
 import { useCategories } from "@/features/categories/useCategories";
+import { useProductColumns } from "@/hooks/use-product-columns";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -42,6 +43,7 @@ interface GroupedFilters {
 export default function FiltrosPage() {
   const router = useRouter();
   const { categories, loading: categoriesLoading } = useCategories();
+  const { columns } = useProductColumns();
   const [filters, setFilters] = useState<DynamicFilter[]>([]);
   const [deletingFilter, setDeletingFilter] = useState<DynamicFilter | null>(null);
   const [draggedFilter, setDraggedFilter] = useState<{ filter: DynamicFilter; scopeType: 'category' | 'menu' | 'submenu'; scopeId: string } | null>(null);
@@ -258,7 +260,7 @@ export default function FiltrosPage() {
   };
 
   const getColumnLabel = (columnKey: string) => {
-    const column = PRODUCT_COLUMNS.find((c) => c.key === columnKey);
+    const column = columns.find((c) => c.key === columnKey);
     return column?.label || columnKey;
   };
 

@@ -8,7 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { PRODUCT_COLUMNS, ProductColumn } from "@/types/filters";
+import { useProductColumns } from "@/hooks/use-product-columns";
 
 interface ColumnSelectorProps {
   value: string;
@@ -21,17 +21,18 @@ export function ColumnSelector({
   onValueChange,
   disabled = false,
 }: ColumnSelectorProps) {
-  const selectedColumn = PRODUCT_COLUMNS.find((col) => col.key === value);
+  const { columns, isLoading } = useProductColumns();
+  const selectedColumn = columns.find((col) => col.key === value);
 
   return (
     <div className="space-y-2">
       <Label htmlFor="column-selector">Columna de Producto</Label>
-      <Select value={value} onValueChange={onValueChange} disabled={disabled}>
+      <Select value={value} onValueChange={onValueChange} disabled={disabled || isLoading}>
         <SelectTrigger id="column-selector">
-          <SelectValue placeholder="Selecciona una columna" />
+          <SelectValue placeholder={isLoading ? "Cargando..." : "Selecciona una columna"} />
         </SelectTrigger>
         <SelectContent>
-          {PRODUCT_COLUMNS.map((column) => (
+          {columns.map((column) => (
             <SelectItem key={column.key} value={column.key}>
               <div className="flex flex-col">
                 <span>{column.label}</span>
