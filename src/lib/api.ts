@@ -10,6 +10,7 @@
 
 import { BackendCategory, BackendMenu, BackendSubmenu, CreateCategoryRequest, UpdateCategoryRequest, CreateMenuRequest, UpdateMenuRequest, CreateSubmenuRequest, UpdateSubmenuRequest, BackendWhatsAppTemplate } from "@/types";
 import { BackendBanner, BannerPaginationData } from "@/types/banner";
+import { ProductColumn, DisplayTypesResponse, FilterOperator, DynamicFilter, FilterOrderConfig } from "@/types/filters";
 
 
 // API Client configuration
@@ -129,8 +130,11 @@ export class ApiClient {
     });
   }
 
-  async delete<T>(endpoint: string): Promise<ApiResponse<T>> {
-    return this.request<T>(endpoint, { method: "DELETE" });
+  async delete<T>(endpoint: string, data?: unknown): Promise<ApiResponse<T>> {
+    return this.request<T>(endpoint, {
+      method: "DELETE",
+      body: data ? JSON.stringify(data) : undefined,
+    });
   }
 
   async patch<T>(endpoint: string, data?: unknown): Promise<ApiResponse<T>> {
@@ -270,6 +274,31 @@ export const productEndpoints = {
   search: (query: string) =>
     apiClient.get<ProductApiResponse>(`/api/products/filtered?nombre=${query}`),
   getSummary: () => apiClient.get<ProductSummary>("/api/products/summary"),
+  getColumnNames: () => apiClient.get<ProductColumn[]>("/api/products/columns/metadata"),
+  getDistinctValues: (columnKey: string, params?: { categoria?: string; menu?: string; submenu?: string }) => {
+    const searchParams = new URLSearchParams();
+    if (params?.categoria) {
+      searchParams.append("categoria", params.categoria);
+    }
+    if (params?.menu) {
+      searchParams.append("menu", params.menu);
+    }
+    if (params?.submenu) {
+      searchParams.append("submenu", params.submenu);
+    }
+    const queryString = searchParams.toString();
+    const url = `/api/products/distinct/${columnKey}${queryString ? `?${queryString}` : ""}`;
+    return apiClient.get<string[]>(url);
+  },
+  getDisplayTypes: (columnKey: string, operator?: FilterOperator) => {
+    const searchParams = new URLSearchParams();
+    if (operator) {
+      searchParams.append("operator", operator);
+    }
+    const queryString = searchParams.toString();
+    const url = `/api/products/columns/${columnKey}/display-types${queryString ? `?${queryString}` : ""}`;
+    return apiClient.get<DisplayTypesResponse>(url);
+  },
   updateMedia: (id: string, data: ProductMediaUpdateData) =>
     apiClient.put<ProductMediaUpdateResponse>(`/api/products/${id}/media`, data),
   getMultimedia: (sku: string) =>
@@ -1087,4 +1116,44 @@ export const productNotificationEndpoints = {
     apiClient.delete<{ success: boolean; message?: string }>(`/api/products/notifications/${id}`),
   markAsNotified: (id: string) =>
     apiClient.patch<{ success: boolean; message?: string }>(`/api/products/notifications/${id}`, { notified: true }),
+};
+
+// Filter API endpoints
+interface CreateFilterRequest {
+  sectionName: string;
+  column: string;
+  operator?: string;
+  operatorMode: "column" | "per-value";
+  valueConfig: DynamicFilter["valueConfig"];
+  displayType: string;
+  scope: DynamicFilter["scope"];
+  order: FilterOrderConfig;
+  isActive: boolean;
+}
+
+interface UpdateFilterRequest extends Partial<CreateFilterRequest> {}
+
+interface UpdateOrderRequest {
+  scopeType: "category" | "menu" | "submenu";
+  scopeId: string;
+  filterOrders: Array<{
+    filterId: string;
+    order: number;
+  }>;
+}
+
+interface DeleteBulkRequest {
+  filterIds: string[];
+}
+
+export const filterEndpoints = {
+  getAll: () => apiClient.get<DynamicFilter[]>("/api/filters"),
+  getById: (id: string) => apiClient.get<DynamicFilter>(`/api/filters/${id}`),
+  create: (data: CreateFilterRequest) => apiClient.post<DynamicFilter>("/api/filters", data),
+  update: (id: string, data: UpdateFilterRequest) => apiClient.put<DynamicFilter>(`/api/filters/${id}`, data),
+  updatePartial: (id: string, data: Partial<UpdateFilterRequest>) => apiClient.patch<DynamicFilter>(`/api/filters/${id}`, data),
+  delete: (id: string) => apiClient.delete<{ success: boolean; message?: string }>(`/api/filters/${id}`),
+  deleteBulk: (data: DeleteBulkRequest) => apiClient.delete<{ success: boolean; message?: string; data?: { deletedCount: number } }>("/api/filters/bulk", data),
+  updateOrder: (data: UpdateOrderRequest) => apiClient.put<{ success: boolean; message?: string; data?: { updatedFilters: Array<{ filterId: string; order: FilterOrderConfig }> } }>("/api/filters/order", data),
+  updateFilterOrder: (id: string, order: FilterOrderConfig) => apiClient.patch<DynamicFilter>(`/api/filters/${id}/order`, { order }),
 };
