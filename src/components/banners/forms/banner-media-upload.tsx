@@ -48,6 +48,9 @@ function MediaField({
   const hasExistingFile = !!existingUrl && !hasNewFile;
   const fileName = existingUrl ? existingUrl.split('/').pop() || 'Archivo actual' : '';
 
+  // Determinar si es un banner de categoría (formato vertical 1080x1944 - 9:16)
+  const isCategoryBanner = id.includes('desktop') && (label.includes('Banner') || label.includes('Categoría'));
+
   return (
     <div className="space-y-2">
       <Label htmlFor={id}>{label}</Label>
@@ -58,8 +61,13 @@ function MediaField({
           <div className="relative group rounded-lg border overflow-hidden bg-muted/30">
             {/* Preview del archivo */}
             <div className="flex items-center gap-3 p-3">
-              {/* Thumbnail/Preview */}
-              <div className="relative w-20 h-20 rounded overflow-hidden bg-muted flex-shrink-0">
+              {/* Thumbnail/Preview - ajustado para formato vertical si es banner de categoría */}
+              <div
+                className={`relative rounded overflow-hidden bg-muted flex-shrink-0 ${
+                  isCategoryBanner ? 'w-16 h-28' : 'w-20 h-20'
+                }`}
+                style={isCategoryBanner ? { aspectRatio: '9/16' } : undefined}
+              >
                 {isVideo ? (
                   // Preview de video con poster
                   <div className="w-full h-full flex items-center justify-center bg-black/5">
@@ -77,7 +85,7 @@ function MediaField({
                     alt={label}
                     fill
                     className="object-cover"
-                    sizes="80px"
+                    sizes={isCategoryBanner ? '64px' : '80px'}
                   />
                 )}
               </div>
@@ -86,6 +94,11 @@ function MediaField({
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium truncate">Archivo actual</p>
                 <p className="text-xs text-muted-foreground truncate">{fileName}</p>
+                {isCategoryBanner && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Formato: 1080×1944px (9:16)
+                  </p>
+                )}
               </div>
 
               {/* Acciones */}
@@ -138,7 +151,14 @@ function MediaField({
             <Upload className="h-4 w-4 text-muted-foreground flex-shrink-0" />
           </div>
           {hasNewFile && (
-            <p className="text-xs text-muted-foreground">{file.name}</p>
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground">{file.name}</p>
+              {isCategoryBanner && (
+                <p className="text-xs text-muted-foreground">
+                  Formato recomendado: 1080×1944px (9:16)
+                </p>
+              )}
+            </div>
           )}
         </>
       )}

@@ -11,16 +11,16 @@ import { MoreHorizontal, Eye, Edit, Trash2, ExternalLink } from "lucide-react";
 import type { BackendBanner } from "@/types/banner";
 
 interface BannerActionsCellProps {
-  banner: BackendBanner;
-  onEdit?: (banner: BackendBanner) => void;
-  onDelete?: (banner: BackendBanner) => void;
+  readonly banner: BackendBanner;
+  readonly onEdit?: (banner: BackendBanner) => void;
+  readonly onDelete?: (banner: BackendBanner) => void;
 }
 
 /**
  * Celda con menú de acciones del banner
  * Incluye: Ver detalles, Editar, Ver en sitio, Eliminar
  */
-export function BannerActionsCell({ banner, onEdit, onDelete }: BannerActionsCellProps) {
+export function BannerActionsCell({ banner, onEdit, onDelete }: Readonly<BannerActionsCellProps>) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>

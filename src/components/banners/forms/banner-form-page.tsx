@@ -11,6 +11,7 @@ import { BannerFormFields } from "./banner-form-fields";
 import { BannerMediaUpload } from "./banner-media-upload";
 import { BannerCategoryFields } from "./banner-category-fields";
 import { BannerPreview } from "../preview/banner-preview";
+import { BannerSizeGuide } from "./banner-size-guide";
 
 interface BannerFormPageProps {
   readonly mode: "create" | "edit";
@@ -124,6 +125,9 @@ export function BannerFormPage({ mode, bannerId, initialPlacement }: BannerFormP
               </CardContent>
             </Card>
           )}
+
+          {/* Guía de dimensiones */}
+          <BannerSizeGuide placement={formData.placement} />
 
           {/* Upload de archivos */}
           <Card>
