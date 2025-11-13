@@ -16,8 +16,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { GripVertical, Edit, Trash2, Copy, Filter, Plus, ChevronDown, ChevronRight } from "lucide-react";
+import { GripVertical, Edit, Trash2, Copy, Filter, Plus, ChevronDown, ChevronRight, Search, X } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { FilterOperator, FilterDisplayType } from "@/types/filters";
 import { DynamicFilter, FilterOrderConfig } from "@/types/filters";
 import { WebsiteCategory, WebsiteMenu, WebsiteSubmenu } from "@/types";
 import { useCategories } from "@/features/categories/useCategories";
@@ -58,6 +61,11 @@ export default function FiltrosPage() {
   const [deletingFilter, setDeletingFilter] = useState<DynamicFilter | null>(null);
   const [deletingFilters, setDeletingFilters] = useState<DynamicFilter[]>([]);
   const [selectedFilters, setSelectedFilters] = useState<Set<string>>(new Set());
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterColumn, setFilterColumn] = useState<string>("all");
+  const [filterOperator, setFilterOperator] = useState<string>("all");
+  const [filterType, setFilterType] = useState<string>("all");
+  const [filterStatus, setFilterStatus] = useState<string>("all");
   const [draggedFilter, setDraggedFilter] = useState<{ filter: DynamicFilter; scopeType: 'category' | 'menu' | 'submenu'; scopeId: string } | null>(null);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [expandedMenus, setExpandedMenus] = useState<Set<string>>(new Set());
@@ -205,6 +213,97 @@ export default function FiltrosPage() {
     }
   };
 
+  const getColumnLabel = (columnKey: string) => {
+    const column = columns.find((c) => c.key === columnKey);
+    return column?.label || columnKey;
+  };
+
+  // Get unique values for filter dropdowns
+  const availableColumns = useMemo(() => {
+    const uniqueColumns = Array.from(new Set(filters.map(f => f.column)));
+    return uniqueColumns.map(key => ({
+      key,
+      label: getColumnLabel(key)
+    })).sort((a, b) => a.label.localeCompare(b.label));
+  }, [filters, columns]);
+
+  // Helper to get operator label from columns metadata
+  const getOperatorLabel = (operator: FilterOperator): string => {
+    for (const column of columns) {
+      const opMeta = column.operators?.find(op => op.value === operator);
+      if (opMeta) return opMeta.label;
+    }
+    return operator;
+  };
+
+  const availableOperators = useMemo(() => {
+    const uniqueOperators = Array.from(new Set(filters.map(f => f.operator).filter(Boolean))) as FilterOperator[];
+    return uniqueOperators.sort();
+  }, [filters]);
+
+  // Helper to get display type label
+  const getDisplayTypeLabel = (type: FilterDisplayType): string => {
+    const labels: Record<FilterDisplayType, string> = {
+      checkbox: "Checkboxes",
+      radio: "Radio Buttons",
+      slider: "Slider de Rango",
+      multi_select: "Multi-Select",
+      single_select: "Single Select",
+    };
+    return labels[type] || type;
+  };
+
+  const availableTypes = useMemo(() => {
+    const uniqueTypes = Array.from(new Set(filters.map(f => f.displayType))) as FilterDisplayType[];
+    return uniqueTypes.sort();
+  }, [filters]);
+
+  // Filter filters based on search query and filter selects
+  const filteredFilters = useMemo(() => {
+    let result = filters;
+
+    // Filter by name (text search)
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      result = result.filter((filter) => 
+        filter.sectionName.toLowerCase().includes(query)
+      );
+    }
+
+    // Filter by column
+    if (filterColumn && filterColumn !== "all") {
+      result = result.filter((filter) => filter.column === filterColumn);
+    }
+
+    // Filter by operator
+    if (filterOperator && filterOperator !== "all") {
+      result = result.filter((filter) => filter.operator === filterOperator);
+    }
+
+    // Filter by display type
+    if (filterType && filterType !== "all") {
+      result = result.filter((filter) => filter.displayType === filterType);
+    }
+
+    // Filter by status
+    if (filterStatus && filterStatus !== "all") {
+      const isActive = filterStatus === "active";
+      result = result.filter((filter) => filter.isActive === isActive);
+    }
+
+    return result;
+  }, [filters, searchQuery, filterColumn, filterOperator, filterType, filterStatus, columns]);
+
+  const clearFilters = () => {
+    setSearchQuery("");
+    setFilterColumn("all");
+    setFilterOperator("all");
+    setFilterType("all");
+    setFilterStatus("all");
+  };
+
+  const hasActiveFilters = searchQuery.trim() || (filterColumn && filterColumn !== "all") || (filterOperator && filterOperator !== "all") || (filterType && filterType !== "all") || (filterStatus && filterStatus !== "all");
+
   const handleDuplicate = (filter: DynamicFilter) => {
     const duplicated: DynamicFilter = {
       ...filter,
@@ -301,11 +400,6 @@ export default function FiltrosPage() {
 
   const handleDragEnd = () => {
     setDraggedFilter(null);
-  };
-
-  const getColumnLabel = (columnKey: string) => {
-    const column = columns.find((c) => c.key === columnKey);
-    return column?.label || columnKey;
   };
 
   // Helper function to map scope IDs to names
@@ -654,27 +748,146 @@ export default function FiltrosPage() {
             </Card>
           ) : (
             <Card>
+              <CardHeader>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold">Filtros</h3>
+                    {hasActiveFilters && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={clearFilters}
+                        className="h-8"
+                      >
+                        <X className="h-4 w-4 mr-2" />
+                        Limpiar filtros
+                      </Button>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                    {/* Nombre - Text input */}
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Buscar por nombre..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-9"
+                      />
+                    </div>
+                    
+                    {/* Columna - Select */}
+                    <Select value={filterColumn} onValueChange={setFilterColumn}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Columna" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todas las columnas</SelectItem>
+                        {availableColumns.map((col) => (
+                          <SelectItem key={col.key} value={col.key}>
+                            {col.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
+                    {/* Operador - Select */}
+                    <Select value={filterOperator} onValueChange={setFilterOperator}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Operador" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todos los operadores</SelectItem>
+                        {availableOperators.map((op) => (
+                          <SelectItem key={op} value={op}>
+                            {getOperatorLabel(op)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
+                    {/* Tipo - Select */}
+                    <Select value={filterType} onValueChange={setFilterType}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Tipo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todos los tipos</SelectItem>
+                        {availableTypes.map((type) => (
+                          <SelectItem key={type} value={type}>
+                            {getDisplayTypeLabel(type)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
+                    {/* Estado - Select */}
+                    <Select value={filterStatus} onValueChange={setFilterStatus}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Estado" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todos los estados</SelectItem>
+                        <SelectItem value="active">Activo</SelectItem>
+                        <SelectItem value="inactive">Inactivo</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {hasActiveFilters && (
+                    <div className="text-sm text-muted-foreground">
+                      Mostrando {filteredFilters.length} de {filters.length} filtro(s)
+                    </div>
+                  )}
+                </div>
+              </CardHeader>
               <CardContent className="p-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-12">
-                        <Checkbox
-                          checked={selectedFilters.size === filters.length && filters.length > 0}
-                          onCheckedChange={toggleSelectAll}
-                        />
-                      </TableHead>
-                      <TableHead>Nombre</TableHead>
-                      <TableHead>Columna</TableHead>
-                      <TableHead>Operador</TableHead>
-                      <TableHead>Tipo</TableHead>
-                      <TableHead>Estado</TableHead>
-                      <TableHead>Alcance</TableHead>
-                      <TableHead className="text-right">Acciones</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filters.map((filter) => {
+                {filteredFilters.length === 0 ? (
+                  <div className="py-12 text-center text-muted-foreground">
+                    <p>No se encontraron filtros que coincidan con los filtros seleccionados</p>
+                    {hasActiveFilters && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={clearFilters}
+                        className="mt-2"
+                      >
+                        Limpiar filtros
+                      </Button>
+                    )}
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-12">
+                          <Checkbox
+                            checked={filteredFilters.length > 0 && filteredFilters.every(f => selectedFilters.has(f.id))}
+                            onCheckedChange={() => {
+                              if (filteredFilters.every(f => selectedFilters.has(f.id))) {
+                                // Deseleccionar todos los filtrados
+                                const newSelected = new Set(selectedFilters);
+                                filteredFilters.forEach(f => newSelected.delete(f.id));
+                                setSelectedFilters(newSelected);
+                              } else {
+                                // Seleccionar todos los filtrados
+                                const newSelected = new Set(selectedFilters);
+                                filteredFilters.forEach(f => newSelected.add(f.id));
+                                setSelectedFilters(newSelected);
+                              }
+                            }}
+                          />
+                        </TableHead>
+                        <TableHead>Nombre</TableHead>
+                        <TableHead>Columna</TableHead>
+                        <TableHead>Operador</TableHead>
+                        <TableHead>Tipo</TableHead>
+                        <TableHead>Estado</TableHead>
+                        <TableHead>Alcance</TableHead>
+                        <TableHead className="text-right">Acciones</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredFilters.map((filter) => {
                       const isSelected = selectedFilters.has(filter.id);
                       const scopeNames = getScopeNames(filter);
                       const scopeDisplay = [
@@ -754,6 +967,7 @@ export default function FiltrosPage() {
                     })}
                   </TableBody>
                 </Table>
+                )}
               </CardContent>
             </Card>
           )}
