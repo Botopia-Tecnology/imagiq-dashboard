@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -29,7 +30,15 @@ export function ColumnSelector({
   disabled = false,
 }: ColumnSelectorProps) {
   const { columns, isLoading } = useProductColumns();
-  const selectedColumn = columns.find((col) => col.key === value);
+  
+  // Filter out columns that don't support dynamic values AND don't support ranges
+  const availableColumns = useMemo(() => {
+    return columns.filter(
+      (column) => column.supportsDynamic || column.supportsRange
+    );
+  }, [columns]);
+  
+  const selectedColumn = availableColumns.find((col) => col.key === value);
 
   return (
     <div className="space-y-2">
@@ -54,16 +63,22 @@ export function ColumnSelector({
           <SelectValue placeholder={isLoading ? "Cargando..." : "Selecciona una columna"} />
         </SelectTrigger>
         <SelectContent>
-          {columns.map((column) => (
-            <SelectItem key={column.key} value={column.key}>
-              <div className="flex flex-col">
-                <span>{column.label}</span>
-                <span className="text-xs text-muted-foreground">
-                  {column.key} ({column.type})
-                </span>
-              </div>
-            </SelectItem>
-          ))}
+          {availableColumns.length === 0 ? (
+            <div className="px-2 py-1.5 text-sm text-muted-foreground">
+              No hay columnas disponibles
+            </div>
+          ) : (
+            availableColumns.map((column) => (
+              <SelectItem key={column.key} value={column.key}>
+                <div className="flex flex-col">
+                  <span>{column.label}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {column.key} ({column.type})
+                  </span>
+                </div>
+              </SelectItem>
+            ))
+          )}
         </SelectContent>
       </Select>
       {selectedColumn && (
