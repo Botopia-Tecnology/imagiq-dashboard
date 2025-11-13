@@ -272,13 +272,16 @@ export const productEndpoints = {
     apiClient.get<ProductApiResponse>(`/api/products/filtered?nombre=${query}`),
   getSummary: () => apiClient.get<ProductSummary>("/api/products/summary"),
   getColumnNames: () => apiClient.get<ProductColumn[]>("/api/products/columns/metadata"),
-  getDistinctValues: (columnKey: string, params?: { categoria?: string; menu?: string }) => {
+  getDistinctValues: (columnKey: string, params?: { categoria?: string; menu?: string; submenu?: string }) => {
     const searchParams = new URLSearchParams();
     if (params?.categoria) {
       searchParams.append("categoria", params.categoria);
     }
     if (params?.menu) {
       searchParams.append("menu", params.menu);
+    }
+    if (params?.submenu) {
+      searchParams.append("submenu", params.submenu);
     }
     const queryString = searchParams.toString();
     const url = `/api/products/distinct/${columnKey}${queryString ? `?${queryString}` : ""}`;
