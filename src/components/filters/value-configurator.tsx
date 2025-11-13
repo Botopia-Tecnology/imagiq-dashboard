@@ -21,7 +21,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Plus, X, Info } from "lucide-react";
+import { Plus, X, Info, Edit, Check } from "lucide-react";
 import {
   FilterValueConfig,
   FilterOperator,
@@ -148,6 +148,14 @@ export function ValueConfigurator({
   const [newRangeLabel, setNewRangeLabel] = useState("");
   const [newRangeMin, setNewRangeMin] = useState("");
   const [newRangeMax, setNewRangeMax] = useState("");
+  const [editingValue, setEditingValue] = useState<{ index: number; isMixed: boolean } | null>(null);
+  const [editingValueData, setEditingValueData] = useState<{
+    value: string;
+    label: string;
+    operator: FilterOperator;
+    min: string;
+    max: string;
+  } | null>(null);
   
   // Use ref to track the last request to avoid duplicate calls
   const lastRequestRef = useRef<string>("");
@@ -373,6 +381,74 @@ export function ValueConfigurator({
         onValueChange({ ...mixedConfig, manualValues: newManualValues });
       }
     }
+  };
+
+  // Start editing a manual value
+  const startEditingValue = (index: number, isMixed: boolean = false) => {
+    let valueItem: ValueItem | undefined;
+    if (value.type === "manual") {
+      valueItem = (value as ManualValueConfig).values?.[index];
+    } else if (value.type === "mixed" && isMixed) {
+      valueItem = (value as MixedValueConfig).manualValues[index];
+    }
+
+    if (valueItem) {
+      setEditingValue({ index, isMixed });
+      setEditingValueData({
+        value: valueItem.value || "",
+        label: valueItem.label || "",
+        operator: valueItem.operator || "equal",
+        min: valueItem.min?.toString() || "",
+        max: valueItem.max?.toString() || "",
+      });
+    }
+  };
+
+  // Cancel editing
+  const cancelEditingValue = () => {
+    setEditingValue(null);
+    setEditingValueData(null);
+  };
+
+  // Save edited value
+  const saveEditedValue = () => {
+    if (!editingValue || !editingValueData) return;
+
+    const { index, isMixed } = editingValue;
+    const { value: editValue, label, operator, min, max } = editingValueData;
+    const isRangeOp = operator === "range";
+
+    // Validación
+    if (isRangeOp) {
+      if (!min || !max || !label.trim()) return;
+      const minNum = parseFloat(min);
+      const maxNum = parseFloat(max);
+      if (isNaN(minNum) || isNaN(maxNum) || minNum >= maxNum) return;
+    } else {
+      if (!editValue.trim()) return;
+    }
+
+    const updatedValue: ValueItem = {
+      value: isRangeOp ? min : editValue.trim(),
+      label: label.trim() || undefined,
+      operator: operatorMode === "per-value" ? operator : undefined,
+      min: isRangeOp ? parseFloat(min) : undefined,
+      max: isRangeOp ? parseFloat(max) : undefined,
+    };
+
+    if (value.type === "manual") {
+      const manualConfig = value as ManualValueConfig;
+      const newValues = [...(manualConfig.values || [])];
+      newValues[index] = updatedValue;
+      onValueChange({ ...manualConfig, values: newValues });
+    } else if (value.type === "mixed" && isMixed) {
+      const mixedConfig = value as MixedValueConfig;
+      const newManualValues = [...mixedConfig.manualValues];
+      newManualValues[index] = updatedValue;
+      onValueChange({ ...mixedConfig, manualValues: newManualValues });
+    }
+
+    cancelEditingValue();
   };
 
   // Update value operator (for per-value mode)
@@ -842,57 +918,192 @@ export function ValueConfigurator({
                     <div className="space-y-2">
                       {value.values.map((valueItem, index) => {
                         const isRangeValue = valueItem.operator === "range";
+                        const isEditing = editingValue?.index === index && !editingValue.isMixed;
+                        const editData = isEditing ? editingValueData : null;
+                        const isRangeEdit = editData?.operator === "range";
+
                         return (
                           <div
                             key={index}
                             className="flex items-center justify-between p-2 border rounded gap-2"
                           >
-                            <div className="flex items-center gap-2 flex-1">
-                              {isRangeValue ? (
-                                <Badge variant="secondary" className="flex flex-col items-start gap-1">
-                                  <span>{valueItem.label || `${valueItem.min} - ${valueItem.max}`}</span>
-                                  <span className="text-xs text-muted-foreground font-normal">
-                                    Rango: {valueItem.min} - {valueItem.max}
-                                  </span>
-                                </Badge>
-                              ) : (
-                                <Badge variant="secondary" className="flex flex-col items-start gap-1">
-                                  <span>{valueItem.label || valueItem.value}</span>
-                                  {valueItem.label && (
-                                    <span className="text-xs text-muted-foreground font-normal">
-                                      Valor: {valueItem.value}
-                                    </span>
+                            {isEditing ? (
+                              <>
+                                <div className="flex items-center gap-2 flex-1">
+                                  {isRangeEdit && editData ? (
+                                    <div className="grid grid-cols-4 gap-2 flex-1">
+                                      <Input
+                                        placeholder="Etiqueta *"
+                                        value={editData.label}
+                                        onChange={(e) => setEditingValueData({ ...editData, label: e.target.value })}
+                                        disabled={disabled}
+                                      />
+                                      <Input
+                                        type="number"
+                                        placeholder="Mínimo *"
+                                        value={editData.min}
+                                        onChange={(e) => setEditingValueData({ ...editData, min: e.target.value })}
+                                        disabled={disabled}
+                                      />
+                                      <Input
+                                        type="number"
+                                        placeholder="Máximo *"
+                                        value={editData.max}
+                                        onChange={(e) => setEditingValueData({ ...editData, max: e.target.value })}
+                                        disabled={disabled}
+                                      />
+                                      {operatorMode === "per-value" && (
+                                        <Select
+                                          value={editData.operator}
+                                          onValueChange={(op: FilterOperator) => {
+                                            if (editData) {
+                                              if (op !== "range") {
+                                                setEditingValueData({ ...editData, operator: op, min: "", max: "" });
+                                              } else {
+                                                setEditingValueData({ ...editData, operator: op });
+                                              }
+                                            }
+                                          }}
+                                          disabled={disabled}
+                                        >
+                                          <SelectTrigger className="w-32 h-7 text-xs">
+                                            <SelectValue />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            {availableOperators.map((op) => (
+                                              <SelectItem key={op.value} value={op.value}>
+                                                {op.label}
+                                              </SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
+                                      )}
+                                    </div>
+                                  ) : editData ? (
+                                    <div className={`grid gap-2 flex-1 ${operatorMode === "per-value" ? "grid-cols-3" : "grid-cols-2"}`}>
+                                      <Input
+                                        placeholder="Valor *"
+                                        value={editData.value}
+                                        onChange={(e) => setEditingValueData({ ...editData, value: e.target.value })}
+                                        disabled={disabled}
+                                      />
+                                      <Input
+                                        placeholder="Etiqueta (opcional)"
+                                        value={editData.label}
+                                        onChange={(e) => setEditingValueData({ ...editData, label: e.target.value })}
+                                        disabled={disabled}
+                                      />
+                                      {operatorMode === "per-value" && (
+                                        <Select
+                                          value={editData.operator}
+                                          onValueChange={(op: FilterOperator) => {
+                                            if (editData) {
+                                              if (op === "range") {
+                                                setEditingValueData({ ...editData, operator: op, value: "" });
+                                              } else {
+                                                setEditingValueData({ ...editData, operator: op });
+                                              }
+                                            }
+                                          }}
+                                          disabled={disabled}
+                                        >
+                                          <SelectTrigger className="w-32 h-7 text-xs">
+                                            <SelectValue />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            {availableOperators.map((op) => (
+                                              <SelectItem key={op.value} value={op.value}>
+                                                {op.label}
+                                              </SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
+                                      )}
+                                    </div>
+                                  ) : null}
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={saveEditedValue}
+                                    disabled={disabled || !editData || (isRangeEdit ? (!editData.label.trim() || !editData.min || !editData.max) : !editData.value.trim())}
+                                  >
+                                    <Check className="h-4 w-4 text-green-600" />
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={cancelEditingValue}
+                                    disabled={disabled}
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </>
+                            ) : (
+                              <>
+                                <div className="flex items-center gap-2 flex-1">
+                                  {isRangeValue ? (
+                                    <Badge variant="secondary" className="flex flex-col items-start gap-1">
+                                      <span>{valueItem.label || `${valueItem.min} - ${valueItem.max}`}</span>
+                                      <span className="text-xs text-muted-foreground font-normal">
+                                        Rango: {valueItem.min} - {valueItem.max}
+                                      </span>
+                                    </Badge>
+                                  ) : (
+                                    <Badge variant="secondary" className="flex flex-col items-start gap-1">
+                                      <span>{valueItem.label || valueItem.value}</span>
+                                      {valueItem.label && (
+                                        <span className="text-xs text-muted-foreground font-normal">
+                                          Valor: {valueItem.value}
+                                        </span>
+                                      )}
+                                    </Badge>
                                   )}
-                                </Badge>
-                              )}
-                              {operatorMode === "per-value" && (
-                                <Select
-                                  value={valueItem.operator || "equal"}
-                                  onValueChange={(op: FilterOperator) => updateValueOperator(valueItem, op, false, index)}
-                                  disabled={disabled}
-                                >
-                                  <SelectTrigger className="w-32 h-7 text-xs">
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {availableOperators.map((op) => (
-                                      <SelectItem key={op.value} value={op.value}>
-                                        {op.label}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              )}
-                            </div>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => removeManualValue(index)}
-                              disabled={disabled}
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
+                                  {operatorMode === "per-value" && (
+                                    <Select
+                                      value={valueItem.operator || "equal"}
+                                      onValueChange={(op: FilterOperator) => updateValueOperator(valueItem, op, false, index)}
+                                      disabled={disabled}
+                                    >
+                                      <SelectTrigger className="w-32 h-7 text-xs">
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {availableOperators.map((op) => (
+                                          <SelectItem key={op.value} value={op.value}>
+                                            {op.label}
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => startEditingValue(index, false)}
+                                    disabled={disabled}
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => removeManualValue(index)}
+                                    disabled={disabled}
+                                  >
+                                    <X className="h-4 w-4 text-destructive" />
+                                  </Button>
+                                </div>
+                              </>
+                            )}
                           </div>
                         );
                       })}
@@ -1129,57 +1340,192 @@ export function ValueConfigurator({
                   <div className="space-y-2">
                     {value.manualValues.map((valueItem, index) => {
                       const isRangeValue = valueItem.operator === "range";
+                      const isEditing = editingValue?.index === index && editingValue.isMixed;
+                      const editData = isEditing ? editingValueData : null;
+                      const isRangeEdit = editData?.operator === "range";
+
                       return (
                         <div
                           key={index}
                           className="flex items-center justify-between p-2 border rounded gap-2"
                         >
-                          <div className="flex items-center gap-2 flex-1">
-                            {isRangeValue ? (
-                              <Badge variant="secondary" className="flex flex-col items-start gap-1">
-                                <span>{valueItem.label || `${valueItem.min} - ${valueItem.max}`}</span>
-                                <span className="text-xs text-muted-foreground font-normal">
-                                  Rango: {valueItem.min} - {valueItem.max}
-                                </span>
-                              </Badge>
-                            ) : (
-                              <Badge variant="secondary" className="flex flex-col items-start gap-1">
-                                <span>{valueItem.label || valueItem.value}</span>
-                                {valueItem.label && (
-                                  <span className="text-xs text-muted-foreground font-normal">
-                                    Valor: {valueItem.value}
-                                  </span>
+                          {isEditing ? (
+                            <>
+                              <div className="flex items-center gap-2 flex-1">
+                                {isRangeEdit && editData ? (
+                                  <div className="grid grid-cols-4 gap-2 flex-1">
+                                    <Input
+                                      placeholder="Etiqueta *"
+                                      value={editData.label}
+                                      onChange={(e) => setEditingValueData({ ...editData, label: e.target.value })}
+                                      disabled={disabled}
+                                    />
+                                    <Input
+                                      type="number"
+                                      placeholder="Mínimo *"
+                                      value={editData.min}
+                                      onChange={(e) => setEditingValueData({ ...editData, min: e.target.value })}
+                                      disabled={disabled}
+                                    />
+                                    <Input
+                                      type="number"
+                                      placeholder="Máximo *"
+                                      value={editData.max}
+                                      onChange={(e) => setEditingValueData({ ...editData, max: e.target.value })}
+                                      disabled={disabled}
+                                    />
+                                    {operatorMode === "per-value" && (
+                                      <Select
+                                        value={editData.operator}
+                                        onValueChange={(op: FilterOperator) => {
+                                          if (editData) {
+                                            if (op !== "range") {
+                                              setEditingValueData({ ...editData, operator: op, min: "", max: "" });
+                                            } else {
+                                              setEditingValueData({ ...editData, operator: op });
+                                            }
+                                          }
+                                        }}
+                                        disabled={disabled}
+                                      >
+                                        <SelectTrigger className="w-32 h-7 text-xs">
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          {availableOperators.map((op) => (
+                                            <SelectItem key={op.value} value={op.value}>
+                                              {op.label}
+                                            </SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                    )}
+                                  </div>
+                                ) : editData ? (
+                                  <div className={`grid gap-2 flex-1 ${operatorMode === "per-value" ? "grid-cols-3" : "grid-cols-2"}`}>
+                                    <Input
+                                      placeholder="Valor *"
+                                      value={editData.value}
+                                      onChange={(e) => setEditingValueData({ ...editData, value: e.target.value })}
+                                      disabled={disabled}
+                                    />
+                                    <Input
+                                      placeholder="Etiqueta (opcional)"
+                                      value={editData.label}
+                                      onChange={(e) => setEditingValueData({ ...editData, label: e.target.value })}
+                                      disabled={disabled}
+                                    />
+                                    {operatorMode === "per-value" && (
+                                      <Select
+                                        value={editData.operator}
+                                        onValueChange={(op: FilterOperator) => {
+                                          if (editData) {
+                                            if (op === "range") {
+                                              setEditingValueData({ ...editData, operator: op, value: "" });
+                                            } else {
+                                              setEditingValueData({ ...editData, operator: op });
+                                            }
+                                          }
+                                        }}
+                                        disabled={disabled}
+                                      >
+                                        <SelectTrigger className="w-32 h-7 text-xs">
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          {availableOperators.map((op) => (
+                                            <SelectItem key={op.value} value={op.value}>
+                                              {op.label}
+                                            </SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                    )}
+                                  </div>
+                                ) : null}
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={saveEditedValue}
+                                  disabled={disabled || !editData || (isRangeEdit ? (!editData.label.trim() || !editData.min || !editData.max) : !editData.value.trim())}
+                                >
+                                  <Check className="h-4 w-4 text-green-600" />
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={cancelEditingValue}
+                                  disabled={disabled}
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <div className="flex items-center gap-2 flex-1">
+                                {isRangeValue ? (
+                                  <Badge variant="secondary" className="flex flex-col items-start gap-1">
+                                    <span>{valueItem.label || `${valueItem.min} - ${valueItem.max}`}</span>
+                                    <span className="text-xs text-muted-foreground font-normal">
+                                      Rango: {valueItem.min} - {valueItem.max}
+                                    </span>
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="secondary" className="flex flex-col items-start gap-1">
+                                    <span>{valueItem.label || valueItem.value}</span>
+                                    {valueItem.label && (
+                                      <span className="text-xs text-muted-foreground font-normal">
+                                        Valor: {valueItem.value}
+                                      </span>
+                                    )}
+                                  </Badge>
                                 )}
-                              </Badge>
-                            )}
-                            {operatorMode === "per-value" && (
-                              <Select
-                                value={valueItem.operator || "equal"}
-                                onValueChange={(op: FilterOperator) => updateValueOperator(valueItem, op, false, index)}
-                                disabled={disabled}
-                              >
-                                <SelectTrigger className="w-32 h-7 text-xs">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {availableOperators.map((op) => (
-                                    <SelectItem key={op.value} value={op.value}>
-                                      {op.label}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            )}
-                          </div>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeManualValue(index, true)}
-                            disabled={disabled}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
+                                {operatorMode === "per-value" && (
+                                  <Select
+                                    value={valueItem.operator || "equal"}
+                                    onValueChange={(op: FilterOperator) => updateValueOperator(valueItem, op, false, index)}
+                                    disabled={disabled}
+                                  >
+                                    <SelectTrigger className="w-32 h-7 text-xs">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {availableOperators.map((op) => (
+                                        <SelectItem key={op.value} value={op.value}>
+                                          {op.label}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => startEditingValue(index, true)}
+                                  disabled={disabled}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => removeManualValue(index, true)}
+                                  disabled={disabled}
+                                >
+                                  <X className="h-4 w-4 text-destructive" />
+                                </Button>
+                              </div>
+                            </>
+                          )}
                         </div>
                       );
                     })}
