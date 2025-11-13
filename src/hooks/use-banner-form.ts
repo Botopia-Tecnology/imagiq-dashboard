@@ -136,18 +136,41 @@ export function useBannerForm({ mode, bannerId, initialPlacement }: UseBannerFor
     setFormData((prev) => ({ ...prev, coordinates_mobile: newCoordinates }));
   };
 
-  // Validación
-  const validate = (): boolean => {
+  // Validación - retorna un objeto con success y error message
+  const validate = (): { success: boolean; error?: string } => {
     if (!formData.name) {
-      alert("El nombre del banner es obligatorio");
-      return false;
+      return { success: false, error: "El nombre del banner es obligatorio" };
     }
-    return true;
+
+    // Validar imágenes obligatorias para hero y home
+    const isHeroOrHome = formData.placement === "hero" || formData.placement === "home";
+
+    if (isHeroOrHome) {
+      // Validar imagen desktop (nueva o existente)
+      const hasDesktopImage = formData.desktop_image || existingUrls.desktop_image_url;
+      if (!hasDesktopImage) {
+        return { success: false, error: "La imagen de escritorio es obligatoria para banners Hero y Home" };
+      }
+
+      // Validar imagen mobile (nueva o existente)
+      const hasMobileImage = formData.mobile_image || existingUrls.mobile_image_url;
+      if (!hasMobileImage) {
+        return { success: false, error: "La imagen móvil es obligatoria para banners Hero y Home" };
+      }
+    }
+
+    return { success: true };
   };
 
   // Envío del formulario
-  const handleSubmit = async (status: "draft" | "active") => {
-    if (!validate()) return;
+  const handleSubmit = async (status: "draft" | "active", onValidationError?: (error: string) => void) => {
+    const validation = validate();
+    if (!validation.success) {
+      if (validation.error && onValidationError) {
+        onValidationError(validation.error);
+      }
+      return;
+    }
 
     setIsLoading(true);
     try {
