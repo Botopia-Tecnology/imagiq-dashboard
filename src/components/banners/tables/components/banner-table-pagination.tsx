@@ -10,17 +10,17 @@ import {
 import type { BackendBanner } from "@/types/banner";
 
 interface BannerTablePaginationProps {
-  table: Table<BackendBanner>;
-  pagination: {
-    currentPage: number;
-    totalPages: number;
-    total: number;
+  readonly table: Table<BackendBanner>;
+  readonly pagination: {
+    readonly currentPage: number;
+    readonly totalPages: number;
+    readonly total: number;
   };
-  itemsPerPage: number;
-  onItemsPerPageChange: (value: number) => void;
-  onNextPage: () => void;
-  onPreviousPage: () => void;
-  isLoading?: boolean;
+  readonly itemsPerPage: number;
+  readonly onItemsPerPageChange: (value: number) => void;
+  readonly onNextPage: () => void;
+  readonly onPreviousPage: () => void;
+  readonly isLoading?: boolean;
 }
 
 /**
@@ -39,7 +39,7 @@ export function BannerTablePagination({
   onNextPage,
   onPreviousPage,
   isLoading = false,
-}: BannerTablePaginationProps) {
+}: Readonly<BannerTablePaginationProps>) {
   const selectedCount = table.getFilteredSelectedRowModel().rows.length;
 
   return (

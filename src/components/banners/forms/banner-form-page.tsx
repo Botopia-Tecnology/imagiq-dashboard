@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useRef } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Save, Send, Eye, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -26,8 +27,8 @@ interface BannerFormPageProps {
 export function BannerFormPage({ mode, bannerId, initialPlacement }: BannerFormPageProps) {
   const router = useRouter();
 
-  // Estado local para guardar los nombres de categoría y subcategoría
-  const [categoryName, setCategoryName] = useState("");
+  // Ref para guardar el nombre de categoría y evitar race conditions con useState
+  const categoryNameRef = useRef("");
 
   const {
     formData,
@@ -109,16 +110,18 @@ export function BannerFormPage({ mode, bannerId, initialPlacement }: BannerFormP
                   subcategoryId={formData.subcategory_id}
                   onCategoryChange={(categoryId, newCategoryName) => {
                     handleFieldChange("category_id", categoryId);
-                    setCategoryName(newCategoryName);
+                    categoryNameRef.current = newCategoryName;
                     // Actualizar placement solo con la categoría
                     handleFieldChange("placement", `banner-${newCategoryName}`);
                   }}
                   onSubcategoryChange={(subcategoryId, newSubcategoryName) => {
                     handleFieldChange("subcategory_id", subcategoryId);
-                    // Actualizar placement con categoría y subcategoría
+                    // Actualizar placement con categoría y subcategoría usando el ref
+                    // El ref siempre tiene el valor más reciente, evitando race conditions
+                    const currentCategoryName = categoryNameRef.current;
                     const newPlacement = subcategoryId === "none" || !subcategoryId
-                      ? `banner-${categoryName}`
-                      : `banner-${categoryName}-${newSubcategoryName}`;
+                      ? `banner-${currentCategoryName}`
+                      : `banner-${currentCategoryName}-${newSubcategoryName}`;
                     handleFieldChange("placement", newPlacement);
                   }}
                 />
@@ -148,7 +151,7 @@ export function BannerFormPage({ mode, bannerId, initialPlacement }: BannerFormP
           <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
             <Button
               variant="outline"
-              onClick={() => handleSubmit("draft")}
+              onClick={() => handleSubmit("draft", (error) => toast.error(error))}
               disabled={isLoading}
               className="flex-1"
             >
@@ -166,7 +169,11 @@ export function BannerFormPage({ mode, bannerId, initialPlacement }: BannerFormP
                 </>
               )}
             </Button>
-            <Button onClick={() => handleSubmit("active")} disabled={isLoading} className="flex-1">
+            <Button
+              onClick={() => handleSubmit("active", (error) => toast.error(error))}
+              disabled={isLoading}
+              className="flex-1"
+            >
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

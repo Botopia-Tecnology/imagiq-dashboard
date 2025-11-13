@@ -14,7 +14,10 @@ export default function BannersPage() {
   };
 
   return (
-    <div className="space-y-3">
+    // `min-w-0` permite que este contenedor principal pueda encogerse cuando un
+    // hijo (la tabla) es más ancho; de este modo el scroll horizontal quedará
+    // confinado al wrapper de la tabla.
+    <div className="space-y-3 min-w-0">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Banners Hero</h1>
