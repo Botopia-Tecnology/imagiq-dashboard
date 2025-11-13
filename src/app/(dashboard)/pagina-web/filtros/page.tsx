@@ -23,6 +23,15 @@ import { useCategories } from "@/features/categories/useCategories";
 import { useProductColumns } from "@/hooks/use-product-columns";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 interface GroupedFilters {
   categoryId: string;
@@ -264,6 +273,49 @@ export default function FiltrosPage() {
     return column?.label || columnKey;
   };
 
+  // Helper function to map scope IDs to names
+  const getScopeNames = (filter: DynamicFilter) => {
+    const categoryNames: string[] = [];
+    const menuNames: string[] = [];
+    const submenuNames: string[] = [];
+
+    // Map category IDs to names
+    filter.scope.categories.forEach((categoryId) => {
+      const category = categories.find((c) => c.id === categoryId);
+      if (category) {
+        categoryNames.push(category.nombreVisible || category.name);
+      }
+    });
+
+    // Map menu IDs to names
+    filter.scope.menus.forEach((menuId) => {
+      categories.forEach((category) => {
+        const menu = category.menus.find((m) => m.id === menuId);
+        if (menu) {
+          menuNames.push(menu.nombreVisible || menu.name);
+        }
+      });
+    });
+
+    // Map submenu IDs to names
+    filter.scope.submenus.forEach((submenuId) => {
+      categories.forEach((category) => {
+        category.menus.forEach((menu) => {
+          const submenu = menu.submenus.find((s) => s.id === submenuId);
+          if (submenu) {
+            submenuNames.push(submenu.nombreVisible || submenu.name);
+          }
+        });
+      });
+    });
+
+    return {
+      categories: categoryNames,
+      menus: menuNames,
+      submenus: submenuNames,
+    };
+  };
+
   const toggleCategory = (categoryId: string) => {
     const newExpanded = new Set(expandedCategories);
     if (newExpanded.has(categoryId)) {
@@ -379,137 +431,266 @@ export default function FiltrosPage() {
         </Button>
       </div>
 
-      {/* Grouped Filters */}
-      {categoriesLoading ? (
-        <Card>
-          <CardContent className="py-12 text-center text-muted-foreground">
-            Cargando categorías...
-          </CardContent>
-        </Card>
-      ) : groupedFilters.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Filter className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">
-              No hay filtros configurados
-            </h3>
-            <p className="text-sm text-muted-foreground mb-4 text-center max-w-md">
-              Crea tu primer filtro dinámico para permitir a los usuarios filtrar
-              productos por diferentes criterios
-            </p>
-            <Button onClick={handleCreate}>
-              <Plus className="h-4 w-4 mr-2" />
-              Crear Primer Filtro
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-4">
-          {groupedFilters.map((group) => (
-            <Card key={group.categoryId}>
-              <CardHeader>
-                <Collapsible
-                  open={expandedCategories.has(group.categoryId)}
-                  onOpenChange={() => toggleCategory(group.categoryId)}
-                >
-                  <CollapsibleTrigger asChild>
-                    <button className="flex items-center justify-between w-full">
-                      <div className="flex items-center gap-2">
-                        {expandedCategories.has(group.categoryId) ? (
-                          <ChevronDown className="h-4 w-4" />
-                        ) : (
-                          <ChevronRight className="h-4 w-4" />
-                        )}
-                        <CardTitle className="text-lg">{group.categoryName}</CardTitle>
-                        <Badge variant="secondary">
-                          {group.filters.length} filtro(s) directo(s)
-                        </Badge>
-                      </div>
-                    </button>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <div className="mt-4 space-y-4">
-                      {/* Category-level filters */}
-                      {group.filters.length > 0 && (
-                        <div>
-                          <h4 className="text-sm font-medium mb-2 text-muted-foreground">
-                            Filtros de Categoría
-                          </h4>
-                          <div className="space-y-2">
-                            {group.filters.map((filter) =>
-                              renderFilterItem(filter, 'category', group.categoryId)
-                            )}
-                          </div>
-                        </div>
-                      )}
+      {/* Tabs for different views */}
+      <Tabs defaultValue="grouped" className="w-full">
+        <TabsList>
+          <TabsTrigger value="grouped">Vista Agrupada</TabsTrigger>
+          <TabsTrigger value="table">Vista de Tabla</TabsTrigger>
+        </TabsList>
 
-                      {/* Menu-level filters */}
-                      {group.menus.map((menu) => (
-                        <div key={menu.menuId} className="border-l-2 pl-4">
-                          <Collapsible
-                            open={expandedMenus.has(menu.menuId)}
-                            onOpenChange={() => toggleMenu(menu.menuId)}
-                          >
-                            <CollapsibleTrigger asChild>
-                              <button className="flex items-center justify-between w-full mb-2">
-                                <div className="flex items-center gap-2">
-                                  {expandedMenus.has(menu.menuId) ? (
-                                    <ChevronDown className="h-4 w-4" />
-                                  ) : (
-                                    <ChevronRight className="h-4 w-4" />
-                                  )}
-                                  <h4 className="font-medium">{menu.menuName}</h4>
-                                  <Badge variant="outline" className="text-xs">
-                                    {menu.filters.length} filtro(s)
-                                  </Badge>
-                                </div>
-                              </button>
-                            </CollapsibleTrigger>
-                            <CollapsibleContent>
-                              <div className="mt-2 space-y-4">
-                                {/* Menu-level filters */}
-                                {menu.filters.length > 0 && (
-                                  <div>
-                                    <h5 className="text-xs font-medium mb-2 text-muted-foreground">
-                                      Filtros de Menú
-                                    </h5>
-                                    <div className="space-y-2">
-                                      {menu.filters.map((filter) =>
-                                        renderFilterItem(filter, 'menu', menu.menuId)
-                                      )}
-                                    </div>
-                                  </div>
-                                )}
-
-                                {/* Submenu-level filters */}
-                                {menu.submenus.map((submenu) => (
-                                  <div key={submenu.submenuId} className="border-l-2 pl-4">
-                                    <h5 className="text-xs font-medium mb-2 text-muted-foreground">
-                                      {submenu.submenuName}
-                                      <Badge variant="outline" className="text-xs ml-2">
-                                        {submenu.filters.length} filtro(s)
-                                      </Badge>
-                                    </h5>
-                                    <div className="space-y-2">
-                                      {submenu.filters.map((filter) =>
-                                        renderFilterItem(filter, 'submenu', submenu.submenuId)
-                                      )}
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </CollapsibleContent>
-                          </Collapsible>
-                        </div>
-                      ))}
-                    </div>
-                  </CollapsibleContent>
-                </Collapsible>
-              </CardHeader>
+        {/* Grouped View */}
+        <TabsContent value="grouped" className="mt-4">
+          {categoriesLoading ? (
+            <Card>
+              <CardContent className="py-12 text-center text-muted-foreground">
+                Cargando categorías...
+              </CardContent>
             </Card>
-          ))}
-        </div>
-      )}
+          ) : groupedFilters.length === 0 ? (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <Filter className="h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold mb-2">
+                  No hay filtros configurados
+                </h3>
+                <p className="text-sm text-muted-foreground mb-4 text-center max-w-md">
+                  Crea tu primer filtro dinámico para permitir a los usuarios filtrar
+                  productos por diferentes criterios
+                </p>
+                <Button onClick={handleCreate}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Crear Primer Filtro
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {groupedFilters.map((group) => (
+                <Card key={group.categoryId}>
+                  <CardHeader>
+                    <Collapsible
+                      open={expandedCategories.has(group.categoryId)}
+                      onOpenChange={() => toggleCategory(group.categoryId)}
+                    >
+                      <CollapsibleTrigger asChild>
+                        <button className="flex items-center justify-between w-full">
+                          <div className="flex items-center gap-2">
+                            {expandedCategories.has(group.categoryId) ? (
+                              <ChevronDown className="h-4 w-4" />
+                            ) : (
+                              <ChevronRight className="h-4 w-4" />
+                            )}
+                            <CardTitle className="text-lg">{group.categoryName}</CardTitle>
+                            <Badge variant="secondary">
+                              {group.filters.length} filtro(s) directo(s)
+                            </Badge>
+                          </div>
+                        </button>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <div className="mt-4 space-y-4">
+                          {/* Category-level filters */}
+                          {group.filters.length > 0 && (
+                            <div>
+                              <h4 className="text-sm font-medium mb-2 text-muted-foreground">
+                                Filtros de Categoría
+                              </h4>
+                              <div className="space-y-2">
+                                {group.filters.map((filter) =>
+                                  renderFilterItem(filter, 'category', group.categoryId)
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Menu-level filters */}
+                          {group.menus.map((menu) => (
+                            <div key={menu.menuId} className="border-l-2 pl-4">
+                              <Collapsible
+                                open={expandedMenus.has(menu.menuId)}
+                                onOpenChange={() => toggleMenu(menu.menuId)}
+                              >
+                                <CollapsibleTrigger asChild>
+                                  <button className="flex items-center justify-between w-full mb-2">
+                                    <div className="flex items-center gap-2">
+                                      {expandedMenus.has(menu.menuId) ? (
+                                        <ChevronDown className="h-4 w-4" />
+                                      ) : (
+                                        <ChevronRight className="h-4 w-4" />
+                                      )}
+                                      <h4 className="font-medium">{menu.menuName}</h4>
+                                      <Badge variant="outline" className="text-xs">
+                                        {menu.filters.length} filtro(s)
+                                      </Badge>
+                                    </div>
+                                  </button>
+                                </CollapsibleTrigger>
+                                <CollapsibleContent>
+                                  <div className="mt-2 space-y-4">
+                                    {/* Menu-level filters */}
+                                    {menu.filters.length > 0 && (
+                                      <div>
+                                        <h5 className="text-xs font-medium mb-2 text-muted-foreground">
+                                          Filtros de Menú
+                                        </h5>
+                                        <div className="space-y-2">
+                                          {menu.filters.map((filter) =>
+                                            renderFilterItem(filter, 'menu', menu.menuId)
+                                          )}
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* Submenu-level filters */}
+                                    {menu.submenus.map((submenu) => (
+                                      <div key={submenu.submenuId} className="border-l-2 pl-4">
+                                        <h5 className="text-xs font-medium mb-2 text-muted-foreground">
+                                          {submenu.submenuName}
+                                          <Badge variant="outline" className="text-xs ml-2">
+                                            {submenu.filters.length} filtro(s)
+                                          </Badge>
+                                        </h5>
+                                        <div className="space-y-2">
+                                          {submenu.filters.map((filter) =>
+                                            renderFilterItem(filter, 'submenu', submenu.submenuId)
+                                          )}
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </CollapsibleContent>
+                              </Collapsible>
+                            </div>
+                          ))}
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  </CardHeader>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        {/* Table View */}
+        <TabsContent value="table" className="mt-4">
+          {categoriesLoading ? (
+            <Card>
+              <CardContent className="py-12 text-center text-muted-foreground">
+                Cargando categorías...
+              </CardContent>
+            </Card>
+          ) : filters.length === 0 ? (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <Filter className="h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold mb-2">
+                  No hay filtros configurados
+                </h3>
+                <p className="text-sm text-muted-foreground mb-4 text-center max-w-md">
+                  Crea tu primer filtro dinámico para permitir a los usuarios filtrar
+                  productos por diferentes criterios
+                </p>
+                <Button onClick={handleCreate}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Crear Primer Filtro
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nombre</TableHead>
+                      <TableHead>Columna</TableHead>
+                      <TableHead>Operador</TableHead>
+                      <TableHead>Tipo</TableHead>
+                      <TableHead>Estado</TableHead>
+                      <TableHead>Alcance</TableHead>
+                      <TableHead className="text-right">Acciones</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filters.map((filter) => {
+                      const scopeNames = getScopeNames(filter);
+                      const scopeDisplay = [
+                        ...scopeNames.categories.map((c) => `Cat: ${c}`),
+                        ...scopeNames.menus.map((m) => `Menú: ${m}`),
+                        ...scopeNames.submenus.map((s) => `Sub: ${s}`),
+                      ].join(", ") || "Ninguno";
+
+                      return (
+                        <TableRow key={filter.id}>
+                          <TableCell className="font-medium">
+                            {filter.sectionName}
+                          </TableCell>
+                          <TableCell>{getColumnLabel(filter.column)}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="text-xs">
+                              {filter.operator}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="secondary" className="text-xs">
+                              {filter.displayType}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {filter.isActive ? (
+                              <Badge variant="default" className="text-xs">
+                                Activo
+                              </Badge>
+                            ) : (
+                              <Badge variant="secondary" className="text-xs">
+                                Inactivo
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell className="max-w-xs">
+                            <span className="text-xs text-muted-foreground truncate block" title={scopeDisplay}>
+                              {scopeDisplay}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEdit(filter)}
+                                title="Editar"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDuplicate(filter)}
+                                title="Duplicar"
+                              >
+                                <Copy className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDelete(filter)}
+                                title="Eliminar"
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+      </Tabs>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog
