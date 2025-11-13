@@ -12,6 +12,7 @@ import {
   Eye,
   MousePointer,
   ArrowRight,
+  Filter,
 } from "lucide-react"
 
 export default function PaginaWebPage() {
@@ -24,6 +25,14 @@ export default function PaginaWebPage() {
       description: "Gestiona las categorías y subcategorías que aparecen en tu sitio web",
       icon: FolderTree,
       path: "/pagina-web/categorias",
+      available: true,
+    },
+    {
+      id: "filtros",
+      title: "Filtros Dinámicos",
+      description: "Configura filtros dinámicos para productos (precio, color, almacenamiento, etc.)",
+      icon: Filter,
+      path: "/pagina-web/filtros",
       available: true,
     },
     {
