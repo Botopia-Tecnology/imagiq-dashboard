@@ -9,15 +9,15 @@ import type { BackendBanner } from "@/types/banner";
 import { statusColors, statusLabels } from "../constants";
 
 interface BannerStatusCellProps {
-  banner: BackendBanner;
-  onStatusChange?: (banner: BackendBanner, newStatus: "active" | "inactive") => void;
+  readonly banner: BackendBanner;
+  readonly onStatusChange?: (banner: BackendBanner, newStatus: "active" | "inactive") => void;
 }
 
 /**
  * Celda con selector de estado del banner
  * Permite cambiar el estado directamente desde la tabla
  */
-export function BannerStatusCell({ banner, onStatusChange }: BannerStatusCellProps) {
+export function BannerStatusCell({ banner, onStatusChange }: Readonly<BannerStatusCellProps>) {
   const status = banner.status;
 
   return (
