@@ -128,9 +128,21 @@ export function mapApiProductToFrontend(apiProduct: ProductApiData): ProductCard
 
   const segmentoArray = Array.isArray(apiProduct.segmento) ? apiProduct.segmento : [];
 
+  // Manejar nombreMarket como array o string
+  const nombreMarketArray = Array.isArray(apiProduct.nombreMarket) 
+    ? apiProduct.nombreMarket 
+    : [apiProduct.nombreMarket];
+  const name = nombreMarketArray.length > 0 ? nombreMarketArray[0] : 'Producto sin nombre';
+
+  // Manejar modelo como array o string
+  const modeloArray = Array.isArray(apiProduct.modelo) 
+    ? apiProduct.modelo 
+    : [apiProduct.modelo];
+  const model = modeloArray.length > 0 ? modeloArray[0] : '';
+
   return {
     id,
-    name: apiProduct.nombreMarket,
+    name,
     image,
     colors,
     price,
@@ -142,7 +154,7 @@ export function mapApiProductToFrontend(apiProduct: ProductApiData): ProductCard
     // Datos adicionales para la página de detalle
     description: apiProduct.descGeneral || null,
     brand: "Samsung", // Por defecto, se puede obtener de la API en el futuro
-    model: apiProduct.modelo,
+    model,
     category: apiProduct.categoria,
     menu: apiProduct.menu,
     capacity: capacidadArray.length > 0 ? capacidadArray.join(', ') : null,
@@ -195,7 +207,9 @@ function createProductColorsFromArray(apiProduct: ProductApiData): ProductColor[
   const preciosNormales = Array.isArray(apiProduct.precioNormal) ? apiProduct.precioNormal : [];
   const preciosDescto = Array.isArray(apiProduct.precioDescto) ? apiProduct.precioDescto : [];
 
-  console.log(`[ProductMapper] Creando variantes para ${apiProduct.nombreMarket}:`);
+  const nombreMarketForLog = Array.isArray(apiProduct.nombreMarket) 
+    ? apiProduct.nombreMarket[0] 
+    : apiProduct.nombreMarket;
   console.log(`  - Colores: ${colorsArray.length} items`);
   console.log(`  - Capacidades: ${capacidadArray.length} items`);
   console.log(`  - RAM: ${ramArray.length} items`);
@@ -619,19 +633,26 @@ export function groupProductsByCategory(products: ProductCardProps[]): Record<st
   };
   
   products.forEach(product => {
+    // Manejar name como string o array (defensivo)
+    const productName = Array.isArray(product.name) 
+      ? product.name[0] || '' 
+      : (typeof product.name === 'string' ? product.name : '');
+    
+    const nameLower = productName.toLowerCase();
+    
     // Mapear categorías de la API a categorías del frontend
-    if (product.name.toLowerCase().includes('buds') || 
-        product.name.toLowerCase().includes('watch') ||
-        product.name.toLowerCase().includes('cargador') ||
-        product.name.toLowerCase().includes('funda')) {
+    if (nameLower.includes('buds') || 
+        nameLower.includes('watch') ||
+        nameLower.includes('cargador') ||
+        nameLower.includes('funda')) {
       grouped['accesorios'].push(product);
-    } else if (product.name.toLowerCase().includes('tv') ||
-               product.name.toLowerCase().includes('monitor') ||
-               product.name.toLowerCase().includes('soundbar')) {
+    } else if (nameLower.includes('tv') ||
+               nameLower.includes('monitor') ||
+               nameLower.includes('soundbar')) {
       grouped['tv-monitores-audio'].push(product);
-    } else if (product.name.toLowerCase().includes('galaxy') ||
-               product.name.toLowerCase().includes('tab') ||
-               product.name.toLowerCase().includes('celular')) {
+    } else if (nameLower.includes('galaxy') ||
+               nameLower.includes('tab') ||
+               nameLower.includes('celular')) {
       grouped['smartphones-tablets'].push(product);
     } else {
       grouped['electrodomesticos'].push(product);

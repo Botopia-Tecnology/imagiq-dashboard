@@ -511,10 +511,13 @@ export interface ProductSummary {
 export interface ProductApiData {
   codigoMarketBase: string;
   codigoMarket?: string[];
-  nombreMarket: string;
+  nombreMarket: string | string[];
   categoria: string;
   menu: string;
-  modelo: string;
+  modelo: string | string[];
+  peso?: string | string[];
+  ancho?: string | string[];
+  alto?: string | string[];
   color?: string[];
   capacidad?: string[];
   memoriaram?: string[]; // Memoria RAM del producto (ej: ["12GB", "16GB"])
