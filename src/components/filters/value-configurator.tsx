@@ -302,7 +302,7 @@ export function ValueConfigurator({
             <div className="flex flex-col items-center justify-center py-8 space-y-4">
               <p className="text-sm text-muted-foreground text-center">
                 {supportsDynamic 
-                  ? "Haz clic en el botón para cargar los valores únicos disponibles desde la API"
+                  ? "Haz clic en el botón para cargar los valores disponibles"
                   : "Esta columna no soporta carga dinámica de valores"}
               </p>
               {supportsDynamic && (
@@ -312,7 +312,7 @@ export function ValueConfigurator({
                   disabled={disabled || !column}
                 >
                   <Plus className="h-4 w-4 mr-2" />
-                  Cargar Valores de la API
+                  Cargar Valores
                 </Button>
               )}
             </div>
