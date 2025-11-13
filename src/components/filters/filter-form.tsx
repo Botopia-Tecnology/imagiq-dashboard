@@ -89,6 +89,20 @@ export function FilterForm({
     operator: operatorMode === "column" ? operator : undefined,
   });
 
+  // Update form state when filter prop changes (for editing)
+  useEffect(() => {
+    if (filter) {
+      setSectionName(filter.sectionName || "");
+      setColumn(filter.column || "");
+      setOperator(filter.operator || "equal");
+      setOperatorMode(filter.operatorMode || "column");
+      setValueConfig(filter.valueConfig || getDefaultValueConfig(filter.operator || "equal"));
+      setDisplayType(filter.displayType || "checkbox");
+      setScope(filter.scope || { categories: [], menus: [], submenus: [] });
+      setIsActive(filter.isActive ?? true);
+    }
+  }, [filter]);
+
   // Reset display type when operator or column changes using API defaultType
   useEffect(() => {
     if (displayTypes && displayTypes.availableTypes.length > 0) {

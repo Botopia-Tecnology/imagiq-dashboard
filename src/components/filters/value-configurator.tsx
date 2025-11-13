@@ -246,6 +246,33 @@ export function ValueConfigurator({
       });
   };
 
+  // Auto-load dynamic values when editing a filter with selected values
+  useEffect(() => {
+    // Only auto-load if:
+    // 1. Column is available
+    // 2. Supports dynamic values
+    // 3. Value config has selected values (dynamic or mixed)
+    // 4. Dynamic values haven't been loaded yet
+    if (column && supportsDynamic && !loadingDynamic) {
+      const hasSelectedValues = 
+        (value.type === "dynamic" && (value as DynamicValueConfig).selectedValues.length > 0) ||
+        (value.type === "mixed" && (value as MixedValueConfig).dynamicValues.length > 0);
+      
+      // Check if we need to load values (either no values loaded or scope changed)
+      const apiColumnKey = toCamelCase(column.key);
+      const scopeKey = scope 
+        ? `${scopeCategoriesKey}|${scopeMenusKey}|${scopeSubmenusKey}`
+        : "";
+      const requestKey = `${apiColumnKey}|${scopeKey}`;
+      const needsLoad = lastRequestRef.current !== requestKey || dynamicValues.length === 0;
+      
+      if (hasSelectedValues && needsLoad) {
+        fetchDynamicValues();
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [column?.key, supportsDynamic, value.type, value, scopeCategoriesKey, scopeMenusKey, scopeSubmenusKey]);
+
   // Helper to get default operator for a value
   const getDefaultOperatorForValue = (): FilterOperator => {
     if (operatorMode === "column") {

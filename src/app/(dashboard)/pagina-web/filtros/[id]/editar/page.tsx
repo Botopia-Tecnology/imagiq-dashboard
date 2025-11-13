@@ -30,12 +30,28 @@ export default function EditarFiltroPage() {
       try {
         const response = await filterEndpoints.getById(filterId);
         
+        // Handle nested response structure: { success: true, data: {...} }
+        // The API client wraps it, so we get: response.data = { success: true, data: {...} }
+        let filterData: any = null;
+        
         if (response.success && response.data) {
+          const responseData = response.data as any;
+          // Check if response.data is directly the filter object
+          if (responseData.id || responseData.sectionName) {
+            filterData = responseData;
+          }
+          // Check if response.data has a nested data property (backend response structure)
+          else if (responseData.data && (responseData.data.id || responseData.data.sectionName)) {
+            filterData = responseData.data;
+          }
+        }
+        
+        if (filterData) {
           // Convert date strings to Date objects
           const filter: DynamicFilter = {
-            ...response.data,
-            createdAt: response.data.createdAt ? new Date(response.data.createdAt) : new Date(),
-            updatedAt: response.data.updatedAt ? new Date(response.data.updatedAt) : new Date(),
+            ...filterData,
+            createdAt: filterData.createdAt ? new Date(filterData.createdAt) : new Date(),
+            updatedAt: filterData.updatedAt ? new Date(filterData.updatedAt) : new Date(),
           };
           setEditingFilter(filter);
         } else {
@@ -59,11 +75,21 @@ export default function EditarFiltroPage() {
   const handleSave = async (filterData: DynamicFilter) => {
     setIsSaving(true);
     try {
-      // Preserve existing order config and dates
-      const updatePayload: Partial<DynamicFilter> = {
+      // Build update payload matching API expectations
+      // Only include operator if operatorMode is "column"
+      const updatePayload: {
+        sectionName: string;
+        column: string;
+        operator?: string;
+        operatorMode: "column" | "per-value";
+        valueConfig: DynamicFilter["valueConfig"];
+        displayType: string;
+        scope: DynamicFilter["scope"];
+        order: DynamicFilter["order"];
+        isActive: boolean;
+      } = {
         sectionName: filterData.sectionName,
         column: filterData.column,
-        operator: filterData.operator,
         operatorMode: filterData.operatorMode,
         valueConfig: filterData.valueConfig,
         displayType: filterData.displayType,
@@ -72,6 +98,11 @@ export default function EditarFiltroPage() {
         // Preserve order from existing filter
         order: editingFilter?.order || filterData.order,
       };
+
+      // Only include operator if operatorMode is "column"
+      if (filterData.operatorMode === "column" && filterData.operator) {
+        updatePayload.operator = filterData.operator;
+      }
 
       const updatedFilter = await updateFilter(filterId, updatePayload);
       

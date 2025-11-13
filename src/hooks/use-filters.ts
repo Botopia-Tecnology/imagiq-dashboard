@@ -121,16 +121,47 @@ export function useFilters(): UseFiltersReturn {
   // Update filter
   const updateFilter = useCallback(async (id: string, data: Partial<CreateFilterData>): Promise<DynamicFilter | null> => {
     try {
-      const response = await filterEndpoints.update(id, data);
+      // Clean up the payload: remove undefined values and ensure proper structure
+      const cleanPayload: any = {};
+      
+      if (data.sectionName !== undefined) cleanPayload.sectionName = data.sectionName;
+      if (data.column !== undefined) cleanPayload.column = data.column;
+      if (data.operator !== undefined) cleanPayload.operator = data.operator;
+      if (data.operatorMode !== undefined) cleanPayload.operatorMode = data.operatorMode;
+      if (data.valueConfig !== undefined) cleanPayload.valueConfig = data.valueConfig;
+      if (data.displayType !== undefined) cleanPayload.displayType = data.displayType;
+      if (data.scope !== undefined) cleanPayload.scope = data.scope;
+      if (data.order !== undefined) cleanPayload.order = data.order;
+      if (data.isActive !== undefined) cleanPayload.isActive = data.isActive;
+
+      console.log("Updating filter with payload:", cleanPayload);
+      
+      const response = await filterEndpoints.update(id, cleanPayload);
       
       if (response.success && response.data) {
-        const updatedFilter = parseFilterDates(response.data);
-        setFilters((prev) => prev.map((f) => (f.id === id ? updatedFilter : f)));
-        toast.success(response.message || "Filtro actualizado correctamente");
-        return updatedFilter;
+        // Handle nested response structure
+        let filterData: any = null;
+        if (response.data.id || response.data.sectionName) {
+          filterData = response.data;
+        } else if (response.data.data && (response.data.data.id || response.data.data.sectionName)) {
+          filterData = response.data.data;
+        }
+        
+        if (filterData) {
+          const updatedFilter = parseFilterDates(filterData);
+          setFilters((prev) => prev.map((f) => (f.id === id ? updatedFilter : f)));
+          toast.success(response.message || "Filtro actualizado correctamente");
+          return updatedFilter;
+        } else {
+          const errorMsg = "Error al procesar la respuesta del servidor";
+          toast.error(errorMsg);
+          console.error("Invalid response structure:", response);
+          return null;
+        }
       } else {
         const errorMsg = response.message || "Error al actualizar el filtro";
         toast.error(errorMsg);
+        console.error("Update failed:", response);
         return null;
       }
     } catch (err) {
