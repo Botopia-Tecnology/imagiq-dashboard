@@ -1,15 +1,24 @@
-"use client"
+"use client";
 
-import { ColumnDef } from "@tanstack/react-table"
-import { ArrowUpDown, MoreHorizontal, Mail, CheckCircle2, Send, Users, Calendar, Clock, Bell } from "lucide-react"
-import Image from "next/image"
-import { useRouter } from "next/navigation"
-import { useState } from "react"
-import { format } from "date-fns"
-import { es } from "date-fns/locale"
+import { ColumnDef } from "@tanstack/react-table";
+import {
+  ArrowUpDown,
+  MoreHorizontal,
+  Mail,
+  CheckCircle2,
+  Send,
+  Users,
+  Clock,
+  Bell,
+} from "lucide-react";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
 
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,14 +26,14 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Checkbox } from "@/components/ui/checkbox"
+} from "@/components/ui/dropdown-menu";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip"
+} from "@/components/ui/tooltip";
 import {
   Dialog,
   DialogContent,
@@ -32,30 +41,30 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from "@/components/ui/dialog"
-import { ProductCardProps } from "@/features/products/useProducts"
-import { GroupedNotificationsResponse, NotificationProducto } from "@/lib/api"
+} from "@/components/ui/dialog";
+import { ProductCardProps } from "@/features/products/useProducts";
+import { GroupedNotificationsResponse, NotificationProducto } from "@/lib/api";
 
 // Componente separado para la celda de acciones que usa useRouter
-function ActionsCell({ 
-  product, 
+function ActionsCell({
+  product,
   notificationData,
-  notificationsOnly = false
-}: { 
-  product: ProductCardProps
-  notificationData?: NotificationProducto | null
-  notificationsOnly?: boolean
+  notificationsOnly = false,
+}: {
+  product: ProductCardProps;
+  notificationData?: NotificationProducto | null;
+  notificationsOnly?: boolean;
 }) {
-  const router = useRouter()
-  const [showPendingModal, setShowPendingModal] = useState(false)
-  const [showSentModal, setShowSentModal] = useState(false)
-  const [showSendEmailModal, setShowSendEmailModal] = useState(false)
-  const [selectedEmails, setSelectedEmails] = useState<string[]>([])
-  const [sendToAll, setSendToAll] = useState(false)
+  const router = useRouter();
+  const [showPendingModal, setShowPendingModal] = useState(false);
+  const [showSentModal, setShowSentModal] = useState(false);
+  const [showSendEmailModal, setShowSendEmailModal] = useState(false);
+  const [selectedEmails, setSelectedEmails] = useState<string[]>([]);
+  const [sendToAll, setSendToAll] = useState(false);
 
   // Si estamos en modo solo notificaciones y no hay datos de notificaciones, no mostrar el menú
   if (notificationsOnly && !notificationData) {
-    return null
+    return null;
   }
 
   return (
@@ -77,11 +86,13 @@ function ActionsCell({
                 Copiar ID del producto
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => router.push(`/productos/${product.id}`)}>
+              <DropdownMenuItem
+                onClick={() => router.push(`/productos/${product.id}`)}
+              >
                 Ver/Editar detalles
               </DropdownMenuItem>
               <DropdownMenuItem>Ver órdenes</DropdownMenuItem>
-              
+
               {notificationData && (
                 <>
                   <DropdownMenuSeparator />
@@ -92,24 +103,27 @@ function ActionsCell({
               )}
             </>
           )}
-          
+
           {notificationsOnly && (
             <DropdownMenuLabel>Notificaciones</DropdownMenuLabel>
           )}
-          
+
           {notificationData && (
             <>
               {notificationData.notificacionesPendientes > 0 && (
                 <>
                   <DropdownMenuItem onClick={() => setShowPendingModal(true)}>
                     <Mail className="mr-2 h-4 w-4" />
-                    Correos pendientes ({notificationData.notificacionesPendientes})
+                    Correos pendientes (
+                    {notificationData.notificacionesPendientes})
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => {
-                    setSelectedEmails([])
-                    setSendToAll(false)
-                    setShowSendEmailModal(true)
-                  }}>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setSelectedEmails([]);
+                      setSendToAll(false);
+                      setShowSendEmailModal(true);
+                    }}
+                  >
                     <Send className="mr-2 h-4 w-4" />
                     Enviar notificaciones
                   </DropdownMenuItem>
@@ -132,13 +146,17 @@ function ActionsCell({
           <DialogHeader>
             <DialogTitle>Correos Pendientes</DialogTitle>
             <DialogDescription>
-              Clientes esperando notificación de disponibilidad para {product.name}
+              Clientes esperando notificación de disponibilidad para{" "}
+              {product.name}
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-2 max-h-[400px] overflow-y-auto">
             {notificationData?.emails.map((email, index) => (
-              <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+              <div
+                key={index}
+                className="flex items-center justify-between p-3 border rounded-lg"
+              >
                 <div className="flex items-center gap-3 flex-1">
                   <Mail className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                   <span className="text-sm font-medium">{email}</span>
@@ -146,12 +164,18 @@ function ActionsCell({
                     <div className="flex items-center gap-2 ml-auto mr-4">
                       <Clock className="h-3.5 w-3.5 text-muted-foreground" />
                       <span className="text-xs text-muted-foreground">
-                        {format(new Date(notificationData.fechaActualizacion), "dd MMM yyyy, HH:mm", { locale: es })}
+                        {format(
+                          new Date(notificationData.fechaActualizacion),
+                          "dd MMM yyyy, HH:mm",
+                          { locale: es },
+                        )}
                       </span>
                     </div>
                   )}
                 </div>
-                <Badge variant="secondary" className="flex-shrink-0">Pendiente</Badge>
+                <Badge variant="secondary" className="flex-shrink-0">
+                  Pendiente
+                </Badge>
               </div>
             ))}
           </div>
@@ -159,9 +183,7 @@ function ActionsCell({
             <p className="text-sm text-muted-foreground">
               Total: {notificationData?.notificacionesPendientes} pendientes
             </p>
-            <Button onClick={() => setShowPendingModal(false)}>
-              Cerrar
-            </Button>
+            <Button onClick={() => setShowPendingModal(false)}>Cerrar</Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -177,12 +199,17 @@ function ActionsCell({
           </DialogHeader>
           <div className="space-y-2 max-h-[400px] overflow-y-auto">
             {notificationData?.emails.map((email, index) => (
-              <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+              <div
+                key={index}
+                className="flex items-center justify-between p-3 border rounded-lg"
+              >
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4 text-green-600" />
                   <span className="text-sm font-medium">{email}</span>
                 </div>
-                <Badge variant="default" className="bg-green-600">Enviado</Badge>
+                <Badge variant="default" className="bg-green-600">
+                  Enviado
+                </Badge>
               </div>
             ))}
           </div>
@@ -190,9 +217,7 @@ function ActionsCell({
             <p className="text-sm text-muted-foreground">
               Total: {notificationData?.notificacionesEnviadas} enviados
             </p>
-            <Button onClick={() => setShowSentModal(false)}>
-              Cerrar
-            </Button>
+            <Button onClick={() => setShowSentModal(false)}>Cerrar</Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -206,10 +231,11 @@ function ActionsCell({
               Enviar Notificaciones
             </DialogTitle>
             <DialogDescription>
-              Selecciona los usuarios a los que deseas enviar la notificación de disponibilidad para {product.name}
+              Selecciona los usuarios a los que deseas enviar la notificación de
+              disponibilidad para {product.name}
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4">
             {/* Opción para enviar a todos */}
             <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/50">
@@ -218,18 +244,19 @@ function ActionsCell({
                 <div>
                   <p className="font-medium">Enviar a todos</p>
                   <p className="text-sm text-muted-foreground">
-                    Notificar a todos los usuarios en la lista ({notificationData?.emails.length || 0} usuarios)
+                    Notificar a todos los usuarios en la lista (
+                    {notificationData?.emails.length || 0} usuarios)
                   </p>
                 </div>
               </div>
               <Checkbox
                 checked={sendToAll}
                 onCheckedChange={(checked) => {
-                  setSendToAll(!!checked)
+                  setSendToAll(!!checked);
                   if (checked) {
-                    setSelectedEmails(notificationData?.emails || [])
+                    setSelectedEmails(notificationData?.emails || []);
                   } else {
-                    setSelectedEmails([])
+                    setSelectedEmails([]);
                   }
                 }}
               />
@@ -237,11 +264,13 @@ function ActionsCell({
 
             {/* Lista de usuarios */}
             <div className="space-y-2">
-              <p className="text-sm font-medium">Seleccionar usuarios individualmente</p>
+              <p className="text-sm font-medium">
+                Seleccionar usuarios individualmente
+              </p>
               <div className="max-h-[300px] overflow-y-auto space-y-2 border rounded-lg p-3">
                 {notificationData?.emails.map((email, index) => (
-                  <div 
-                    key={index} 
+                  <div
+                    key={index}
                     className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors"
                   >
                     <div className="flex items-center gap-3">
@@ -252,10 +281,12 @@ function ActionsCell({
                       checked={selectedEmails.includes(email)}
                       onCheckedChange={(checked) => {
                         if (checked) {
-                          setSelectedEmails([...selectedEmails, email])
+                          setSelectedEmails([...selectedEmails, email]);
                         } else {
-                          setSelectedEmails(selectedEmails.filter(e => e !== email))
-                          setSendToAll(false)
+                          setSelectedEmails(
+                            selectedEmails.filter((e) => e !== email),
+                          );
+                          setSendToAll(false);
                         }
                       }}
                     />
@@ -267,18 +298,23 @@ function ActionsCell({
 
           <DialogFooter className="flex items-center justify-between pt-4 border-t">
             <p className="text-sm text-muted-foreground">
-              {selectedEmails.length} usuario{selectedEmails.length !== 1 ? 's' : ''} seleccionado{selectedEmails.length !== 1 ? 's' : ''}
+              {selectedEmails.length} usuario
+              {selectedEmails.length !== 1 ? "s" : ""} seleccionado
+              {selectedEmails.length !== 1 ? "s" : ""}
             </p>
             <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setShowSendEmailModal(false)}>
+              <Button
+                variant="outline"
+                onClick={() => setShowSendEmailModal(false)}
+              >
                 Cancelar
               </Button>
-              <Button 
+              <Button
                 disabled={selectedEmails.length === 0}
                 onClick={() => {
                   // TODO: Implementar lógica de envío
-                  console.log('Enviar correos a:', selectedEmails)
-                  setShowSendEmailModal(false)
+                  console.log("Enviar correos a:", selectedEmails);
+                  setShowSendEmailModal(false);
                 }}
               >
                 <Send className="mr-2 h-4 w-4" />
@@ -289,200 +325,256 @@ function ActionsCell({
         </DialogContent>
       </Dialog>
     </>
-  )
+  );
 }
 
 export const createProductColumns = (
-  onSortChange?: (field: string, direction:  "desc" | "asc" ) => void,
+  onSortChange?: (field: string, direction: "desc" | "asc") => void,
   notificationsData?: GroupedNotificationsResponse | null,
-  notificationsOnly: boolean = false
-): ColumnDef<ProductCardProps>[] => [
-  {
-    id: "select",
-    header: ({ table }) => (
-      <Checkbox
-        checked={
-          table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && "indeterminate")
-        }
-        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Seleccionar todo"
-      />
-    ),
-    cell: ({ row }) => (
-      <Checkbox
-        checked={row.getIsSelected()}
-        onCheckedChange={(value) => row.toggleSelected(!!value)}
-        aria-label="Seleccionar fila"
-      />
-    ),
-    enableSorting: false,
-    enableHiding: false,
-  },
-  {
-    accessorKey: "image",
-    header: "Imagen",
-    cell: ({ row }) => {
-      const product = row.original
-      return (
-        <div className="w-16 h-16 relative overflow-hidden rounded-lg">
-          {product.image ? (
-            <Image
-              src={product.image}
-              alt={product.name}
-              fill
-              className="object-cover"
-            />
-          ) : (
-            <div className="w-full h-full bg-muted flex items-center justify-center">
-              <span className="text-xs text-muted-foreground">Sin imagen</span>
-            </div>
-          )}
-        </div>
-      )
+  notificationsOnly: boolean = false,
+): ColumnDef<ProductCardProps>[] => {
+  const baseColumns: ColumnDef<ProductCardProps>[] = [
+    {
+      id: "select",
+      header: ({ table }) => (
+        <Checkbox
+          checked={
+            table.getIsAllPageRowsSelected() ||
+            (table.getIsSomePageRowsSelected() && "indeterminate")
+          }
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Seleccionar todo"
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Seleccionar fila"
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
     },
-    enableSorting: false,
-  },
-  {
-    accessorKey: "name",
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => {
-            const isAsc = column.getIsSorted() === "asc"
-            const newDirection = isAsc ? "desc" : "asc"
-            column.toggleSorting(isAsc)
-            onSortChange?.("name", newDirection)
-          }}
-        >
-          Nombre
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      )
-    },
-    cell: ({ row }) => {
-      const product = row.original
-      return (
-        <TooltipProvider>
-          <div className="max-w-[200px]">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="font-medium truncate cursor-default">{product.name}</div>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>{product.name}</p>
-              </TooltipContent>
-            </Tooltip>
-            <div className="text-sm text-muted-foreground truncate">
-              {product.description}
-            </div>
+    {
+      accessorKey: "image",
+      header: "Imagen",
+      cell: ({ row }) => {
+        const product = row.original;
+        return (
+          <div className="w-16 h-16 relative overflow-hidden rounded-lg">
+            {product.image ? (
+              <Image
+                src={product.image}
+                alt={product.name}
+                fill
+                className="object-cover"
+              />
+            ) : (
+              <div className="w-full h-full bg-muted flex items-center justify-center">
+                <span className="text-xs text-muted-foreground">
+                  Sin imagen
+                </span>
+              </div>
+            )}
           </div>
-        </TooltipProvider>
-      )
+        );
+      },
+      enableSorting: false,
     },
-  },
-  {
-    accessorKey: "category",
-    header: "Categoría",
-    cell: ({ row }) => {
-      const product = row.original
-      return (
-        <div className="flex flex-col gap-1">
-          <Badge variant="outline" className="w-fit">
-            {product.category || "Sin categoría"}
-          </Badge>
-          {/* {product.menu && (
+    {
+      accessorKey: "name",
+      header: ({ column }) => {
+        return (
+          <Button
+            variant="ghost"
+            onClick={() => {
+              const isAsc = column.getIsSorted() === "asc";
+              const newDirection = isAsc ? "desc" : "asc";
+              column.toggleSorting(isAsc);
+              onSortChange?.("name", newDirection);
+            }}
+          >
+            Nombre
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        );
+      },
+      cell: ({ row }) => {
+        const product = row.original;
+        return (
+          <TooltipProvider>
+            <div className="max-w-[200px]">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="font-medium truncate cursor-default">
+                    {product.name}
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{product.name}</p>
+                </TooltipContent>
+              </Tooltip>
+              <div className="text-sm text-muted-foreground truncate">
+                {product.description}
+              </div>
+            </div>
+          </TooltipProvider>
+        );
+      },
+    },
+    {
+      accessorKey: "category",
+      header: "Categoría",
+      cell: ({ row }) => {
+        const product = row.original;
+        return (
+          <div className="flex flex-col gap-1">
+            <Badge variant="outline" className="w-fit">
+              {product.category || "Sin categoría"}
+            </Badge>
+            {/* {product.menu && (
             <span className="text-xs text-muted-foreground">
               {product.menu}
             </span>
           )} */}
-        </div>
-      )
+          </div>
+        );
+      },
+      filterFn: (row, id, value) => {
+        return value.includes(row.getValue(id));
+      },
     },
-    filterFn: (row, id, value) => {
-      return value.includes(row.getValue(id))
+    {
+      accessorKey: "menu",
+      header: "Menú",
+      cell: ({ row }) => {
+        const product = row.original;
+        return <div className="flex flex-col gap-1">{product.menu}</div>;
+      },
+      filterFn: (row, id, value) => {
+        const menuValue = row.getValue(id) as string;
+        return value.includes(menuValue);
+      },
+      enableSorting: false,
+      enableHiding: false,
+      size: 0, // Tamaño 0 para que no ocupe espacio
     },
-  },
-  {
-    accessorKey: "menu",
-    header: "Menú",
-    cell: ({ row }) => {
-      const product = row.original
-      return (
-        <div className="flex flex-col gap-1">
-          {product.menu }
-        </div>
-      )
+    {
+      accessorKey: "price",
+      header: ({ column }) => {
+        return (
+          <Button
+            variant="ghost"
+            onClick={() => {
+              const isAsc = column.getIsSorted() === "asc";
+              const newDirection = isAsc ? "desc" : "asc";
+              column.toggleSorting(isAsc);
+              onSortChange?.("price", newDirection);
+            }}
+          >
+            Precio
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        );
+      },
+      cell: ({ row }) => {
+        const price = row.getValue("price") as string;
+        return <div className="font-medium">{price || "N/A"}</div>;
+      },
     },
-    filterFn: (row, id, value) => {
-      const menuValue = row.getValue(id) as string
-      return value.includes(menuValue)
-    },
-    enableSorting: false,
-    enableHiding: false,
-    size: 0, // Tamaño 0 para que no ocupe espacio
-  },
-  {
-    accessorKey: "price",
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => {
-            const isAsc = column.getIsSorted() === "asc"
-            const newDirection = isAsc ? "desc" : "asc"
-            column.toggleSorting(isAsc)
-            onSortChange?.("price", newDirection)
-          }}
-        >
-          Precio
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      )
-    },
-    cell: ({ row }) => {
-      const price = row.getValue("price") as string
-      return <div className="font-medium">{price || "N/A"}</div>
-    },
-  },
-  {
-    accessorKey: "stockTotal",
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          // onClick={() => {
-          //   const currentSort = column.getIsSorted()
-          //   // Si está en desc, cambiar a asc. Si no está ordenado o está en asc, ir a desc
-          //   const isDesc = currentSort === "desc"
-          //   const newDirection = isDesc ? "asc" : "desc"
-          //   // toggleSorting(true) = desc, toggleSorting(false) = asc
-          //   column.toggleSorting(!isDesc)
-          //   onSortChange?.("stock", newDirection)
-          // }}
-        >
-          Stock
-          {/* <ArrowUpDown className="ml-2 h-4 w-4" /> */}
-        </Button>
-      )
-    },
-    cell: ({ row }) => {
-      const stock = row.getValue("stockTotal") as number | undefined
+    {
+      accessorKey: "stockTotal",
+      header: ({ column }) => {
+        return (
+          <Button
+            variant="ghost"
+            // onClick={() => {
+            //   const currentSort = column.getIsSorted()
+            //   // Si está en desc, cambiar a asc. Si no está ordenado o está en asc, ir a desc
+            //   const isDesc = currentSort === "desc"
+            //   const newDirection = isDesc ? "asc" : "desc"
+            //   // toggleSorting(true) = desc, toggleSorting(false) = asc
+            //   column.toggleSorting(!isDesc)
+            //   onSortChange?.("stock", newDirection)
+            // }}
+          >
+            Stock
+            {/* <ArrowUpDown className="ml-2 h-4 w-4" /> */}
+          </Button>
+        );
+      },
+      cell: ({ row }) => {
+        const stock = row.getValue("stockTotal") as number | undefined;
 
-      return (
-        <div className="flex items-center gap-2">
-          <span className="font-medium">{stock ?? 0}</span>
-          {stock !== undefined && stock <= 10 && (
-            <Badge variant="destructive">
-              Bajo
-            </Badge>
-          )}
-        </div>
-      )
+        return (
+          <div className="flex items-center gap-2">
+            <span className="font-medium">{stock ?? 0}</span>
+            {stock !== undefined && stock <= 10 && (
+              <Badge variant="destructive">Bajo</Badge>
+            )}
+          </div>
+        );
+      },
     },
-  },
-  {
+    // {
+    //   accessorKey: "status",
+    //   header: "Estado",
+    //   cell: ({ row }) => {
+    //     const stock = row.original.stock
+    //     const status = (stock ?? 0) > 0 ? "active" : "inactive"
+    //     return (
+    //       <Badge
+    //         variant={
+    //           status === "active"
+    //             ? "default"
+    //             : "secondary"
+    //         }
+    //       >
+    //         {status === "active" ? "Activo" : "Inactivo"}
+    //       </Badge>
+    //     )
+    //   },
+    //   filterFn: (row, id, value) => {
+    //     const stock = row.original.stock
+    //     const status = (stock ?? 0) > 0 ? "active" : "inactive"
+    //     return value.includes(status)
+    //   },
+    // },
+    {
+      id: "actions",
+      enableHiding: false,
+      cell: ({ row }) => {
+        const product = row.original;
+
+        // Buscar datos de notificaciones para este producto
+        let notificationData: NotificationProducto | null = null;
+        if (notificationsData) {
+          // Buscar en todos los grupos de notificaciones
+          for (const group of notificationsData.notificaciones) {
+            // Buscar el producto por SKU en los productos del grupo
+            const foundProduct = group.productos.find(
+              (p) => product.sku && p.sku === product.sku,
+            );
+            if (foundProduct) {
+              notificationData = foundProduct;
+              break;
+            }
+          }
+        }
+
+        return (
+          <ActionsCell
+            product={product}
+            notificationData={notificationData}
+            notificationsOnly={notificationsOnly}
+          />
+        );
+      },
+    },
+  ];
+
+  const solicitudesColumn: ColumnDef<ProductCardProps> = {
     id: "solicitudes",
     header: ({ column }) => {
       return (
@@ -491,9 +583,8 @@ export const createProductColumns = (
             variant="ghost"
             className="h-8"
             onClick={() => {
-              const isAsc = column.getIsSorted() === "asc"
-              const newDirection = isAsc ? "desc" : "asc"
-              column.toggleSorting(isAsc)
+              const isAsc = column.getIsSorted() === "asc";
+              column.toggleSorting(isAsc);
             }}
           >
             <Bell className="mr-1.5 h-4 w-4" />
@@ -501,40 +592,39 @@ export const createProductColumns = (
             <ArrowUpDown className="ml-1.5 h-3.5 w-3.5" />
           </Button>
         </div>
-      )
+      );
     },
     cell: ({ row }) => {
-      const product = row.original
-      
+      const product = row.original;
+
       // Buscar datos de notificaciones para este producto
-      let notificationData: NotificationProducto | null = null
+      let notificationData: NotificationProducto | null = null;
       if (notificationsData) {
         // Buscar en todos los grupos de notificaciones
         for (const group of notificationsData.notificaciones) {
           // Buscar el producto por SKU en los productos del grupo
-          const foundProduct = group.productos.find(p => 
-            product.sku && p.sku === product.sku
-          )
+          const foundProduct = group.productos.find(
+            (p) => product.sku && p.sku === product.sku,
+          );
           if (foundProduct) {
-            notificationData = foundProduct
-            break
+            notificationData = foundProduct;
+            break;
           }
         }
       }
-      
-      const totalSolicitudes = notificationData?.totalNotificaciones || 0
-      const pendientes = notificationData?.notificacionesPendientes || 0
-      const enviadas = notificationData?.notificacionesEnviadas || 0
-      
+
+      const pendientes = notificationData?.notificacionesPendientes || 0;
+      const enviadas = notificationData?.notificacionesEnviadas || 0;
+
       // Si hay datos de notificaciones, mostrar ambos badges (incluso si uno es 0)
       if (notificationData) {
         return (
           <div className="flex items-center justify-center gap-2">
-            <Badge 
-              variant="outline" 
+            <Badge
+              variant="outline"
               className={`flex items-center gap-1 ${
-                pendientes > 0 
-                  ? "border-orange-500 text-orange-600 bg-orange-50 dark:bg-orange-950/20" 
+                pendientes > 0
+                  ? "border-orange-500 text-orange-600 bg-orange-50 dark:bg-orange-950/20"
                   : "border-gray-300 text-gray-500 bg-gray-50 dark:bg-gray-950/20"
               }`}
             >
@@ -542,11 +632,11 @@ export const createProductColumns = (
               <span>Pendiente</span>
               <span className="font-semibold">{pendientes}</span>
             </Badge>
-            <Badge 
-              variant="outline" 
+            <Badge
+              variant="outline"
               className={`flex items-center gap-1 ${
-                enviadas > 0 
-                  ? "border-green-500 text-green-600 bg-green-50 dark:bg-green-950/20" 
+                enviadas > 0
+                  ? "border-green-500 text-green-600 bg-green-50 dark:bg-green-950/20"
                   : "border-gray-300 text-gray-500 bg-gray-50 dark:bg-gray-950/20"
               }`}
             >
@@ -555,98 +645,59 @@ export const createProductColumns = (
               <span className="font-semibold">{enviadas}</span>
             </Badge>
           </div>
-        )
+        );
       }
-      
+
       // Si no hay datos de notificaciones
       return (
         <div className="flex items-center justify-center">
           <span className="text-sm text-muted-foreground">-</span>
         </div>
-      )
+      );
     },
     sortingFn: (rowA, rowB) => {
-      const productA = rowA.original
-      const productB = rowB.original
-      
+      const productA = rowA.original;
+      const productB = rowB.original;
+
       // Buscar datos de notificaciones para cada producto
-      let notificationDataA: NotificationProducto | null = null
-      let notificationDataB: NotificationProducto | null = null
-      
+      let notificationDataA: NotificationProducto | null = null;
+      let notificationDataB: NotificationProducto | null = null;
+
       if (notificationsData) {
         for (const group of notificationsData.notificaciones) {
-          const foundA = group.productos.find(p => 
-            productA.sku && p.sku === productA.sku
-          )
+          const foundA = group.productos.find(
+            (p) => productA.sku && p.sku === productA.sku,
+          );
           if (foundA) {
-            notificationDataA = foundA
-            break
+            notificationDataA = foundA;
+            break;
           }
         }
         for (const group of notificationsData.notificaciones) {
-          const foundB = group.productos.find(p => 
-            productB.sku && p.sku === productB.sku
-          )
+          const foundB = group.productos.find(
+            (p) => productB.sku && p.sku === productB.sku,
+          );
           if (foundB) {
-            notificationDataB = foundB
-            break
+            notificationDataB = foundB;
+            break;
           }
         }
       }
-      
-      const totalA = notificationDataA?.totalNotificaciones || 0
-      const totalB = notificationDataB?.totalNotificaciones || 0
-      
-      return totalA - totalB
+
+      const totalA = notificationDataA?.totalNotificaciones || 0;
+      const totalB = notificationDataB?.totalNotificaciones || 0;
+
+      return totalA - totalB;
     },
-  },
-  // {
-  //   accessorKey: "status",
-  //   header: "Estado",
-  //   cell: ({ row }) => {
-  //     const stock = row.original.stock
-  //     const status = (stock ?? 0) > 0 ? "active" : "inactive"
-  //     return (
-  //       <Badge
-  //         variant={
-  //           status === "active"
-  //             ? "default"
-  //             : "secondary"
-  //         }
-  //       >
-  //         {status === "active" ? "Activo" : "Inactivo"}
-  //       </Badge>
-  //     )
-  //   },
-  //   filterFn: (row, id, value) => {
-  //     const stock = row.original.stock
-  //     const status = (stock ?? 0) > 0 ? "active" : "inactive"
-  //     return value.includes(status)
-  //   },
-  // },
-  {
-    id: "actions",
-    enableHiding: false,
-    cell: ({ row }) => {
-      const product = row.original
-      
-      // Buscar datos de notificaciones para este producto
-      let notificationData: NotificationProducto | null = null
-      if (notificationsData) {
-        // Buscar en todos los grupos de notificaciones
-        for (const group of notificationsData.notificaciones) {
-          // Buscar el producto por SKU en los productos del grupo
-          const foundProduct = group.productos.find(p => 
-            product.sku && p.sku === product.sku
-          )
-          if (foundProduct) {
-            notificationData = foundProduct
-            break
-          }
-        }
-      }
-      
-      return <ActionsCell product={product} notificationData={notificationData} notificationsOnly={notificationsOnly} />
-    },
-  },
-]
+  };
+
+  // Si notificationsOnly es true, insertar la columna de solicitudes antes de la columna de acciones
+  if (notificationsOnly) {
+    const actionsIndex = baseColumns.findIndex((col) => col.id === "actions");
+    if (actionsIndex !== -1) {
+      baseColumns.splice(actionsIndex, 0, solicitudesColumn);
+    }
+  }
+
+  return baseColumns;
+};
