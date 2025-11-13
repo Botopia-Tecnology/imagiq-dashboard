@@ -58,9 +58,12 @@ export type ValueSource = "manual" | "dynamic";
  * Valor individual con operador opcional
  */
 export interface ValueItem {
-  value: string; // Valor de comparación
+  value: string; // Valor de comparación (o min si es range)
   label?: string; // Etiqueta para mostrar (opcional, si no se proporciona se usa value)
   operator?: FilterOperator; // Operador específico para este valor (si no se usa operador por columna)
+  // Para operadores de rango (range)
+  min?: number; // Valor mínimo (cuando operator === "range")
+  max?: number; // Valor máximo (cuando operator === "range")
 }
 
 /**

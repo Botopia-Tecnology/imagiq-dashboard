@@ -143,6 +143,8 @@ export function ValueConfigurator({
   const [newManualValue, setNewManualValue] = useState("");
   const [newManualLabel, setNewManualLabel] = useState("");
   const [newManualOperator, setNewManualOperator] = useState<FilterOperator>("equal");
+  const [newManualMin, setNewManualMin] = useState("");
+  const [newManualMax, setNewManualMax] = useState("");
   const [newRangeLabel, setNewRangeLabel] = useState("");
   const [newRangeMin, setNewRangeMin] = useState("");
   const [newRangeMax, setNewRangeMax] = useState("");
@@ -317,12 +319,25 @@ export function ValueConfigurator({
 
   // Add manual value
   const addManualValue = () => {
-    if (!newManualValue.trim()) return;
     const selectedOp = operatorMode === "per-value" ? newManualOperator : getDefaultOperatorForValue();
+    const isRangeOp = selectedOp === "range";
+    
+    // Validación para rangos
+    if (isRangeOp) {
+      if (!newManualMin || !newManualMax || !newManualLabel.trim()) return;
+      const min = parseFloat(newManualMin);
+      const max = parseFloat(newManualMax);
+      if (isNaN(min) || isNaN(max) || min >= max) return;
+    } else {
+      if (!newManualValue.trim()) return;
+    }
+
     const newValue: ValueItem = {
-      value: newManualValue.trim(),
+      value: isRangeOp ? newManualMin : newManualValue.trim(),
       label: newManualLabel.trim() || undefined,
       operator: operatorMode === "per-value" ? selectedOp : undefined,
+      min: isRangeOp ? parseFloat(newManualMin) : undefined,
+      max: isRangeOp ? parseFloat(newManualMax) : undefined,
     };
 
     if (value.type === "manual") {
@@ -340,6 +355,8 @@ export function ValueConfigurator({
     }
     setNewManualValue("");
     setNewManualLabel("");
+    setNewManualMin("");
+    setNewManualMax("");
     setNewManualOperator("equal"); // Reset to default
   };
 
@@ -712,23 +729,39 @@ export function ValueConfigurator({
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <Label>Valores de Lista</Label>
-                    <div className={`grid gap-2 ${operatorMode === "per-value" ? "grid-cols-4" : "grid-cols-3"}`}>
-                      <Input
-                        placeholder="Valor de comparación *"
-                        value={newManualValue}
-                        onChange={(e) => setNewManualValue(e.target.value)}
-                        disabled={disabled}
-                      />
-                      <Input
-                        placeholder="Etiqueta (opcional)"
-                        value={newManualLabel}
-                        onChange={(e) => setNewManualLabel(e.target.value)}
-                        disabled={disabled}
-                      />
-                      {operatorMode === "per-value" && (
+                    {operatorMode === "per-value" && newManualOperator === "range" ? (
+                      // UI para rangos cuando el operador es "range"
+                      <div className="grid grid-cols-5 gap-2">
+                        <Input
+                          placeholder="Etiqueta *"
+                          value={newManualLabel}
+                          onChange={(e) => setNewManualLabel(e.target.value)}
+                          disabled={disabled}
+                        />
+                        <Input
+                          type="number"
+                          placeholder="Mínimo *"
+                          value={newManualMin}
+                          onChange={(e) => setNewManualMin(e.target.value)}
+                          disabled={disabled}
+                        />
+                        <Input
+                          type="number"
+                          placeholder="Máximo *"
+                          value={newManualMax}
+                          onChange={(e) => setNewManualMax(e.target.value)}
+                          disabled={disabled}
+                        />
                         <Select
                           value={newManualOperator}
-                          onValueChange={(op: FilterOperator) => setNewManualOperator(op)}
+                          onValueChange={(op: FilterOperator) => {
+                            setNewManualOperator(op);
+                            // Limpiar campos cuando se cambia de operador
+                            if (op !== "range") {
+                              setNewManualMin("");
+                              setNewManualMax("");
+                            }
+                          }}
                           disabled={disabled}
                         >
                           <SelectTrigger>
@@ -742,66 +775,127 @@ export function ValueConfigurator({
                             ))}
                           </SelectContent>
                         </Select>
-                      )}
-                      <Button
-                        type="button"
-                        onClick={addManualValue}
-                        disabled={disabled || !newManualValue.trim() || (operatorMode === "per-value" && !newManualOperator)}
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </div>
+                        <Button
+                          type="button"
+                          onClick={addManualValue}
+                          disabled={disabled || !newManualLabel.trim() || !newManualMin || !newManualMax || !newManualOperator}
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      // UI normal para valores no-rango
+                      <div className={`grid gap-2 ${operatorMode === "per-value" ? "grid-cols-4" : "grid-cols-3"}`}>
+                        <Input
+                          placeholder="Valor de comparación *"
+                          value={newManualValue}
+                          onChange={(e) => setNewManualValue(e.target.value)}
+                          disabled={disabled}
+                        />
+                        <Input
+                          placeholder="Etiqueta (opcional)"
+                          value={newManualLabel}
+                          onChange={(e) => setNewManualLabel(e.target.value)}
+                          disabled={disabled}
+                        />
+                        {operatorMode === "per-value" && (
+                          <Select
+                            value={newManualOperator}
+                            onValueChange={(op: FilterOperator) => {
+                              setNewManualOperator(op);
+                              // Limpiar campos cuando se cambia a range
+                              if (op === "range") {
+                                setNewManualValue("");
+                              }
+                            }}
+                            disabled={disabled}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {availableOperators.map((op) => (
+                                <SelectItem key={op.value} value={op.value}>
+                                  {op.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+                        <Button
+                          type="button"
+                          onClick={addManualValue}
+                          disabled={disabled || !newManualValue.trim() || (operatorMode === "per-value" && !newManualOperator)}
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
                     <p className="text-xs text-muted-foreground">
-                      El valor de comparación es obligatorio. La etiqueta es opcional y se usará para mostrar en el frontend.
-                      {operatorMode === "per-value" && " Debes seleccionar un operador antes de agregar el valor."}
+                      {operatorMode === "per-value" && newManualOperator === "range" 
+                        ? "Para rangos, ingresa etiqueta, valor mínimo y máximo. Todos son obligatorios."
+                        : "El valor de comparación es obligatorio. La etiqueta es opcional y se usará para mostrar en el frontend."}
+                      {operatorMode === "per-value" && newManualOperator !== "range" && " Debes seleccionar un operador antes de agregar el valor."}
                     </p>
                   </div>
                   {value.type === "manual" && value.values && value.values.length > 0 && (
                     <div className="space-y-2">
-                      {value.values.map((valueItem, index) => (
-                        <div
-                          key={index}
-                          className="flex items-center justify-between p-2 border rounded gap-2"
-                        >
-                          <div className="flex items-center gap-2 flex-1">
-                            <Badge variant="secondary" className="flex flex-col items-start gap-1">
-                              <span>{valueItem.label || valueItem.value}</span>
-                              {valueItem.label && (
-                                <span className="text-xs text-muted-foreground font-normal">
-                                  Valor: {valueItem.value}
-                                </span>
-                              )}
-                            </Badge>
-                            {operatorMode === "per-value" && (
-                              <Select
-                                value={valueItem.operator || "equal"}
-                                onValueChange={(op: FilterOperator) => updateValueOperator(valueItem, op, false, index)}
-                                disabled={disabled}
-                              >
-                                <SelectTrigger className="w-32 h-7 text-xs">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {availableOperators.map((op) => (
-                                    <SelectItem key={op.value} value={op.value}>
-                                      {op.label}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            )}
-                          </div>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeManualValue(index)}
-                            disabled={disabled}
+                      {value.values.map((valueItem, index) => {
+                        const isRangeValue = valueItem.operator === "range";
+                        return (
+                          <div
+                            key={index}
+                            className="flex items-center justify-between p-2 border rounded gap-2"
                           >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))}
+                            <div className="flex items-center gap-2 flex-1">
+                              {isRangeValue ? (
+                                <Badge variant="secondary" className="flex flex-col items-start gap-1">
+                                  <span>{valueItem.label || `${valueItem.min} - ${valueItem.max}`}</span>
+                                  <span className="text-xs text-muted-foreground font-normal">
+                                    Rango: {valueItem.min} - {valueItem.max}
+                                  </span>
+                                </Badge>
+                              ) : (
+                                <Badge variant="secondary" className="flex flex-col items-start gap-1">
+                                  <span>{valueItem.label || valueItem.value}</span>
+                                  {valueItem.label && (
+                                    <span className="text-xs text-muted-foreground font-normal">
+                                      Valor: {valueItem.value}
+                                    </span>
+                                  )}
+                                </Badge>
+                              )}
+                              {operatorMode === "per-value" && (
+                                <Select
+                                  value={valueItem.operator || "equal"}
+                                  onValueChange={(op: FilterOperator) => updateValueOperator(valueItem, op, false, index)}
+                                  disabled={disabled}
+                                >
+                                  <SelectTrigger className="w-32 h-7 text-xs">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {availableOperators.map((op) => (
+                                      <SelectItem key={op.value} value={op.value}>
+                                        {op.label}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              )}
+                            </div>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeManualValue(index)}
+                              disabled={disabled}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -923,23 +1017,39 @@ export function ValueConfigurator({
               {/* Manual Values Section */}
               <div className="space-y-2 border-t pt-4">
                 <Label>Valores Manuales</Label>
-                <div className={`grid gap-2 ${operatorMode === "per-value" ? "grid-cols-4" : "grid-cols-3"}`}>
-                  <Input
-                    placeholder="Valor de comparación *"
-                    value={newManualValue}
-                    onChange={(e) => setNewManualValue(e.target.value)}
-                    disabled={disabled}
-                  />
-                  <Input
-                    placeholder="Etiqueta (opcional)"
-                    value={newManualLabel}
-                    onChange={(e) => setNewManualLabel(e.target.value)}
-                    disabled={disabled}
-                  />
-                  {operatorMode === "per-value" && (
+                {operatorMode === "per-value" && newManualOperator === "range" ? (
+                  // UI para rangos cuando el operador es "range"
+                  <div className="grid grid-cols-5 gap-2">
+                    <Input
+                      placeholder="Etiqueta *"
+                      value={newManualLabel}
+                      onChange={(e) => setNewManualLabel(e.target.value)}
+                      disabled={disabled}
+                    />
+                    <Input
+                      type="number"
+                      placeholder="Mínimo *"
+                      value={newManualMin}
+                      onChange={(e) => setNewManualMin(e.target.value)}
+                      disabled={disabled}
+                    />
+                    <Input
+                      type="number"
+                      placeholder="Máximo *"
+                      value={newManualMax}
+                      onChange={(e) => setNewManualMax(e.target.value)}
+                      disabled={disabled}
+                    />
                     <Select
                       value={newManualOperator}
-                      onValueChange={(op: FilterOperator) => setNewManualOperator(op)}
+                      onValueChange={(op: FilterOperator) => {
+                        setNewManualOperator(op);
+                        // Limpiar campos cuando se cambia de operador
+                        if (op !== "range") {
+                          setNewManualMin("");
+                          setNewManualMax("");
+                        }
+                      }}
                       disabled={disabled}
                     >
                       <SelectTrigger>
@@ -953,65 +1063,126 @@ export function ValueConfigurator({
                         ))}
                       </SelectContent>
                     </Select>
-                  )}
-                  <Button
-                    type="button"
-                    onClick={addManualValue}
-                    disabled={disabled || !newManualValue.trim() || (operatorMode === "per-value" && !newManualOperator)}
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
+                    <Button
+                      type="button"
+                      onClick={addManualValue}
+                      disabled={disabled || !newManualLabel.trim() || !newManualMin || !newManualMax || !newManualOperator}
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  // UI normal para valores no-rango
+                  <div className={`grid gap-2 ${operatorMode === "per-value" ? "grid-cols-4" : "grid-cols-3"}`}>
+                    <Input
+                      placeholder="Valor de comparación *"
+                      value={newManualValue}
+                      onChange={(e) => setNewManualValue(e.target.value)}
+                      disabled={disabled}
+                    />
+                    <Input
+                      placeholder="Etiqueta (opcional)"
+                      value={newManualLabel}
+                      onChange={(e) => setNewManualLabel(e.target.value)}
+                      disabled={disabled}
+                    />
+                    {operatorMode === "per-value" && (
+                      <Select
+                        value={newManualOperator}
+                        onValueChange={(op: FilterOperator) => {
+                          setNewManualOperator(op);
+                          // Limpiar campos cuando se cambia a range
+                          if (op === "range") {
+                            setNewManualValue("");
+                          }
+                        }}
+                        disabled={disabled}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableOperators.map((op) => (
+                            <SelectItem key={op.value} value={op.value}>
+                              {op.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                    <Button
+                      type="button"
+                      onClick={addManualValue}
+                      disabled={disabled || !newManualValue.trim() || (operatorMode === "per-value" && !newManualOperator)}
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
                 <p className="text-xs text-muted-foreground">
-                  El valor de comparación es obligatorio. La etiqueta es opcional y se usará para mostrar en el frontend.
-                  {operatorMode === "per-value" && " Debes seleccionar un operador antes de agregar el valor."}
+                  {operatorMode === "per-value" && newManualOperator === "range" 
+                    ? "Para rangos, ingresa etiqueta, valor mínimo y máximo. Todos son obligatorios."
+                    : "El valor de comparación es obligatorio. La etiqueta es opcional y se usará para mostrar en el frontend."}
+                  {operatorMode === "per-value" && newManualOperator !== "range" && " Debes seleccionar un operador antes de agregar el valor."}
                 </p>
                 {value.type === "mixed" && value.manualValues && value.manualValues.length > 0 && (
                   <div className="space-y-2">
-                    {value.manualValues.map((valueItem, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between p-2 border rounded gap-2"
-                      >
-                        <div className="flex items-center gap-2 flex-1">
-                          <Badge variant="secondary" className="flex flex-col items-start gap-1">
-                            <span>{valueItem.label || valueItem.value}</span>
-                            {valueItem.label && (
-                              <span className="text-xs text-muted-foreground font-normal">
-                                Valor: {valueItem.value}
-                              </span>
-                            )}
-                          </Badge>
-                          {operatorMode === "per-value" && (
-                            <Select
-                              value={valueItem.operator || "equal"}
-                              onValueChange={(op: FilterOperator) => updateValueOperator(valueItem, op, false, index)}
-                              disabled={disabled}
-                            >
-                              <SelectTrigger className="w-32 h-7 text-xs">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {availableOperators.map((op) => (
-                                  <SelectItem key={op.value} value={op.value}>
-                                    {op.label}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          )}
-                        </div>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeManualValue(index, true)}
-                          disabled={disabled}
+                    {value.manualValues.map((valueItem, index) => {
+                      const isRangeValue = valueItem.operator === "range";
+                      return (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between p-2 border rounded gap-2"
                         >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
+                          <div className="flex items-center gap-2 flex-1">
+                            {isRangeValue ? (
+                              <Badge variant="secondary" className="flex flex-col items-start gap-1">
+                                <span>{valueItem.label || `${valueItem.min} - ${valueItem.max}`}</span>
+                                <span className="text-xs text-muted-foreground font-normal">
+                                  Rango: {valueItem.min} - {valueItem.max}
+                                </span>
+                              </Badge>
+                            ) : (
+                              <Badge variant="secondary" className="flex flex-col items-start gap-1">
+                                <span>{valueItem.label || valueItem.value}</span>
+                                {valueItem.label && (
+                                  <span className="text-xs text-muted-foreground font-normal">
+                                    Valor: {valueItem.value}
+                                  </span>
+                                )}
+                              </Badge>
+                            )}
+                            {operatorMode === "per-value" && (
+                              <Select
+                                value={valueItem.operator || "equal"}
+                                onValueChange={(op: FilterOperator) => updateValueOperator(valueItem, op, false, index)}
+                                disabled={disabled}
+                              >
+                                <SelectTrigger className="w-32 h-7 text-xs">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {availableOperators.map((op) => (
+                                    <SelectItem key={op.value} value={op.value}>
+                                      {op.label}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            )}
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeManualValue(index, true)}
+                            disabled={disabled}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
