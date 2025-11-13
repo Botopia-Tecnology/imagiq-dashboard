@@ -112,6 +112,19 @@ export function DynamicBreadcrumb() {
             id: 'editar-filtro'
           })
           break // No procesar más segmentos
+        } else if (nextSegment && paths[i + 2] === 'ver') {
+          // Ruta: /pagina-web/filtros/[id]/ver
+          breadcrumbs.push({
+            label: routeNames[segment],
+            href: currentPath,
+            id: segment
+          })
+          breadcrumbs.push({
+            label: 'Ver Filtro',
+            href: undefined,
+            id: 'ver-filtro'
+          })
+          break // No procesar más segmentos
         } else {
           // Ruta: /pagina-web/filtros (página principal)
           const isLast = i === paths.length - 1

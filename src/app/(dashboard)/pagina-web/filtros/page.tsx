@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Label } from "@/components/ui/label";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   AlertDialog,
@@ -16,7 +18,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { GripVertical, Edit, Trash2, Copy, Filter, Plus, ChevronDown, ChevronRight, Search, X } from "lucide-react";
+import { GripVertical, Edit, Trash2, Copy, Filter, Plus, ChevronDown, ChevronRight, Search, X, Eye } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -141,6 +143,10 @@ export default function FiltrosPage() {
 
   const handleEdit = (filter: DynamicFilter) => {
     router.push(`/pagina-web/filtros/${filter.id}/editar`);
+  };
+
+  const handleView = (filter: DynamicFilter) => {
+    router.push(`/pagina-web/filtros/${filter.id}/ver`);
   };
 
   const handleDelete = (filter: DynamicFilter) => {
@@ -499,6 +505,14 @@ export default function FiltrosPage() {
                 </div>
               </div>
               <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleView(filter)}
+                  title="Ver"
+                >
+                  <Eye className="h-3 w-3" />
+                </Button>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -920,6 +934,14 @@ export default function FiltrosPage() {
                               <Button
                                 variant="ghost"
                                 size="sm"
+                                onClick={() => handleView(filter)}
+                                title="Ver"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
                                 onClick={() => handleEdit(filter)}
                                 title="Editar"
                               >
@@ -1009,6 +1031,7 @@ export default function FiltrosPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
     </div>
   );
 }
