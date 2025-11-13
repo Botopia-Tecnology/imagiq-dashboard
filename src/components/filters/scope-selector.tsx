@@ -36,6 +36,7 @@ export function ScopeSelector({
   categories,
   disabled = false,
 }: ScopeSelectorProps) {
+  const [isScopeExpanded, setIsScopeExpanded] = useState<boolean>(true);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
     new Set()
   );
@@ -68,6 +69,26 @@ export function ScopeSelector({
       newExpanded.add(menuId);
     }
     setExpandedMenus(newExpanded);
+  };
+
+  const expandAll = () => {
+    const allCategoryIds = new Set<string>();
+    const allMenuIds = new Set<string>();
+    
+    categories.forEach((category) => {
+      allCategoryIds.add(category.id);
+      category.menus.forEach((menu) => {
+        allMenuIds.add(menu.id);
+      });
+    });
+    
+    setExpandedCategories(allCategoryIds);
+    setExpandedMenus(allMenuIds);
+  };
+
+  const collapseAll = () => {
+    setExpandedCategories(new Set());
+    setExpandedMenus(new Set());
   };
 
   const handleCategoryToggle = (categoryId: string, checked: boolean) => {
@@ -264,67 +285,102 @@ export function ScopeSelector({
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <div>
+      <Collapsible open={isScopeExpanded} onOpenChange={setIsScopeExpanded}>
+        <div className="flex items-center justify-between">
+          <CollapsibleTrigger asChild>
+            <button
+              type="button"
+              className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+              disabled={disabled}
+            >
+              <div className="flex items-center gap-2">
+                {isScopeExpanded ? (
+                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                ) : (
+                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                )}
+                <Label className="cursor-pointer">Alcance del Filtro</Label>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="max-w-xs">
+                        Seleccionar una categoría, menú o submenú hará que el filtro se muestre en el panel de filtros de esa categoría, menú o submenú de forma independiente. Puede seleccionar más de una categoría, menú o submenú para hacer el filtro disponible en múltiples categorías, menús o submenús.
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Define dónde se mostrará este filtro en el sitio web
+              </p>
+            </button>
+          </CollapsibleTrigger>
           <div className="flex items-center gap-2">
-            <Label>Alcance del Filtro</Label>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p className="max-w-xs">
-                    Seleccionar una categoría, menú o submenú hará que el filtro se muestre en el panel de filtros de esa categoría, menú o submenú de forma independiente. Puede seleccionar más de una categoría, menú o submenú para hacer el filtro disponible en múltiples categorías, menús o submenús.
-                  </p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
-          <p className="text-xs text-muted-foreground mt-1">
-            Define dónde se mostrará este filtro en el sitio web
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          {selectedCount > 0 && (
-            <Badge variant="secondary">{selectedCount} seleccionado(s)</Badge>
-          )}
-          {categories && categories.length > 0 && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" disabled={disabled}>
-                  <Layers className="h-4 w-4 mr-1" />
-                  Seleccionar todo
+            {selectedCount > 0 && (
+              <Badge variant="secondary">{selectedCount} seleccionado(s)</Badge>
+            )}
+            {categories && categories.length > 0 && (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={expandAll}
+                  disabled={disabled}
+                  title="Desplegar todas las categorías y menús"
+                >
+                  <ChevronDown className="h-4 w-4 mr-1" />
+                  Desplegar todo
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem
-                  onClick={() => selectAllCategories(false, false)}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={collapseAll}
                   disabled={disabled}
+                  title="Plegar todas las categorías y menús"
                 >
-                  <CheckSquare className="h-4 w-4 mr-2" />
-                  Solo categorías
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => selectAllCategories(true, false)}
-                  disabled={disabled}
-                >
-                  <CheckSquare className="h-4 w-4 mr-2" />
-                  Categorías + Menús
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => selectAllCategories(true, true)}
-                  disabled={disabled}
-                >
-                  <CheckSquare className="h-4 w-4 mr-2" />
-                  Categorías + Menús + Submenús
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
+                  <ChevronRight className="h-4 w-4 mr-1" />
+                  Plegar todo
+                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" disabled={disabled}>
+                      <Layers className="h-4 w-4 mr-1" />
+                      Seleccionar todo
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      onClick={() => selectAllCategories(false, false)}
+                      disabled={disabled}
+                    >
+                      <CheckSquare className="h-4 w-4 mr-2" />
+                      Solo categorías
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => selectAllCategories(true, false)}
+                      disabled={disabled}
+                    >
+                      <CheckSquare className="h-4 w-4 mr-2" />
+                      Categorías + Menús
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => selectAllCategories(true, true)}
+                      disabled={disabled}
+                    >
+                      <CheckSquare className="h-4 w-4 mr-2" />
+                      Categorías + Menús + Submenús
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
+            )}
+          </div>
         </div>
-      </div>
-      <Card>
+        <CollapsibleContent>
+          <Card className="mt-2">
         <CardContent className="pt-4">
           <div className="space-y-2 max-h-96 overflow-y-auto">
             {!categories || categories.length === 0 ? (
@@ -530,6 +586,8 @@ export function ScopeSelector({
           </div>
         </CardContent>
       </Card>
+      </CollapsibleContent>
+      </Collapsible>
       {selectedCount === 0 && categories && categories.length > 0 && (
         <p className="text-xs text-muted-foreground">
           Selecciona al menos una categoría, menú o submenú para aplicar el
