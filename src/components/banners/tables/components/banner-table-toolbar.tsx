@@ -11,8 +11,8 @@ import { Input } from "@/components/ui/input";
 import type { BackendBanner } from "@/types/banner";
 
 interface BannerTableToolbarProps {
-  table: Table<BackendBanner>;
-  onBulkDelete: () => void;
+  readonly table: Table<BackendBanner>;
+  readonly onBulkDelete: () => void;
 }
 
 /**
@@ -22,7 +22,7 @@ interface BannerTableToolbarProps {
  * - Botón de eliminación masiva
  * - Selector de columnas visibles
  */
-export function BannerTableToolbar({ table, onBulkDelete }: BannerTableToolbarProps) {
+export function BannerTableToolbar({ table, onBulkDelete }: Readonly<BannerTableToolbarProps>) {
   const selectedCount = table.getFilteredSelectedRowModel().rows.length;
 
   return (

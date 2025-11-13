@@ -14,7 +14,9 @@ export default function DashboardLayout({
     <ProtectedRoute>
       <SidebarProvider>
         <AppSidebar />
-        <main className="flex flex-1 flex-col">
+    {/* Añadir `min-w-0` para permitir que la columna principal se encoja
+      cuando un hijo ancho (como una tabla) overflow-e en su propio wrapper. */}
+    <main className="flex flex-1 flex-col min-w-0">
           <header className="sticky top-0 z-20 flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <div className="flex items-center gap-2 px-4 flex-1">
               <SidebarTrigger className="-ml-1" />
@@ -25,7 +27,7 @@ export default function DashboardLayout({
               <UserProfile />
             </div>
           </header>
-          <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+          <div className="flex flex-1 flex-col gap-4 p-4 pt-0 min-w-0">
             {children}
           </div>
         </main>

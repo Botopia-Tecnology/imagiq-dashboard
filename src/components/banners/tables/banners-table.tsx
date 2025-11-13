@@ -160,12 +160,17 @@ export function BannersTable() {
   }
 
   return (
-    <div className="w-full">
+    // `min-w-0` permite que este contenedor pueda encogerse cuando un hijo (la tabla)
+    // es más ancho; de este modo solo el wrapper de la tabla hará scroll horizontal
+    // y el resto del layout (toolbar, paginación) se mantiene en el ancho visible.
+    <div className="w-full min-w-0">
       {/* Toolbar: filtros y acciones */}
       <BannerTableToolbar table={table} onBulkDelete={handleBulkDeleteClick} />
 
       {/* Tabla */}
-      <div className="rounded-md border">
+      <div className="rounded-md border overflow-x-auto">
+        {/* Forzamos que la tabla pueda tener un ancho mínimo mayor al contenedor
+            y se muestre un scroll horizontal solo en este wrapper. */}
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
