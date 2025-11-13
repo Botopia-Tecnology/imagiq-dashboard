@@ -866,8 +866,8 @@ export function ValueConfigurator({
                           placeholder="Valor de comparación *"
                           value={newManualValue}
                           onChange={(e) => setNewManualValue(e.target.value)}
-                          disabled={disabled}
-                        />
+                      disabled={disabled}
+                    />
                         <Input
                           placeholder="Etiqueta (opcional)"
                           value={newManualLabel}

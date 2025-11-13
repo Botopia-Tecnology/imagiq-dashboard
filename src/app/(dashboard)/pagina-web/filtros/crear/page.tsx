@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,47 +8,19 @@ import { ArrowLeft } from "lucide-react";
 import { DynamicFilter, FilterOrderConfig } from "@/types/filters";
 import { WebsiteCategory } from "@/types";
 import { useCategories } from "@/features/categories/useCategories";
+import { useFilters } from "@/hooks/use-filters";
 import { FilterForm } from "@/components/filters/filter-form";
 import { toast } from "sonner";
 
 export default function CrearFiltroPage() {
   const router = useRouter();
   const { categories, loading: categoriesLoading } = useCategories();
-  const [filters, setFilters] = useState<DynamicFilter[]>([]);
+  const { filters, createFilter, isLoading: filtersLoading } = useFilters();
   const [isSaving, setIsSaving] = useState(false);
-
-  // Load existing filters to calculate next order
-  useEffect(() => {
-    const savedFilters = localStorage.getItem("dynamicFilters");
-    if (savedFilters) {
-      try {
-        const parsed = JSON.parse(savedFilters);
-        const filtersWithDates = parsed.map((f: any) => ({
-          ...f,
-          createdAt: f.createdAt ? new Date(f.createdAt) : new Date(),
-          updatedAt: f.updatedAt ? new Date(f.updatedAt) : new Date(),
-          order: f.order && typeof f.order === 'number' 
-            ? { categories: {}, menus: {}, submenus: {} }
-            : (f.order || { categories: {}, menus: {}, submenus: {} }),
-        }));
-        setFilters(filtersWithDates);
-      } catch (error) {
-        console.error("Error loading filters:", error);
-      }
-    }
-  }, []);
-
-  const saveFilters = (newFilters: DynamicFilter[]) => {
-    localStorage.setItem("dynamicFilters", JSON.stringify(newFilters));
-    setFilters(newFilters);
-  };
 
   const handleSave = async (filterData: DynamicFilter) => {
     setIsSaving(true);
     try {
-      // Simulate API call delay
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
       // Initialize order config for all scopes
       const orderConfig: FilterOrderConfig = {
         categories: {},
@@ -56,7 +28,7 @@ export default function CrearFiltroPage() {
         submenus: {},
       };
 
-      // Set initial order for each scope
+      // Set initial order for each scope based on existing filters
       filterData.scope.categories.forEach((categoryId) => {
         const categoryFilters = filters.filter((f) =>
           f.scope.categories.includes(categoryId)
@@ -78,17 +50,24 @@ export default function CrearFiltroPage() {
         orderConfig.submenus[submenuId] = submenuFilters.length;
       });
 
-      const newFilter: DynamicFilter = {
-        ...filterData,
+      // Prepare filter data for API
+      const filterPayload = {
+        sectionName: filterData.sectionName,
+        column: filterData.column,
+        operator: filterData.operator,
+        operatorMode: filterData.operatorMode,
+        valueConfig: filterData.valueConfig,
+        displayType: filterData.displayType,
+        scope: filterData.scope,
         order: orderConfig,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        isActive: filterData.isActive,
       };
 
-      const newFilters = [...filters, newFilter];
-      saveFilters(newFilters);
-      toast.success("Filtro creado correctamente");
-      router.push("/pagina-web/filtros");
+      const newFilter = await createFilter(filterPayload);
+      
+      if (newFilter) {
+        router.push("/pagina-web/filtros");
+      }
     } catch (error) {
       toast.error("Error al guardar el filtro");
       console.error(error);
@@ -132,9 +111,9 @@ export default function CrearFiltroPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {categoriesLoading ? (
+          {categoriesLoading || filtersLoading ? (
             <div className="py-8 text-center text-muted-foreground">
-              Cargando categorías...
+              Cargando...
             </div>
           ) : (
             <FilterForm

@@ -25,6 +25,8 @@ import { DynamicFilter, FilterOrderConfig } from "@/types/filters";
 import { WebsiteCategory, WebsiteMenu, WebsiteSubmenu } from "@/types";
 import { useCategories } from "@/features/categories/useCategories";
 import { useProductColumns } from "@/hooks/use-product-columns";
+import { useFilters } from "@/hooks/use-filters";
+import { useFilterOrder } from "@/hooks/use-filter-order";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -57,7 +59,8 @@ export default function FiltrosPage() {
   const router = useRouter();
   const { categories, loading: categoriesLoading } = useCategories();
   const { columns } = useProductColumns();
-  const [filters, setFilters] = useState<DynamicFilter[]>([]);
+  const { filters, isLoading: filtersLoading, deleteFilter, deleteBulk, createFilter, refreshFilters } = useFilters();
+  const { updateOrder } = useFilterOrder();
   const [deletingFilter, setDeletingFilter] = useState<DynamicFilter | null>(null);
   const [deletingFilters, setDeletingFilters] = useState<DynamicFilter[]>([]);
   const [selectedFilters, setSelectedFilters] = useState<Set<string>>(new Set());
@@ -69,31 +72,6 @@ export default function FiltrosPage() {
   const [draggedFilter, setDraggedFilter] = useState<{ filter: DynamicFilter; scopeType: 'category' | 'menu' | 'submenu'; scopeId: string } | null>(null);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [expandedMenus, setExpandedMenus] = useState<Set<string>>(new Set());
-
-  // Load filters from localStorage
-  useEffect(() => {
-    const savedFilters = localStorage.getItem("dynamicFilters");
-    if (savedFilters) {
-      try {
-        const parsed = JSON.parse(savedFilters);
-        // Ensure dates are Date objects
-        const filtersWithDates = parsed.map((f: DynamicFilter) => ({
-          ...f,
-          createdAt: f.createdAt ? new Date(f.createdAt) : new Date(),
-          updatedAt: f.updatedAt ? new Date(f.updatedAt) : new Date(),
-        }));
-        setFilters(filtersWithDates);
-      } catch (error) {
-        console.error("Error loading filters:", error);
-      }
-    }
-  }, []);
-
-  // Save filters to localStorage
-  const saveFilters = (newFilters: DynamicFilter[]) => {
-    localStorage.setItem("dynamicFilters", JSON.stringify(newFilters));
-    setFilters(newFilters);
-  };
 
   // Group filters by category/menu/submenu
   const groupedFilters = useMemo(() => {
@@ -175,24 +153,25 @@ export default function FiltrosPage() {
     setDeletingFilters(filtersToDelete);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (!deletingFilter) return;
 
-    const newFilters = filters.filter((f) => f.id !== deletingFilter.id);
-    saveFilters(newFilters);
-    setDeletingFilter(null);
-    setSelectedFilters(new Set());
-    toast.success("Filtro eliminado correctamente");
+    const success = await deleteFilter(deletingFilter.id);
+    if (success) {
+      setDeletingFilter(null);
+      setSelectedFilters(new Set());
+    }
   };
 
-  const confirmDeleteMultiple = () => {
+  const confirmDeleteMultiple = async () => {
     if (deletingFilters.length === 0) return;
 
-    const newFilters = filters.filter((f) => !selectedFilters.has(f.id));
-    saveFilters(newFilters);
-    setDeletingFilters([]);
-    setSelectedFilters(new Set());
-    toast.success(`${deletingFilters.length} filtro(s) eliminado(s) correctamente`);
+    const filterIds = Array.from(selectedFilters);
+    const success = await deleteBulk(filterIds);
+    if (success) {
+      setDeletingFilters([]);
+      setSelectedFilters(new Set());
+    }
   };
 
   const toggleFilterSelection = (filterId: string) => {
@@ -300,22 +279,27 @@ export default function FiltrosPage() {
 
   const hasActiveFilters = searchQuery.trim() || (filterColumn && filterColumn !== "all") || (filterOperator && filterOperator !== "all") || (filterType && filterType !== "all") || (filterStatus && filterStatus !== "all");
 
-  const handleDuplicate = (filter: DynamicFilter) => {
-    const duplicated: DynamicFilter = {
-      ...filter,
-      id: `filter-${Date.now()}`,
+  const handleDuplicate = async (filter: DynamicFilter) => {
+    const duplicated = {
       sectionName: `${filter.sectionName} (Copia)`,
+      column: filter.column,
+      operator: filter.operator,
+      operatorMode: filter.operatorMode,
+      valueConfig: filter.valueConfig,
+      displayType: filter.displayType,
+      scope: filter.scope,
       order: {
         categories: {},
         menus: {},
         submenus: {},
       },
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      isActive: filter.isActive,
     };
-    const newFilters = [...filters, duplicated];
-    saveFilters(newFilters);
-    toast.success("Filtro duplicado correctamente");
+    
+    const newFilter = await createFilter(duplicated);
+    if (newFilter) {
+      // Filter will be automatically updated via useFilters hook
+    }
   };
 
   // Drag and drop handlers
@@ -334,7 +318,7 @@ export default function FiltrosPage() {
     e.dataTransfer.dropEffect = "move";
   };
 
-  const handleDrop = (
+  const handleDrop = async (
     e: React.DragEvent,
     targetFilter: DynamicFilter,
     scopeType: 'category' | 'menu' | 'submenu',
@@ -371,27 +355,28 @@ export default function FiltrosPage() {
     const [removed] = reordered.splice(draggedIndex, 1);
     reordered.splice(targetIndex, 0, removed);
 
-    // Update order values
-    const updatedFilters = filters.map((f) => {
-      const newOrder = { ...f.order };
-      const index = reordered.findIndex((rf) => rf.id === f.id);
-      
-      if (index !== -1) {
-        if (scopeType === 'category') {
-          newOrder.categories = { ...newOrder.categories, [scopeId]: index };
-        } else if (scopeType === 'menu') {
-          newOrder.menus = { ...newOrder.menus, [scopeId]: index };
-        } else {
-          newOrder.submenus = { ...newOrder.submenus, [scopeId]: index };
-        }
-        return { ...f, order: newOrder };
-      }
-      return f;
-    });
+    // Build filterOrders array for API
+    const filterOrders = reordered.map((f, index) => ({
+      filterId: f.id,
+      order: index,
+    }));
 
-    saveFilters(updatedFilters);
-    setDraggedFilter(null);
-    toast.success("Orden actualizado");
+    // Update order via API
+    const success = await updateOrder(
+      {
+        scopeType,
+        scopeId,
+        filterOrders,
+      },
+      async () => {
+        // Refresh filters after successful order update
+        await refreshFilters();
+      }
+    );
+
+    if (success) {
+      setDraggedFilter(null);
+    }
   };
 
   const handleDragEnd = () => {
@@ -563,13 +548,13 @@ export default function FiltrosPage() {
             <Button
               variant="destructive"
               onClick={handleDeleteMultiple}
-              disabled={categoriesLoading}
+              disabled={categoriesLoading || filtersLoading}
             >
               <Trash2 className="h-4 w-4 mr-2" />
               Eliminar {selectedFilters.size} seleccionado(s)
             </Button>
           )}
-          <Button onClick={handleCreate} disabled={categoriesLoading}>
+          <Button onClick={handleCreate} disabled={categoriesLoading || filtersLoading}>
             <Plus className="h-4 w-4 mr-2" />
             Crear Filtro
           </Button>
@@ -585,10 +570,10 @@ export default function FiltrosPage() {
 
         {/* Grouped View */}
         <TabsContent value="grouped" className="mt-4">
-          {categoriesLoading ? (
+          {categoriesLoading || filtersLoading ? (
             <Card>
               <CardContent className="py-12 text-center text-muted-foreground">
-                Cargando categorías...
+                Cargando filtros...
               </CardContent>
             </Card>
           ) : groupedFilters.length === 0 ? (
@@ -719,10 +704,10 @@ export default function FiltrosPage() {
 
         {/* Table View */}
         <TabsContent value="table" className="mt-4">
-          {categoriesLoading ? (
+          {categoriesLoading || filtersLoading ? (
             <Card>
               <CardContent className="py-12 text-center text-muted-foreground">
-                Cargando categorías...
+                Cargando filtros...
               </CardContent>
             </Card>
           ) : filters.length === 0 ? (

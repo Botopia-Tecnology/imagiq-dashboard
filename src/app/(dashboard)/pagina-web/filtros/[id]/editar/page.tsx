@@ -8,6 +8,8 @@ import { ArrowLeft } from "lucide-react";
 import { DynamicFilter } from "@/types/filters";
 import { WebsiteCategory } from "@/types";
 import { useCategories } from "@/features/categories/useCategories";
+import { useFilters } from "@/hooks/use-filters";
+import { filterEndpoints } from "@/lib/api";
 import { FilterForm } from "@/components/filters/filter-form";
 import { toast } from "sonner";
 
@@ -16,75 +18,66 @@ export default function EditarFiltroPage() {
   const params = useParams();
   const filterId = params.id as string;
   const { categories, loading: categoriesLoading } = useCategories();
-  const [filters, setFilters] = useState<DynamicFilter[]>([]);
+  const { updateFilter } = useFilters();
   const [editingFilter, setEditingFilter] = useState<DynamicFilter | undefined>();
   const [isSaving, setIsSaving] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // Load filters and find the one to edit
+  // Load filter by ID from API
   useEffect(() => {
-    const savedFilters = localStorage.getItem("dynamicFilters");
-    if (savedFilters) {
+    const fetchFilter = async () => {
+      setLoading(true);
       try {
-        const parsed = JSON.parse(savedFilters);
-        const filtersWithDates = parsed.map((f: any) => ({
-          ...f,
-          createdAt: f.createdAt ? new Date(f.createdAt) : new Date(),
-          updatedAt: f.updatedAt ? new Date(f.updatedAt) : new Date(),
-          order: f.order && typeof f.order === 'number' 
-            ? { categories: {}, menus: {}, submenus: {} }
-            : (f.order || { categories: {}, menus: {}, submenus: {} }),
-        }));
-        setFilters(filtersWithDates);
-
-        const filter = filtersWithDates.find((f: DynamicFilter) => f.id === filterId);
-        if (filter) {
+        const response = await filterEndpoints.getById(filterId);
+        
+        if (response.success && response.data) {
+          // Convert date strings to Date objects
+          const filter: DynamicFilter = {
+            ...response.data,
+            createdAt: response.data.createdAt ? new Date(response.data.createdAt) : new Date(),
+            updatedAt: response.data.updatedAt ? new Date(response.data.updatedAt) : new Date(),
+          };
           setEditingFilter(filter);
         } else {
-          toast.error("Filtro no encontrado");
+          toast.error(response.message || "Filtro no encontrado");
           router.push("/pagina-web/filtros");
         }
       } catch (error) {
-        console.error("Error loading filters:", error);
-        toast.error("Error al cargar los filtros");
+        console.error("Error loading filter:", error);
+        toast.error("Error al cargar el filtro");
         router.push("/pagina-web/filtros");
       } finally {
         setLoading(false);
       }
-    } else {
-      toast.error("No se encontraron filtros");
-      router.push("/pagina-web/filtros");
-      setLoading(false);
+    };
+
+    if (filterId) {
+      fetchFilter();
     }
   }, [filterId, router]);
-
-  const saveFilters = (newFilters: DynamicFilter[]) => {
-    localStorage.setItem("dynamicFilters", JSON.stringify(newFilters));
-    setFilters(newFilters);
-  };
 
   const handleSave = async (filterData: DynamicFilter) => {
     setIsSaving(true);
     try {
-      // Simulate API call delay
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      // Preserve existing order config
-      const existingFilter = filters.find((f) => f.id === filterId);
-      const updatedFilter: DynamicFilter = {
-        ...filterData,
-        id: filterId,
-        order: existingFilter?.order || filterData.order,
-        createdAt: existingFilter?.createdAt || new Date(),
-        updatedAt: new Date(),
+      // Preserve existing order config and dates
+      const updatePayload: Partial<DynamicFilter> = {
+        sectionName: filterData.sectionName,
+        column: filterData.column,
+        operator: filterData.operator,
+        operatorMode: filterData.operatorMode,
+        valueConfig: filterData.valueConfig,
+        displayType: filterData.displayType,
+        scope: filterData.scope,
+        isActive: filterData.isActive,
+        // Preserve order from existing filter
+        order: editingFilter?.order || filterData.order,
       };
 
-      const newFilters = filters.map((f) =>
-        f.id === filterId ? updatedFilter : f
-      );
-      saveFilters(newFilters);
-      toast.success("Filtro actualizado correctamente");
-      router.push("/pagina-web/filtros");
+      const updatedFilter = await updateFilter(filterId, updatePayload);
+      
+      if (updatedFilter) {
+        router.push("/pagina-web/filtros");
+      }
     } catch (error) {
       toast.error("Error al guardar el filtro");
       console.error(error);
