@@ -29,25 +29,44 @@ export default function CrearFiltroPage() {
       };
 
       // Set initial order for each scope based on existing filters
+      // Find the maximum order for each category to avoid duplicates
       filterData.scope.categories.forEach((categoryId) => {
         const categoryFilters = filters.filter((f) =>
           f.scope.categories.includes(categoryId)
         );
-        orderConfig.categories[categoryId] = categoryFilters.length;
+        // Find the maximum order for this category, or use -1 if no filters exist
+        const maxOrder = categoryFilters.reduce((max, f) => {
+          const order = f.order?.categories[categoryId] ?? -1;
+          return Math.max(max, order);
+        }, -1);
+        // Set order to maxOrder + 1 (will be 0 if no filters exist)
+        orderConfig.categories[categoryId] = maxOrder + 1;
       });
 
       filterData.scope.menus.forEach((menuId) => {
         const menuFilters = filters.filter((f) =>
           f.scope.menus.includes(menuId)
         );
-        orderConfig.menus[menuId] = menuFilters.length;
+        // Find the maximum order for this menu, or use -1 if no filters exist
+        const maxOrder = menuFilters.reduce((max, f) => {
+          const order = f.order?.menus[menuId] ?? -1;
+          return Math.max(max, order);
+        }, -1);
+        // Set order to maxOrder + 1 (will be 0 if no filters exist)
+        orderConfig.menus[menuId] = maxOrder + 1;
       });
 
       filterData.scope.submenus.forEach((submenuId) => {
         const submenuFilters = filters.filter((f) =>
           f.scope.submenus.includes(submenuId)
         );
-        orderConfig.submenus[submenuId] = submenuFilters.length;
+        // Find the maximum order for this submenu, or use -1 if no filters exist
+        const maxOrder = submenuFilters.reduce((max, f) => {
+          const order = f.order?.submenus[submenuId] ?? -1;
+          return Math.max(max, order);
+        }, -1);
+        // Set order to maxOrder + 1 (will be 0 if no filters exist)
+        orderConfig.submenus[submenuId] = maxOrder + 1;
       });
 
       // Prepare filter data for API

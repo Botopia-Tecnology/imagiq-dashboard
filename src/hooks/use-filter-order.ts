@@ -32,9 +32,12 @@ export function useFilterOrder(): UseFilterOrderReturn {
         toast.success(response.message || "Orden actualizado correctamente");
         
         // If the API returns updated filters, call onSuccess with them
-        if (response.data?.updatedFilters && onSuccess) {
+        // The response structure is: ApiResponse<{ success: boolean; message?: string; data?: { updatedFilters: ... } }>
+        // So we need to access response.data.data?.updatedFilters
+        const responseData = response.data as { success: boolean; message?: string; data?: { updatedFilters: Array<{ filterId: string; order: FilterOrderConfig }> } };
+        if (responseData.data?.updatedFilters && onSuccess) {
           // Map the response to DynamicFilter format
-          const updatedFilters = response.data.updatedFilters.map((item) => ({
+          const updatedFilters = responseData.data.updatedFilters.map((item) => ({
             id: item.filterId,
             order: item.order,
           })) as Partial<DynamicFilter>[];

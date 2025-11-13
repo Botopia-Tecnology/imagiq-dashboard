@@ -5,6 +5,45 @@ import { DynamicFilter } from "@/types/filters";
 import { filterEndpoints } from "@/lib/api";
 import { toast } from "sonner";
 
+// Type definitions for nested API responses
+type NestedFilterResponse = {
+  data: DynamicFilter;
+};
+
+type FilterResponse = DynamicFilter | NestedFilterResponse;
+
+type NestedDeleteBulkResponse = {
+  data: {
+    deletedCount: number;
+  };
+};
+
+type DeleteBulkResponse = {
+  deletedCount: number;
+} | NestedDeleteBulkResponse;
+
+// Filter from API (dates as strings)
+type FilterFromAPI = Omit<DynamicFilter, 'createdAt' | 'updatedAt'> & {
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
+};
+
+// Nested array response structure
+type NestedFiltersArrayResponse = {
+  data: FilterFromAPI[];
+};
+
+type FiltersArrayResponse = FilterFromAPI[] | NestedFiltersArrayResponse;
+
+// Type guards
+function isNestedFilterResponse(response: FilterResponse): response is NestedFilterResponse {
+  return typeof response === 'object' && response !== null && 'data' in response && !('id' in response) && !('sectionName' in response);
+}
+
+function isNestedDeleteBulkResponse(response: DeleteBulkResponse): response is NestedDeleteBulkResponse {
+  return typeof response === 'object' && response !== null && 'data' in response && !('deletedCount' in response);
+}
+
 interface CreateFilterData {
   sectionName: string;
   column: string;
@@ -34,11 +73,11 @@ export function useFilters(): UseFiltersReturn {
   const [error, setError] = useState<string | null>(null);
 
   // Helper to convert date strings to Date objects
-  const parseFilterDates = (filter: any): DynamicFilter => {
+  const parseFilterDates = (filter: FilterFromAPI): DynamicFilter => {
     return {
       ...filter,
-      createdAt: filter.createdAt ? new Date(filter.createdAt) : new Date(),
-      updatedAt: filter.updatedAt ? new Date(filter.updatedAt) : new Date(),
+      createdAt: filter.createdAt ? (filter.createdAt instanceof Date ? filter.createdAt : new Date(filter.createdAt)) : new Date(),
+      updatedAt: filter.updatedAt ? (filter.updatedAt instanceof Date ? filter.updatedAt : new Date(filter.updatedAt)) : new Date(),
     };
   };
 
@@ -51,20 +90,21 @@ export function useFilters(): UseFiltersReturn {
       
       // Handle nested response structure: { success: true, data: [...] }
       // The API client wraps it, so we get: response.data = { success: true, data: [...] }
-      let filtersArray: any[] = [];
+      let filtersArray: FilterFromAPI[] = [];
       
       if (response.success && response.data) {
+        const responseData = response.data as FiltersArrayResponse;
+        
         // Check if response.data is directly an array
-        if (Array.isArray(response.data)) {
-          filtersArray = response.data;
+        if (Array.isArray(responseData)) {
+          filtersArray = responseData;
         } 
-        // Check if response.data has a nested data property (backend response structure)
-        else if (response.data.data && Array.isArray(response.data.data)) {
-          filtersArray = response.data.data;
-        }
-        // Check if response.data is an object with success and data
-        else if (typeof response.data === 'object' && 'data' in response.data && Array.isArray((response.data as any).data)) {
-          filtersArray = (response.data as any).data;
+        // Check if response.data is an object (not an array) with nested data property
+        else if (typeof responseData === 'object' && responseData !== null && !Array.isArray(responseData) && 'data' in responseData) {
+          const nestedResponse = responseData as NestedFiltersArrayResponse;
+          if (Array.isArray(nestedResponse.data)) {
+            filtersArray = nestedResponse.data;
+          }
         }
       }
       
@@ -122,7 +162,7 @@ export function useFilters(): UseFiltersReturn {
   const updateFilter = useCallback(async (id: string, data: Partial<CreateFilterData>): Promise<DynamicFilter | null> => {
     try {
       // Clean up the payload: remove undefined values and ensure proper structure
-      const cleanPayload: any = {};
+      const cleanPayload: Partial<CreateFilterData> = {};
       
       if (data.sectionName !== undefined) cleanPayload.sectionName = data.sectionName;
       if (data.column !== undefined) cleanPayload.column = data.column;
@@ -140,11 +180,17 @@ export function useFilters(): UseFiltersReturn {
       
       if (response.success && response.data) {
         // Handle nested response structure
-        let filterData: any = null;
-        if (response.data.id || response.data.sectionName) {
-          filterData = response.data;
-        } else if (response.data.data && (response.data.data.id || response.data.data.sectionName)) {
-          filterData = response.data.data;
+        // The API client wraps responses, so response.data might be DynamicFilter or { data: DynamicFilter }
+        let filterData: DynamicFilter | null = null;
+        const responseData = response.data as FilterResponse;
+        
+        // Check if response.data is directly the filter object
+        if ('id' in responseData || 'sectionName' in responseData) {
+          filterData = responseData as DynamicFilter;
+        } 
+        // Check if response.data has a nested data property (backend response structure)
+        else if (isNestedFilterResponse(responseData)) {
+          filterData = responseData.data;
         }
         
         if (filterData) {
@@ -203,7 +249,18 @@ export function useFilters(): UseFiltersReturn {
       
       if (response.success) {
         setFilters((prev) => prev.filter((f) => !filterIds.includes(f.id)));
-        const deletedCount = response.data?.deletedCount || filterIds.length;
+        // Handle nested response structure: response.data might be { deletedCount: number } or wrapped
+        const responseData = response.data as DeleteBulkResponse | undefined;
+        let deletedCount = filterIds.length;
+        
+        if (responseData) {
+          if (isNestedDeleteBulkResponse(responseData)) {
+            deletedCount = responseData.data.deletedCount;
+          } else if ('deletedCount' in responseData) {
+            deletedCount = responseData.deletedCount;
+          }
+        }
+        
         toast.success(response.message || `${deletedCount} filtro(s) eliminado(s) correctamente`);
         return true;
       } else {

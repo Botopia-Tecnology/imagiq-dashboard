@@ -13,6 +13,13 @@ import { filterEndpoints } from "@/lib/api";
 import { FilterForm } from "@/components/filters/filter-form";
 import { toast } from "sonner";
 
+// Type definitions for nested API responses
+type NestedFilterResponse = {
+  data: DynamicFilter;
+};
+
+type FilterResponse = DynamicFilter | NestedFilterResponse;
+
 export default function EditarFiltroPage() {
   const router = useRouter();
   const params = useParams();
@@ -36,16 +43,16 @@ export default function EditarFiltroPage() {
         
         // Handle nested response structure: { success: true, data: {...} }
         // The API client wraps it, so we get: response.data = { success: true, data: {...} }
-        let filterData: any = null;
+        let filterData: DynamicFilter | null = null;
         
         if (response.success && response.data) {
-          const responseData = response.data as any;
+          const responseData = response.data as FilterResponse;
           // Check if response.data is directly the filter object
-          if (responseData.id || responseData.sectionName) {
-            filterData = responseData;
+          if ('id' in responseData || 'sectionName' in responseData) {
+            filterData = responseData as DynamicFilter;
           }
           // Check if response.data has a nested data property (backend response structure)
-          else if (responseData.data && (responseData.data.id || responseData.data.sectionName)) {
+          else if ('data' in responseData && (responseData.data.id || responseData.data.sectionName)) {
             filterData = responseData.data;
           }
         }

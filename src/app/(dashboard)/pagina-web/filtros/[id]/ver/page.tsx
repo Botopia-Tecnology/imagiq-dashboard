@@ -17,6 +17,13 @@ import { toast } from "sonner";
 import { FilterOperator, FilterDisplayType } from "@/types/filters";
 import { DynamicValueConfig, ManualValueConfig, MixedValueConfig } from "@/types/filters";
 
+// Type definitions for nested API responses
+type NestedFilterResponse = {
+  data: DynamicFilter;
+};
+
+type FilterResponse = DynamicFilter | NestedFilterResponse;
+
 export default function VerFiltroPage() {
   const router = useRouter();
   const params = useParams();
@@ -39,16 +46,16 @@ export default function VerFiltroPage() {
         
         // Handle nested response structure: { success: true, data: {...} }
         // The API client wraps it, so we get: response.data = { success: true, data: {...} }
-        let filterData: any = null;
+        let filterData: DynamicFilter | null = null;
         
         if (response.success && response.data) {
-          const responseData = response.data as any;
+          const responseData = response.data as FilterResponse;
           // Check if response.data is directly the filter object
-          if (responseData.id || responseData.sectionName) {
-            filterData = responseData;
+          if ('id' in responseData || 'sectionName' in responseData) {
+            filterData = responseData as DynamicFilter;
           }
           // Check if response.data has a nested data property (backend response structure)
-          else if (responseData.data && (responseData.data.id || responseData.data.sectionName)) {
+          else if ('data' in responseData && (responseData.data.id || responseData.data.sectionName)) {
             filterData = responseData.data;
           }
         }
@@ -254,90 +261,96 @@ export default function VerFiltroPage() {
             </div>
           )}
 
-          {viewingFilter.valueConfig.type === "manual" && (
-            <>
-              {(viewingFilter.valueConfig as ManualValueConfig).values && (viewingFilter.valueConfig as ManualValueConfig).values.length > 0 && (
-                <div>
-                  <Label className="text-xs text-muted-foreground">Valores Manuales</Label>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {(viewingFilter.valueConfig as ManualValueConfig).values.map((val, idx) => (
-                      <Badge key={idx} variant="outline" className="text-xs">
-                        {val.label || val.value}
-                        {viewingFilter.operatorMode === "per-value" && val.operator && (
-                          <span className="ml-1 text-muted-foreground">({val.operator})</span>
-                        )}
-                      </Badge>
-                    ))}
+          {viewingFilter.valueConfig.type === "manual" && (() => {
+            const manualConfig = viewingFilter.valueConfig as ManualValueConfig;
+            return (
+              <>
+                {manualConfig.values && manualConfig.values.length > 0 && (
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Valores Manuales</Label>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {manualConfig.values.map((val, idx) => (
+                        <Badge key={idx} variant="outline" className="text-xs">
+                          {val.label || val.value}
+                          {viewingFilter.operatorMode === "per-value" && val.operator && (
+                            <span className="ml-1 text-muted-foreground">({val.operator})</span>
+                          )}
+                        </Badge>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
-              {(viewingFilter.valueConfig as ManualValueConfig).ranges && (viewingFilter.valueConfig as ManualValueConfig).ranges.length > 0 && (
-                <div>
-                  <Label className="text-xs text-muted-foreground">Rangos</Label>
-                  <div className="space-y-2 mt-2">
-                    {(viewingFilter.valueConfig as ManualValueConfig).ranges.map((range, idx) => (
-                      <div key={idx} className="p-2 border rounded text-sm">
-                        <span className="font-medium">{range.label}:</span> {range.min} - {range.max}
-                        {viewingFilter.operatorMode === "per-value" && range.operator && (
-                          <span className="ml-2 text-muted-foreground">({range.operator})</span>
-                        )}
-                      </div>
-                    ))}
+                )}
+                {manualConfig.ranges && manualConfig.ranges.length > 0 && (
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Rangos</Label>
+                    <div className="space-y-2 mt-2">
+                      {manualConfig.ranges.map((range, idx) => (
+                        <div key={idx} className="p-2 border rounded text-sm">
+                          <span className="font-medium">{range.label}:</span> {range.min} - {range.max}
+                          {viewingFilter.operatorMode === "per-value" && range.operator && (
+                            <span className="ml-2 text-muted-foreground">({range.operator})</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
-            </>
-          )}
+                )}
+              </>
+            );
+          })()}
 
-          {viewingFilter.valueConfig.type === "mixed" && (
-            <>
-              {(viewingFilter.valueConfig as MixedValueConfig).dynamicValues && (viewingFilter.valueConfig as MixedValueConfig).dynamicValues.length > 0 && (
-                <div>
-                  <Label className="text-xs text-muted-foreground">Valores Dinámicos</Label>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {(viewingFilter.valueConfig as MixedValueConfig).dynamicValues.map((val, idx) => (
-                      <Badge key={idx} variant="outline" className="text-xs">
-                        {val.value}
-                        {viewingFilter.operatorMode === "per-value" && val.operator && (
-                          <span className="ml-1 text-muted-foreground">({val.operator})</span>
-                        )}
-                      </Badge>
-                    ))}
+          {viewingFilter.valueConfig.type === "mixed" && (() => {
+            const mixedConfig = viewingFilter.valueConfig as MixedValueConfig;
+            return (
+              <>
+                {mixedConfig.dynamicValues && mixedConfig.dynamicValues.length > 0 && (
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Valores Dinámicos</Label>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {mixedConfig.dynamicValues.map((val, idx) => (
+                        <Badge key={idx} variant="outline" className="text-xs">
+                          {val.value}
+                          {viewingFilter.operatorMode === "per-value" && val.operator && (
+                            <span className="ml-1 text-muted-foreground">({val.operator})</span>
+                          )}
+                        </Badge>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
-              {(viewingFilter.valueConfig as MixedValueConfig).manualValues && (viewingFilter.valueConfig as MixedValueConfig).manualValues.length > 0 && (
-                <div>
-                  <Label className="text-xs text-muted-foreground">Valores Manuales</Label>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {(viewingFilter.valueConfig as MixedValueConfig).manualValues.map((val, idx) => (
-                      <Badge key={idx} variant="outline" className="text-xs">
-                        {val.label || val.value}
-                        {viewingFilter.operatorMode === "per-value" && val.operator && (
-                          <span className="ml-1 text-muted-foreground">({val.operator})</span>
-                        )}
-                      </Badge>
-                    ))}
+                )}
+                {mixedConfig.manualValues && mixedConfig.manualValues.length > 0 && (
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Valores Manuales</Label>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {mixedConfig.manualValues.map((val, idx) => (
+                        <Badge key={idx} variant="outline" className="text-xs">
+                          {val.label || val.value}
+                          {viewingFilter.operatorMode === "per-value" && val.operator && (
+                            <span className="ml-1 text-muted-foreground">({val.operator})</span>
+                          )}
+                        </Badge>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
-              {(viewingFilter.valueConfig as MixedValueConfig).ranges && (viewingFilter.valueConfig as MixedValueConfig).ranges.length > 0 && (
-                <div>
-                  <Label className="text-xs text-muted-foreground">Rangos</Label>
-                  <div className="space-y-2 mt-2">
-                    {(viewingFilter.valueConfig as MixedValueConfig).ranges.map((range, idx) => (
-                      <div key={idx} className="p-2 border rounded text-sm">
-                        <span className="font-medium">{range.label}:</span> {range.min} - {range.max}
-                        {viewingFilter.operatorMode === "per-value" && range.operator && (
-                          <span className="ml-2 text-muted-foreground">({range.operator})</span>
-                        )}
-                      </div>
-                    ))}
+                )}
+                {mixedConfig.ranges && mixedConfig.ranges.length > 0 && (
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Rangos</Label>
+                    <div className="space-y-2 mt-2">
+                      {mixedConfig.ranges.map((range, idx) => (
+                        <div key={idx} className="p-2 border rounded text-sm">
+                          <span className="font-medium">{range.label}:</span> {range.min} - {range.max}
+                          {viewingFilter.operatorMode === "per-value" && range.operator && (
+                            <span className="ml-2 text-muted-foreground">({range.operator})</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
-            </>
-          )}
+                )}
+              </>
+            );
+          })()}
         </CardContent>
       </Card>
 

@@ -194,14 +194,30 @@ export function ValueConfigurator({
         if (response.success) {
           let valuesArray: string[] = [];
           
+          // Type definitions for nested value responses
+          type NestedValuesResponse = {
+            values: string[];
+          };
+          
+          type DoubleNestedValuesResponse = {
+            data: {
+              values: string[];
+            };
+          };
+          
+          type ValuesResponse = string[] | NestedValuesResponse | DoubleNestedValuesResponse;
+          
           if (Array.isArray(response.data)) {
             valuesArray = response.data;
           } else if (response.data && typeof response.data === 'object') {
-            const data = response.data as any;
+            const data = response.data as ValuesResponse;
             if ('values' in data && Array.isArray(data.values)) {
               valuesArray = data.values;
-            } else if ('data' in data && Array.isArray(data.data)) {
-              valuesArray = data.data;
+            } else if ('data' in data) {
+              const nestedData = data as DoubleNestedValuesResponse;
+              if (nestedData.data && 'values' in nestedData.data && Array.isArray(nestedData.data.values)) {
+                valuesArray = nestedData.data.values;
+              }
             }
           }
           
@@ -292,7 +308,7 @@ export function ValueConfigurator({
       if (existingIndex >= 0) {
         const newSelected = dynamicConfig.selectedValues.filter((v) => v.value !== val);
         onValueChange({ ...dynamicConfig, selectedValues: newSelected });
-      } else {
+    } else {
         const newValue: ValueItem = {
           value: val,
           operator: operatorMode === "per-value" ? defaultOp : undefined,
