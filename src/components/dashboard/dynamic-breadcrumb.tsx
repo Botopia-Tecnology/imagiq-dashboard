@@ -21,6 +21,7 @@ export function DynamicBreadcrumb() {
       'inicio': 'Inicio',
       'pagina-web': 'Página Web',
       'categorias': 'Categorías',
+      'filtros': 'Configuración de Filtros',
       'productos': 'Productos',
       'clientes': 'Clientes',
       'pedidos': 'Pedidos',
@@ -44,6 +45,12 @@ export function DynamicBreadcrumb() {
       if (uuidRegex.test(segment)) {
         // Determinar si es categoryId o menuId según el contexto
         const prevSegment = paths[i - 1]
+
+        // Si el UUID está después de 'filtros' y el siguiente es 'editar', ignorarlo
+        // (se manejará en la sección de filtros)
+        if (prevSegment === 'filtros' && paths[i + 1] === 'editar') {
+          continue
+        }
 
         if (prevSegment === 'categorias') {
           // Es un categoryId
@@ -71,6 +78,48 @@ export function DynamicBreadcrumb() {
               id: `submenus-${segment}`
             })
           }
+        }
+        continue
+      }
+
+      // Manejar casos especiales para filtros
+      if (segment === 'filtros') {
+        const nextSegment = paths[i + 1]
+        
+        if (nextSegment === 'crear') {
+          // Ruta: /pagina-web/filtros/crear
+          breadcrumbs.push({
+            label: routeNames[segment],
+            href: currentPath,
+            id: segment
+          })
+          breadcrumbs.push({
+            label: 'Crear Nuevo Filtro',
+            href: undefined,
+            id: 'crear-filtro'
+          })
+          break // No procesar más segmentos
+        } else if (nextSegment && paths[i + 2] === 'editar') {
+          // Ruta: /pagina-web/filtros/[id]/editar
+          breadcrumbs.push({
+            label: routeNames[segment],
+            href: currentPath,
+            id: segment
+          })
+          breadcrumbs.push({
+            label: 'Editar Filtro',
+            href: undefined,
+            id: 'editar-filtro'
+          })
+          break // No procesar más segmentos
+        } else {
+          // Ruta: /pagina-web/filtros (página principal)
+          const isLast = i === paths.length - 1
+          breadcrumbs.push({
+            label: routeNames[segment],
+            href: isLast ? undefined : currentPath,
+            id: segment
+          })
         }
         continue
       }

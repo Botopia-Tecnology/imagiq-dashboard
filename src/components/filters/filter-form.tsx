@@ -6,6 +6,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Info } from "lucide-react";
 import { DynamicFilter, FilterScope, FilterOperator, FilterDisplayType, FilterOrderConfig } from "@/types/filters";
 import { WebsiteCategory } from "@/types";
 import { ScopeSelector } from "./scope-selector";
@@ -50,6 +64,9 @@ export function FilterForm({
   const [column, setColumn] = useState(filter?.column || "");
   const [operator, setOperator] = useState<FilterOperator>(
     filter?.operator || "equal"
+  );
+  const [operatorMode, setOperatorMode] = useState<"column" | "per-value">(
+    filter?.operatorMode || "column"
   );
   const [valueConfig, setValueConfig] = useState<DynamicFilter["valueConfig"]>(
     filter?.valueConfig || getDefaultValueConfig("equal")
@@ -124,9 +141,18 @@ export function FilterForm({
           return;
         }
       }
-    } else {
+    } else if (valueConfig.type === "dynamic") {
       if (valueConfig.selectedValues.length === 0) {
         toast.error("Debes seleccionar al menos un valor dinámico");
+        return;
+      }
+    } else if (valueConfig.type === "mixed") {
+      const hasDynamicValues = valueConfig.dynamicValues && valueConfig.dynamicValues.length > 0;
+      const hasManualValues = valueConfig.manualValues && valueConfig.manualValues.length > 0;
+      const hasRanges = valueConfig.ranges && valueConfig.ranges.length > 0;
+      
+      if (!hasDynamicValues && !hasManualValues && !hasRanges) {
+        toast.error("Debes agregar al menos un valor (dinámico, manual o rango)");
         return;
       }
     }
@@ -143,6 +169,7 @@ export function FilterForm({
       sectionName: sectionName.trim(),
       column,
       operator,
+      operatorMode,
       valueConfig,
       displayType,
       scope,
@@ -174,18 +201,56 @@ export function FilterForm({
           </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <ColumnSelector
-            value={column}
-            onValueChange={setColumn}
-            disabled={isLoading}
-          />
-          <OperatorSelector
-            value={operator}
-            onValueChange={setOperator}
-            selectedColumn={selectedColumn}
-            disabled={isLoading}
-          />
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <ColumnSelector
+              value={column}
+              onValueChange={setColumn}
+              disabled={isLoading}
+            />
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Label>Modo de Operador</Label>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="max-w-xs">
+                        <strong>Por columna:</strong> Todos los valores usan el mismo operador seleccionado.<br/>
+                        <strong>Por valor:</strong> Cada valor puede tener su propio operador configurado individualmente.
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+              <Select
+                value={operatorMode}
+                onValueChange={(value: "column" | "per-value") => setOperatorMode(value)}
+                disabled={isLoading}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="column">Por columna</SelectItem>
+                  <SelectItem value="per-value">Por valor</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          {operatorMode === "column" && (
+            <div>
+              <OperatorSelector
+                value={operator}
+                onValueChange={setOperator}
+                selectedColumn={selectedColumn}
+                disabled={isLoading}
+              />
+            </div>
+          )}
         </div>
       </div>
 
@@ -206,6 +271,8 @@ export function FilterForm({
         value={valueConfig}
         onValueChange={setValueConfig}
         operator={operator}
+        operatorMode={operatorMode}
+        onOperatorModeChange={setOperatorMode}
         column={selectedColumn}
         scope={scope}
         categories={categories}

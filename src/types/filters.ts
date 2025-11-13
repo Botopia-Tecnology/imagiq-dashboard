@@ -55,18 +55,33 @@ export type FilterDisplayType =
 export type ValueSource = "manual" | "dynamic";
 
 /**
+ * Valor individual con operador opcional
+ */
+export interface ValueItem {
+  value: string; // Valor de comparación
+  label?: string; // Etiqueta para mostrar (opcional, si no se proporciona se usa value)
+  operator?: FilterOperator; // Operador específico para este valor (si no se usa operador por columna)
+}
+
+/**
+ * Rango con operador opcional
+ */
+export interface RangeItem {
+  label: string;
+  min: number;
+  max: number;
+  operator?: FilterOperator;
+}
+
+/**
  * Manual value configuration
  */
 export interface ManualValueConfig {
   type: "manual";
   // For range filters
-  ranges?: Array<{
-    label: string;
-    min: number;
-    max: number;
-  }>;
+  ranges?: RangeItem[];
   // For list filters
-  values?: string[];
+  values?: ValueItem[]; // Cambiar de string[] a ValueItem[]
 }
 
 /**
@@ -74,14 +89,24 @@ export interface ManualValueConfig {
  */
 export interface DynamicValueConfig {
   type: "dynamic";
-  selectedValues: string[]; // Values selected from DB to include in filter
+  selectedValues: ValueItem[]; // Cambiar de string[] a ValueItem[]
   // The actual unique values will be fetched from the API
+}
+
+/**
+ * Nueva configuración mixta
+ */
+export interface MixedValueConfig {
+  type: "mixed";
+  dynamicValues: ValueItem[];
+  manualValues: ValueItem[];
+  ranges?: RangeItem[];
 }
 
 /**
  * Combined value configuration
  */
-export type FilterValueConfig = ManualValueConfig | DynamicValueConfig;
+export type FilterValueConfig = ManualValueConfig | DynamicValueConfig | MixedValueConfig;
 
 /**
  * Complete dynamic filter configuration
@@ -90,7 +115,8 @@ export interface DynamicFilter {
   id: string; // Unique identifier
   sectionName: string; // Display name (e.g., "RANGO DE PRECIOS")
   column: string; // Product column to filter by (e.g., "precioNormal", "color")
-  operator: FilterOperator;
+  operator?: FilterOperator; // Hacer opcional - solo se usa si operatorMode === "column"
+  operatorMode: "column" | "per-value"; // Nuevo campo para elegir modo
   valueConfig: FilterValueConfig;
   displayType: FilterDisplayType;
   scope: FilterScope;

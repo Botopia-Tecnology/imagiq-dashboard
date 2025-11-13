@@ -17,6 +17,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { GripVertical, Edit, Trash2, Copy, Filter, Plus, ChevronDown, ChevronRight } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { DynamicFilter, FilterOrderConfig } from "@/types/filters";
 import { WebsiteCategory, WebsiteMenu, WebsiteSubmenu } from "@/types";
 import { useCategories } from "@/features/categories/useCategories";
@@ -55,6 +56,8 @@ export default function FiltrosPage() {
   const { columns } = useProductColumns();
   const [filters, setFilters] = useState<DynamicFilter[]>([]);
   const [deletingFilter, setDeletingFilter] = useState<DynamicFilter | null>(null);
+  const [deletingFilters, setDeletingFilters] = useState<DynamicFilter[]>([]);
+  const [selectedFilters, setSelectedFilters] = useState<Set<string>>(new Set());
   const [draggedFilter, setDraggedFilter] = useState<{ filter: DynamicFilter; scopeType: 'category' | 'menu' | 'submenu'; scopeId: string } | null>(null);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [expandedMenus, setExpandedMenus] = useState<Set<string>>(new Set());
@@ -65,14 +68,11 @@ export default function FiltrosPage() {
     if (savedFilters) {
       try {
         const parsed = JSON.parse(savedFilters);
-        const filtersWithDates = parsed.map((f: any) => ({
+        // Ensure dates are Date objects
+        const filtersWithDates = parsed.map((f: DynamicFilter) => ({
           ...f,
           createdAt: f.createdAt ? new Date(f.createdAt) : new Date(),
           updatedAt: f.updatedAt ? new Date(f.updatedAt) : new Date(),
-          // Migrate old order format to new format if needed
-          order: f.order && typeof f.order === 'number' 
-            ? { categories: {}, menus: {}, submenus: {} }
-            : (f.order || { categories: {}, menus: {}, submenus: {} }),
         }));
         setFilters(filtersWithDates);
       } catch (error) {
@@ -161,13 +161,48 @@ export default function FiltrosPage() {
     setDeletingFilter(filter);
   };
 
+  const handleDeleteMultiple = () => {
+    if (selectedFilters.size === 0) return;
+    const filtersToDelete = filters.filter((f) => selectedFilters.has(f.id));
+    setDeletingFilters(filtersToDelete);
+  };
+
   const confirmDelete = () => {
     if (!deletingFilter) return;
 
     const newFilters = filters.filter((f) => f.id !== deletingFilter.id);
     saveFilters(newFilters);
     setDeletingFilter(null);
+    setSelectedFilters(new Set());
     toast.success("Filtro eliminado correctamente");
+  };
+
+  const confirmDeleteMultiple = () => {
+    if (deletingFilters.length === 0) return;
+
+    const newFilters = filters.filter((f) => !selectedFilters.has(f.id));
+    saveFilters(newFilters);
+    setDeletingFilters([]);
+    setSelectedFilters(new Set());
+    toast.success(`${deletingFilters.length} filtro(s) eliminado(s) correctamente`);
+  };
+
+  const toggleFilterSelection = (filterId: string) => {
+    const newSelected = new Set(selectedFilters);
+    if (newSelected.has(filterId)) {
+      newSelected.delete(filterId);
+    } else {
+      newSelected.add(filterId);
+    }
+    setSelectedFilters(newSelected);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedFilters.size === filters.length) {
+      setSelectedFilters(new Set());
+    } else {
+      setSelectedFilters(new Set(filters.map((f) => f.id)));
+    }
   };
 
   const handleDuplicate = (filter: DynamicFilter) => {
@@ -342,6 +377,7 @@ export default function FiltrosPage() {
     scopeId: string
   ) => {
     const isDragging = draggedFilter?.filter.id === filter.id;
+    const isSelected = selectedFilters.has(filter.id);
 
     return (
       <div
@@ -354,10 +390,17 @@ export default function FiltrosPage() {
         className={cn(
           "group relative p-3 border rounded-lg cursor-move transition-all mb-2",
           "hover:border-primary hover:bg-primary/5",
-          isDragging && "opacity-50"
+          isDragging && "opacity-50",
+          isSelected && "border-primary bg-primary/10"
         )}
       >
         <div className="flex items-start gap-3">
+          <Checkbox
+            checked={isSelected}
+            onCheckedChange={() => toggleFilterSelection(filter.id)}
+            onClick={(e) => e.stopPropagation()}
+            className="mt-1"
+          />
           <div className="mt-1 cursor-grab active:cursor-grabbing text-muted-foreground group-hover:text-foreground">
             <GripVertical className="h-4 w-4" />
           </div>
@@ -425,10 +468,22 @@ export default function FiltrosPage() {
             Gestiona los filtros dinámicos agrupados por categoría, menú y submenú
           </p>
         </div>
-        <Button onClick={handleCreate} disabled={categoriesLoading}>
-          <Plus className="h-4 w-4 mr-2" />
-          Crear Filtro
-        </Button>
+        <div className="flex items-center gap-2">
+          {selectedFilters.size > 0 && (
+            <Button
+              variant="destructive"
+              onClick={handleDeleteMultiple}
+              disabled={categoriesLoading}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Eliminar {selectedFilters.size} seleccionado(s)
+            </Button>
+          )}
+          <Button onClick={handleCreate} disabled={categoriesLoading}>
+            <Plus className="h-4 w-4 mr-2" />
+            Crear Filtro
+          </Button>
+        </div>
       </div>
 
       {/* Tabs for different views */}
@@ -603,6 +658,12 @@ export default function FiltrosPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-12">
+                        <Checkbox
+                          checked={selectedFilters.size === filters.length && filters.length > 0}
+                          onCheckedChange={toggleSelectAll}
+                        />
+                      </TableHead>
                       <TableHead>Nombre</TableHead>
                       <TableHead>Columna</TableHead>
                       <TableHead>Operador</TableHead>
@@ -614,6 +675,7 @@ export default function FiltrosPage() {
                   </TableHeader>
                   <TableBody>
                     {filters.map((filter) => {
+                      const isSelected = selectedFilters.has(filter.id);
                       const scopeNames = getScopeNames(filter);
                       const scopeDisplay = [
                         ...scopeNames.categories.map((c) => `Cat: ${c}`),
@@ -622,7 +684,13 @@ export default function FiltrosPage() {
                       ].join(", ") || "Ninguno";
 
                       return (
-                        <TableRow key={filter.id}>
+                        <TableRow key={filter.id} className={isSelected ? "bg-primary/5" : ""}>
+                          <TableCell>
+                            <Checkbox
+                              checked={isSelected}
+                              onCheckedChange={() => toggleFilterSelection(filter.id)}
+                            />
+                          </TableCell>
                           <TableCell className="font-medium">
                             {filter.sectionName}
                           </TableCell>
@@ -692,7 +760,7 @@ export default function FiltrosPage() {
         </TabsContent>
       </Tabs>
 
-      {/* Delete Confirmation Dialog */}
+      {/* Delete Confirmation Dialog (Single) */}
       <AlertDialog
         open={deletingFilter !== null}
         onOpenChange={(open) => !open && setDeletingFilter(null)}
@@ -712,6 +780,36 @@ export default function FiltrosPage() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Confirmation Dialog (Multiple) */}
+      <AlertDialog
+        open={deletingFilters.length > 0}
+        onOpenChange={(open) => !open && setDeletingFilters([])}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar {deletingFilters.length} filtro(s)?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Estás a punto de eliminar {deletingFilters.length} filtro(s) seleccionado(s):
+              <ul className="list-disc list-inside mt-2 space-y-1">
+                {deletingFilters.map((f) => (
+                  <li key={f.id} className="text-sm">{f.sectionName}</li>
+                ))}
+              </ul>
+              Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteMultiple}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Eliminar {deletingFilters.length} filtro(s)
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -5,13 +5,33 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Plus, X, Info } from "lucide-react";
 import {
   FilterValueConfig,
   FilterOperator,
   FilterScope,
   ProductColumn,
   DynamicValueConfig,
+  ManualValueConfig,
+  MixedValueConfig,
+  ValueItem,
+  RangeItem,
 } from "@/types/filters";
 import { WebsiteCategory } from "@/types";
 import { productEndpoints } from "@/lib/api";
@@ -20,6 +40,8 @@ interface ValueConfiguratorProps {
   value: FilterValueConfig;
   onValueChange: (config: FilterValueConfig) => void;
   operator: FilterOperator;
+  operatorMode: "column" | "per-value";
+  onOperatorModeChange: (mode: "column" | "per-value") => void;
   column: ProductColumn | undefined;
   scope?: FilterScope;
   categories?: WebsiteCategory[];
@@ -28,15 +50,12 @@ interface ValueConfiguratorProps {
 
 // Helper function to convert column key to camelCase for API
 const toCamelCase = (str: string): string => {
-  // Handle specific cases
   if (str === "nombrecolor") {
     return "nombreColor";
   }
-  // nombreMarket and codigoMarket are already in camelCase, but ensure consistency
   if (str === "nombreMarket" || str === "codigoMarket") {
     return str;
   }
-  // For other cases, convert snake_case or lowercase to camelCase
   return str.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
 };
 
@@ -51,12 +70,11 @@ const mapScopeToApiParams = (
 
   const params: { categoria?: string; menu?: string; submenu?: string } = {};
 
-  // Map category IDs to codes (use name which contains the code like IM, AV, DA, IT)
+  // Map category IDs to codes
   if (scope.categories.length > 0) {
     const categoryCodes = scope.categories
       .map((categoryId) => {
         const category = categories.find((c) => c.id === categoryId);
-        // Use name which contains the category code (IM, AV, DA, IT) from backend
         return category?.name;
       })
       .filter((code): code is string => !!code);
@@ -113,6 +131,8 @@ export function ValueConfigurator({
   value,
   onValueChange,
   operator,
+  operatorMode,
+  onOperatorModeChange,
   column,
   scope,
   categories = [],
@@ -120,38 +140,35 @@ export function ValueConfigurator({
 }: ValueConfiguratorProps) {
   const [dynamicValues, setDynamicValues] = useState<string[]>([]);
   const [loadingDynamic, setLoadingDynamic] = useState(false);
+  const [newManualValue, setNewManualValue] = useState("");
+  const [newManualLabel, setNewManualLabel] = useState("");
+  const [newManualOperator, setNewManualOperator] = useState<FilterOperator>("equal");
+  const [newRangeLabel, setNewRangeLabel] = useState("");
+  const [newRangeMin, setNewRangeMin] = useState("");
+  const [newRangeMax, setNewRangeMax] = useState("");
   
   // Use ref to track the last request to avoid duplicate calls
   const lastRequestRef = useRef<string>("");
 
   const supportsDynamic = column?.supportsDynamic ?? false;
+  const isRangeOperator = operator === "range";
+  const availableOperators = column?.operators || [];
 
-  // Memoize scope keys to avoid recreating strings on every render
+  // Memoize scope keys
   const scopeCategoriesKey = useMemo(() => scope?.categories.join(",") || "", [scope?.categories]);
   const scopeMenusKey = useMemo(() => scope?.menus.join(",") || "", [scope?.menus]);
   const scopeSubmenusKey = useMemo(() => scope?.submenus.join(",") || "", [scope?.submenus]);
-  const selectedValuesKey = useMemo(() => {
-    if (value.type === "dynamic") {
-      const dynamicConfig = value as DynamicValueConfig;
-      return dynamicConfig.selectedValues.join(",");
-    }
-    return "";
-  }, [value]);
 
   // Function to fetch dynamic values from API
   const fetchDynamicValues = () => {
     if (!column || loadingDynamic) return;
 
-    // Convert column key to camelCase for API (e.g., nombrecolor -> nombreColor)
     const apiColumnKey = toCamelCase(column.key);
-    
-    // Create a unique key for this request to avoid duplicates
     const scopeKey = scope 
       ? `${scopeCategoriesKey}|${scopeMenusKey}|${scopeSubmenusKey}`
       : "";
     const requestKey = `${apiColumnKey}|${scopeKey}`;
     
-    // Skip if this is the same request as the last one
     if (lastRequestRef.current === requestKey && dynamicValues.length > 0) {
       return;
     }
@@ -159,27 +176,21 @@ export function ValueConfigurator({
     setLoadingDynamic(true);
     lastRequestRef.current = requestKey;
     
-    // Map scope to API parameters
     const apiParams = mapScopeToApiParams(scope, categories);
     
-    // Call the API endpoint
     productEndpoints
       .getDistinctValues(apiColumnKey, apiParams)
       .then((response) => {
         if (response.success) {
-          // Handle different response formats
           let valuesArray: string[] = [];
           
           if (Array.isArray(response.data)) {
-            // Direct array response
             valuesArray = response.data;
           } else if (response.data && typeof response.data === 'object') {
             const data = response.data as any;
             if ('values' in data && Array.isArray(data.values)) {
-              // Wrapped in { values: [...] }
               valuesArray = data.values;
             } else if ('data' in data && Array.isArray(data.data)) {
-              // Double-wrapped response
               valuesArray = data.data;
             }
           }
@@ -187,89 +198,279 @@ export function ValueConfigurator({
           if (valuesArray.length > 0) {
             setDynamicValues(valuesArray);
             // Reset selected values if they're no longer in the new list
-            const dynamicConfig = value as DynamicValueConfig;
-            if (dynamicConfig.selectedValues.length > 0) {
-              const validSelectedValues = dynamicConfig.selectedValues.filter((val) =>
-                valuesArray.includes(val)
-              );
-              if (validSelectedValues.length !== dynamicConfig.selectedValues.length) {
-                onValueChange({ ...value, selectedValues: validSelectedValues } as DynamicValueConfig);
+            if (value.type === "dynamic") {
+              const dynamicConfig = value as DynamicValueConfig;
+              if (dynamicConfig.selectedValues.length > 0) {
+                const validSelectedValues = dynamicConfig.selectedValues.filter((val) =>
+                  valuesArray.includes(val.value)
+                );
+                if (validSelectedValues.length !== dynamicConfig.selectedValues.length) {
+                  onValueChange({ ...value, selectedValues: validSelectedValues } as DynamicValueConfig);
+                }
+              }
+            } else if (value.type === "mixed") {
+              const mixedConfig = value as MixedValueConfig;
+              if (mixedConfig.dynamicValues.length > 0) {
+                const validDynamicValues = mixedConfig.dynamicValues.filter((val) =>
+                  valuesArray.includes(val.value)
+                );
+                if (validDynamicValues.length !== mixedConfig.dynamicValues.length) {
+                  onValueChange({ ...value, dynamicValues: validDynamicValues } as MixedValueConfig);
+                }
               }
             }
           } else {
-            console.warn("No values found in response", {
-              columnKey: column.key,
-              apiColumnKey: apiColumnKey,
-              apiParams,
-              responseData: response.data
-            });
             setDynamicValues([]);
           }
         } else {
-          const errorMessage = response.message || 
-            (response.data && typeof response.data === 'object' && 'message' in response.data 
-              ? String(response.data.message) 
-              : 'Error desconocido al obtener valores');
-          console.error("Failed to fetch distinct values:", errorMessage, {
-            columnKey: column.key,
-            apiColumnKey: apiColumnKey,
-            apiParams,
-            response
-          });
           setDynamicValues([]);
         }
       })
       .catch((error) => {
-        console.error("Error fetching distinct values:", error, {
-          columnKey: column.key,
-          apiColumnKey: apiColumnKey,
-          apiParams
-        });
+        console.error("Error fetching distinct values:", error);
         setDynamicValues([]);
-        lastRequestRef.current = ""; // Reset on error to allow retry
+        lastRequestRef.current = "";
       })
       .finally(() => {
         setLoadingDynamic(false);
       });
   };
 
-  // Ensure value is always dynamic type
-  useEffect(() => {
-    if (value.type !== "dynamic") {
-      const newConfig: DynamicValueConfig = {
-        type: "dynamic",
-        selectedValues: [],
-      };
-      onValueChange(newConfig);
+  // Helper to get default operator for a value
+  const getDefaultOperatorForValue = (): FilterOperator => {
+    if (operatorMode === "column") {
+      return operator;
     }
-  }, [value.type, onValueChange]);
+    return "equal";
+  };
 
-
+  // Toggle dynamic value selection
   const toggleDynamicValue = (val: string) => {
-    if (value.type !== "dynamic") return;
-    const dynamicConfig = value as DynamicValueConfig;
-
-    const newSelected = dynamicConfig.selectedValues.includes(val)
-      ? dynamicConfig.selectedValues.filter((v) => v !== val)
-      : [...dynamicConfig.selectedValues, val];
-
-    onValueChange({ ...dynamicConfig, selectedValues: newSelected });
+    const defaultOp = getDefaultOperatorForValue();
+    
+    if (value.type === "dynamic") {
+      const dynamicConfig = value as DynamicValueConfig;
+      const existingIndex = dynamicConfig.selectedValues.findIndex(v => v.value === val);
+      
+      if (existingIndex >= 0) {
+        const newSelected = dynamicConfig.selectedValues.filter((v) => v.value !== val);
+        onValueChange({ ...dynamicConfig, selectedValues: newSelected });
+      } else {
+        const newValue: ValueItem = {
+          value: val,
+          operator: operatorMode === "per-value" ? defaultOp : undefined,
+        };
+        onValueChange({ ...dynamicConfig, selectedValues: [...dynamicConfig.selectedValues, newValue] });
+      }
+    } else if (value.type === "mixed") {
+      const mixedConfig = value as MixedValueConfig;
+      const existingIndex = mixedConfig.dynamicValues.findIndex(v => v.value === val);
+      
+      if (existingIndex >= 0) {
+        const newDynamicValues = mixedConfig.dynamicValues.filter((v) => v.value !== val);
+        onValueChange({ ...mixedConfig, dynamicValues: newDynamicValues });
+      } else {
+        const newValue: ValueItem = {
+          value: val,
+          operator: operatorMode === "per-value" ? defaultOp : undefined,
+        };
+        onValueChange({ ...mixedConfig, dynamicValues: [...mixedConfig.dynamicValues, newValue] });
+      }
+    }
   };
 
   const toggleSelectAllDynamicValues = () => {
-    if (value.type !== "dynamic") return;
-    const dynamicConfig = value as DynamicValueConfig;
+    const defaultOp = getDefaultOperatorForValue();
+    
+    if (value.type === "dynamic") {
+      const dynamicConfig = value as DynamicValueConfig;
+      const selectedValues = dynamicConfig.selectedValues.map(v => v.value);
+      const allSelected = dynamicValues.length > 0 && 
+        dynamicValues.every(val => selectedValues.includes(val));
 
-    // Check if all values are already selected
-    const allSelected = dynamicValues.length > 0 && 
-      dynamicValues.every(val => dynamicConfig.selectedValues.includes(val));
+      if (allSelected) {
+        onValueChange({ ...dynamicConfig, selectedValues: [] });
+      } else {
+        const newValues: ValueItem[] = dynamicValues.map(val => ({
+          value: val,
+          operator: operatorMode === "per-value" ? defaultOp : undefined,
+        }));
+        onValueChange({ ...dynamicConfig, selectedValues: newValues });
+      }
+    } else if (value.type === "mixed") {
+      const mixedConfig = value as MixedValueConfig;
+      const selectedValues = mixedConfig.dynamicValues.map(v => v.value);
+      const allSelected = dynamicValues.length > 0 && 
+        dynamicValues.every(val => selectedValues.includes(val));
 
-    if (allSelected) {
-      // Deselect all
-      onValueChange({ ...dynamicConfig, selectedValues: [] });
-    } else {
-      // Select all
-      onValueChange({ ...dynamicConfig, selectedValues: [...dynamicValues] });
+      if (allSelected) {
+        onValueChange({ ...mixedConfig, dynamicValues: [] });
+      } else {
+        const newValues: ValueItem[] = dynamicValues.map(val => ({
+          value: val,
+          operator: operatorMode === "per-value" ? defaultOp : undefined,
+        }));
+        onValueChange({ ...mixedConfig, dynamicValues: newValues });
+      }
+    }
+  };
+
+  // Add manual value
+  const addManualValue = () => {
+    if (!newManualValue.trim()) return;
+    const selectedOp = operatorMode === "per-value" ? newManualOperator : getDefaultOperatorForValue();
+    const newValue: ValueItem = {
+      value: newManualValue.trim(),
+      label: newManualLabel.trim() || undefined,
+      operator: operatorMode === "per-value" ? selectedOp : undefined,
+    };
+
+    if (value.type === "manual") {
+      const manualConfig = value as ManualValueConfig;
+      onValueChange({
+        ...manualConfig,
+        values: [...(manualConfig.values || []), newValue],
+      });
+    } else if (value.type === "mixed") {
+      const mixedConfig = value as MixedValueConfig;
+      onValueChange({
+        ...mixedConfig,
+        manualValues: [...mixedConfig.manualValues, newValue],
+      });
+    }
+    setNewManualValue("");
+    setNewManualLabel("");
+    setNewManualOperator("equal"); // Reset to default
+  };
+
+  // Remove manual value
+  const removeManualValue = (index: number, isMixed: boolean = false) => {
+    if (value.type === "manual") {
+      const manualConfig = value as ManualValueConfig;
+      const newValues = (manualConfig.values || []).filter((_, i) => i !== index);
+      onValueChange({ ...manualConfig, values: newValues });
+    } else if (value.type === "mixed") {
+      const mixedConfig = value as MixedValueConfig;
+      if (isMixed) {
+        const newManualValues = mixedConfig.manualValues.filter((_, i) => i !== index);
+        onValueChange({ ...mixedConfig, manualValues: newManualValues });
+      }
+    }
+  };
+
+  // Update value operator (for per-value mode)
+  const updateValueOperator = (valueItem: ValueItem, newOperator: FilterOperator, isDynamic: boolean, index: number) => {
+    if (value.type === "dynamic") {
+      const dynamicConfig = value as DynamicValueConfig;
+      const newSelectedValues = [...dynamicConfig.selectedValues];
+      newSelectedValues[index] = { ...valueItem, operator: newOperator };
+      onValueChange({ ...dynamicConfig, selectedValues: newSelectedValues });
+    } else if (value.type === "manual") {
+      const manualConfig = value as ManualValueConfig;
+      const newValues = [...(manualConfig.values || [])];
+      newValues[index] = { ...valueItem, operator: newOperator };
+      onValueChange({ ...manualConfig, values: newValues });
+    } else if (value.type === "mixed") {
+      const mixedConfig = value as MixedValueConfig;
+      if (isDynamic) {
+        const newDynamicValues = [...mixedConfig.dynamicValues];
+        newDynamicValues[index] = { ...valueItem, operator: newOperator };
+        onValueChange({ ...mixedConfig, dynamicValues: newDynamicValues });
+      } else {
+        const newManualValues = [...mixedConfig.manualValues];
+        newManualValues[index] = { ...valueItem, operator: newOperator };
+        onValueChange({ ...mixedConfig, manualValues: newManualValues });
+      }
+    }
+  };
+
+  // Add range
+  const addRange = () => {
+    if (!newRangeLabel || !newRangeMin || !newRangeMax) return;
+    const min = parseFloat(newRangeMin);
+    const max = parseFloat(newRangeMax);
+    if (isNaN(min) || isNaN(max) || min >= max) return;
+
+    const defaultOp = getDefaultOperatorForValue();
+    const newRange: RangeItem = {
+      label: newRangeLabel,
+      min,
+      max,
+      operator: operatorMode === "per-value" ? defaultOp : undefined,
+    };
+
+    if (value.type === "manual") {
+      const manualConfig = value as ManualValueConfig;
+      onValueChange({
+        ...manualConfig,
+        ranges: [...(manualConfig.ranges || []), newRange],
+      });
+    } else if (value.type === "mixed") {
+      const mixedConfig = value as MixedValueConfig;
+      onValueChange({
+        ...mixedConfig,
+        ranges: [...(mixedConfig.ranges || []), newRange],
+      });
+    }
+    setNewRangeLabel("");
+    setNewRangeMin("");
+    setNewRangeMax("");
+  };
+
+  // Remove range
+  const removeRange = (index: number) => {
+    if (value.type === "manual") {
+      const manualConfig = value as ManualValueConfig;
+      const newRanges = (manualConfig.ranges || []).filter((_, i) => i !== index);
+      onValueChange({ ...manualConfig, ranges: newRanges });
+    } else if (value.type === "mixed") {
+      const mixedConfig = value as MixedValueConfig;
+      const newRanges = (mixedConfig.ranges || []).filter((_, i) => i !== index);
+      onValueChange({ ...mixedConfig, ranges: newRanges });
+    }
+  };
+
+  // Update range operator
+  const updateRangeOperator = (range: RangeItem, newOperator: FilterOperator, index: number) => {
+    if (value.type === "manual") {
+      const manualConfig = value as ManualValueConfig;
+      const newRanges = [...(manualConfig.ranges || [])];
+      newRanges[index] = { ...range, operator: newOperator };
+      onValueChange({ ...manualConfig, ranges: newRanges });
+    } else if (value.type === "mixed") {
+      const mixedConfig = value as MixedValueConfig;
+      const newRanges = [...(mixedConfig.ranges || [])];
+      newRanges[index] = { ...range, operator: newOperator };
+      onValueChange({ ...mixedConfig, ranges: newRanges });
+    }
+  };
+
+  // Handle value type change
+  const handleValueTypeChange = (newType: "dynamic" | "manual" | "mixed") => {
+    if (newType === "dynamic") {
+      onValueChange({
+        type: "dynamic",
+        selectedValues: [],
+      });
+    } else if (newType === "manual") {
+      if (isRangeOperator) {
+        onValueChange({
+          type: "manual",
+          ranges: [],
+        });
+      } else {
+        onValueChange({
+          type: "manual",
+          values: [],
+        });
+      }
+    } else if (newType === "mixed") {
+      onValueChange({
+        type: "mixed",
+        dynamicValues: [],
+        manualValues: [],
+        ranges: isRangeOperator ? [] : undefined,
+      });
     }
   };
 
@@ -284,103 +485,620 @@ export function ValueConfigurator({
     );
   }
 
+  // Determine current tab based on value type
+  const currentTab = value.type === "dynamic" ? "dynamic" : value.type === "manual" ? "manual" : "mixed";
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <Label>Configuración de Valores</Label>
       </div>
 
-      <Card>
-        <CardContent className="pt-4">
-          {loadingDynamic ? (
-            <div className="flex flex-col items-center justify-center py-8">
-              <p className="text-sm text-muted-foreground mb-2">
-                Cargando valores únicos...
-              </p>
-            </div>
-          ) : dynamicValues.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-8 space-y-4">
-              <p className="text-sm text-muted-foreground text-center">
-                {supportsDynamic 
-                  ? "Haz clic en el botón para cargar los valores disponibles"
-                  : "Esta columna no soporta carga dinámica de valores"}
-              </p>
-              {supportsDynamic && (
-                <Button
-                  type="button"
-                  onClick={fetchDynamicValues}
-                  disabled={disabled || !column}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Cargar Valores
-                </Button>
+      <Tabs value={currentTab} onValueChange={(v) => handleValueTypeChange(v as "dynamic" | "manual" | "mixed")}>
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="dynamic" disabled={!supportsDynamic || disabled}>
+            Dinámico
+          </TabsTrigger>
+          <TabsTrigger value="manual" disabled={disabled}>
+            Manual
+          </TabsTrigger>
+          <TabsTrigger value="mixed" disabled={!supportsDynamic || disabled}>
+            Mixto
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Dynamic Tab */}
+        <TabsContent value="dynamic" className="mt-4">
+          <Card>
+            <CardContent className="pt-4">
+              {loadingDynamic ? (
+                <div className="flex flex-col items-center justify-center py-8">
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Cargando valores únicos...
+                  </p>
+                </div>
+              ) : dynamicValues.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-8 space-y-4">
+                  <p className="text-sm text-muted-foreground text-center">
+                    Haz clic en el botón para cargar los valores disponibles desde la API
+                  </p>
+                  <Button
+                    type="button"
+                    onClick={fetchDynamicValues}
+                    disabled={disabled || !column}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Cargar Valores de la API
+                  </Button>
+                </div>
+              ) : (
+                (() => {
+                  const dynamicConfig = value.type === "dynamic" ? value as DynamicValueConfig : { selectedValues: [] as ValueItem[] };
+                  const selectedValues = dynamicConfig.selectedValues.map(v => v.value);
+                  return (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label>Selecciona los valores a incluir en el filtro</Label>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={fetchDynamicValues}
+                            disabled={disabled}
+                            title="Recargar valores"
+                          >
+                            Actualizar
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={toggleSelectAllDynamicValues}
+                            disabled={disabled || dynamicValues.length === 0}
+                          >
+                            {dynamicValues.length > 0 && 
+                             dynamicValues.every(val => selectedValues.includes(val))
+                              ? "Deseleccionar todo"
+                              : "Seleccionar todo"}
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 max-h-64 overflow-y-auto">
+                        {dynamicValues.map((val) => {
+                          const valueItem = dynamicConfig.selectedValues.find(v => v.value === val);
+                          const isSelected = !!valueItem;
+                          return (
+                            <div
+                              key={val}
+                              className="flex items-center gap-2 p-2 border rounded hover:bg-muted/50"
+                            >
+                              <Checkbox
+                                id={`dynamic-${val}`}
+                                checked={isSelected}
+                                onCheckedChange={() => toggleDynamicValue(val)}
+                                disabled={disabled}
+                              />
+                              <Label
+                                htmlFor={`dynamic-${val}`}
+                                className="flex-1 cursor-pointer text-sm"
+                              >
+                                {val}
+                              </Label>
+                              {isSelected && operatorMode === "per-value" && (
+                                <Select
+                                  value={valueItem?.operator || "equal"}
+                                  onValueChange={(op: FilterOperator) => {
+                                    if (valueItem) {
+                                      const index = dynamicConfig.selectedValues.findIndex(v => v.value === val);
+                                      updateValueOperator(valueItem, op, true, index);
+                                    }
+                                  }}
+                                  disabled={disabled}
+                                >
+                                  <SelectTrigger className="w-32 h-7 text-xs">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {availableOperators.map((op) => (
+                                      <SelectItem key={op.value} value={op.value}>
+                                        {op.label}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                      {dynamicConfig.selectedValues.length > 0 && (
+                        <p className="text-xs text-muted-foreground">
+                          {dynamicConfig.selectedValues.length} valor(es) seleccionado(s)
+                        </p>
+                      )}
+                    </div>
+                  );
+                })()
               )}
-            </div>
-          ) : (
-            (() => {
-              const dynamicConfig = value.type === "dynamic" ? value as DynamicValueConfig : { selectedValues: [] as string[] };
-              return (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label>Selecciona los valores a incluir en el filtro</Label>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={fetchDynamicValues}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Manual Tab */}
+        <TabsContent value="manual" className="mt-4">
+          <Card>
+            <CardContent className="pt-4">
+              {isRangeOperator ? (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Rangos de Valores</Label>
+                    <div className="grid grid-cols-4 gap-2">
+                      <Input
+                        placeholder="Etiqueta (ej: $500k-$1M)"
+                        value={newRangeLabel}
+                        onChange={(e) => setNewRangeLabel(e.target.value)}
                         disabled={disabled}
-                        title="Recargar valores"
-                      >
-                        Actualizar
-                      </Button>
+                      />
+                      <Input
+                        type="number"
+                        placeholder="Mínimo"
+                        value={newRangeMin}
+                        onChange={(e) => setNewRangeMin(e.target.value)}
+                        disabled={disabled}
+                      />
+                      <Input
+                        type="number"
+                        placeholder="Máximo"
+                        value={newRangeMax}
+                        onChange={(e) => setNewRangeMax(e.target.value)}
+                        disabled={disabled}
+                      />
                       <Button
                         type="button"
-                        variant="outline"
+                        onClick={addRange}
+                        disabled={disabled || !newRangeLabel || !newRangeMin || !newRangeMax}
                         size="sm"
-                        onClick={toggleSelectAllDynamicValues}
-                        disabled={disabled || dynamicValues.length === 0}
                       >
-                        {dynamicValues.length > 0 && 
-                         dynamicValues.every(val => dynamicConfig.selectedValues.includes(val))
-                          ? "Deseleccionar todo"
-                          : "Seleccionar todo"}
+                        <Plus className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-2 max-h-64 overflow-y-auto">
-                    {dynamicValues.map((val) => (
-                      <div
-                        key={val}
-                        className="flex items-center gap-2 p-2 border rounded hover:bg-muted/50"
-                      >
-                        <Checkbox
-                          id={`dynamic-${val}`}
-                          checked={dynamicConfig.selectedValues.includes(val)}
-                          onCheckedChange={() => toggleDynamicValue(val)}
-                          disabled={disabled}
-                        />
-                        <Label
-                          htmlFor={`dynamic-${val}`}
-                          className="flex-1 cursor-pointer text-sm"
+                  {value.type === "manual" && value.ranges && value.ranges.length > 0 && (
+                    <div className="space-y-2">
+                      {value.ranges.map((range, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between p-2 border rounded gap-2"
                         >
-                          {val}
-                        </Label>
+                          <div className="flex items-center gap-2 flex-1">
+                            <span className="text-sm">
+                              {range.label}: {range.min} - {range.max}
+                            </span>
+                            {operatorMode === "per-value" && (
+                              <Select
+                                value={range.operator || "equal"}
+                                onValueChange={(op: FilterOperator) => updateRangeOperator(range, op, index)}
+                                disabled={disabled}
+                              >
+                                <SelectTrigger className="w-32 h-7 text-xs">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {availableOperators.map((op) => (
+                                    <SelectItem key={op.value} value={op.value}>
+                                      {op.label}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            )}
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeRange(index)}
+                            disabled={disabled}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Valores de Lista</Label>
+                    <div className={`grid gap-2 ${operatorMode === "per-value" ? "grid-cols-4" : "grid-cols-3"}`}>
+                      <Input
+                        placeholder="Valor de comparación *"
+                        value={newManualValue}
+                        onChange={(e) => setNewManualValue(e.target.value)}
+                        disabled={disabled}
+                      />
+                      <Input
+                        placeholder="Etiqueta (opcional)"
+                        value={newManualLabel}
+                        onChange={(e) => setNewManualLabel(e.target.value)}
+                        disabled={disabled}
+                      />
+                      {operatorMode === "per-value" && (
+                        <Select
+                          value={newManualOperator}
+                          onValueChange={(op: FilterOperator) => setNewManualOperator(op)}
+                          disabled={disabled}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {availableOperators.map((op) => (
+                              <SelectItem key={op.value} value={op.value}>
+                                {op.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                      <Button
+                        type="button"
+                        onClick={addManualValue}
+                        disabled={disabled || !newManualValue.trim() || (operatorMode === "per-value" && !newManualOperator)}
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      El valor de comparación es obligatorio. La etiqueta es opcional y se usará para mostrar en el frontend.
+                      {operatorMode === "per-value" && " Debes seleccionar un operador antes de agregar el valor."}
+                    </p>
+                  </div>
+                  {value.type === "manual" && value.values && value.values.length > 0 && (
+                    <div className="space-y-2">
+                      {value.values.map((valueItem, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between p-2 border rounded gap-2"
+                        >
+                          <div className="flex items-center gap-2 flex-1">
+                            <Badge variant="secondary" className="flex flex-col items-start gap-1">
+                              <span>{valueItem.label || valueItem.value}</span>
+                              {valueItem.label && (
+                                <span className="text-xs text-muted-foreground font-normal">
+                                  Valor: {valueItem.value}
+                                </span>
+                              )}
+                            </Badge>
+                            {operatorMode === "per-value" && (
+                              <Select
+                                value={valueItem.operator || "equal"}
+                                onValueChange={(op: FilterOperator) => updateValueOperator(valueItem, op, false, index)}
+                                disabled={disabled}
+                              >
+                                <SelectTrigger className="w-32 h-7 text-xs">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {availableOperators.map((op) => (
+                                    <SelectItem key={op.value} value={op.value}>
+                                      {op.label}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            )}
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeManualValue(index)}
+                            disabled={disabled}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Mixed Tab */}
+        <TabsContent value="mixed" className="mt-4">
+          <Card>
+            <CardContent className="pt-4 space-y-6">
+              {/* Dynamic Values Section */}
+              <div className="space-y-2">
+                <Label>Valores Dinámicos</Label>
+                {loadingDynamic ? (
+                  <p className="text-sm text-muted-foreground">Cargando valores únicos...</p>
+                ) : dynamicValues.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-4 space-y-2">
+                    <p className="text-sm text-muted-foreground text-center">
+                      Cargar valores desde la API
+                    </p>
+                    <Button
+                      type="button"
+                      onClick={fetchDynamicValues}
+                      disabled={disabled || !column}
+                      size="sm"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Cargar Valores
+                    </Button>
+                  </div>
+                ) : (
+                  (() => {
+                    const mixedConfig = value.type === "mixed" ? value as MixedValueConfig : { dynamicValues: [] as ValueItem[] };
+                    const selectedValues = mixedConfig.dynamicValues.map(v => v.value);
+                    return (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-muted-foreground">Selecciona valores dinámicos</span>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={fetchDynamicValues}
+                              disabled={disabled}
+                            >
+                              Actualizar
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={toggleSelectAllDynamicValues}
+                              disabled={disabled || dynamicValues.length === 0}
+                            >
+                              {dynamicValues.length > 0 && 
+                               dynamicValues.every(val => selectedValues.includes(val))
+                                ? "Deseleccionar todo"
+                                : "Seleccionar todo"}
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
+                          {dynamicValues.map((val) => {
+                            const valueItem = mixedConfig.dynamicValues.find(v => v.value === val);
+                            const isSelected = !!valueItem;
+                            return (
+                              <div
+                                key={val}
+                                className="flex items-center gap-2 p-2 border rounded hover:bg-muted/50"
+                              >
+                                <Checkbox
+                                  id={`mixed-dynamic-${val}`}
+                                  checked={isSelected}
+                                  onCheckedChange={() => toggleDynamicValue(val)}
+                                  disabled={disabled}
+                                />
+                                <Label
+                                  htmlFor={`mixed-dynamic-${val}`}
+                                  className="flex-1 cursor-pointer text-sm"
+                                >
+                                  {val}
+                                </Label>
+                                {isSelected && operatorMode === "per-value" && (
+                                  <Select
+                                    value={valueItem?.operator || "equal"}
+                                    onValueChange={(op: FilterOperator) => {
+                                      if (valueItem) {
+                                        const index = mixedConfig.dynamicValues.findIndex(v => v.value === val);
+                                        updateValueOperator(valueItem, op, true, index);
+                                      }
+                                    }}
+                                    disabled={disabled}
+                                  >
+                                    <SelectTrigger className="w-32 h-7 text-xs">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {availableOperators.map((op) => (
+                                        <SelectItem key={op.value} value={op.value}>
+                                          {op.label}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })()
+                )}
+              </div>
+
+              {/* Manual Values Section */}
+              <div className="space-y-2 border-t pt-4">
+                <Label>Valores Manuales</Label>
+                <div className={`grid gap-2 ${operatorMode === "per-value" ? "grid-cols-4" : "grid-cols-3"}`}>
+                  <Input
+                    placeholder="Valor de comparación *"
+                    value={newManualValue}
+                    onChange={(e) => setNewManualValue(e.target.value)}
+                    disabled={disabled}
+                  />
+                  <Input
+                    placeholder="Etiqueta (opcional)"
+                    value={newManualLabel}
+                    onChange={(e) => setNewManualLabel(e.target.value)}
+                    disabled={disabled}
+                  />
+                  {operatorMode === "per-value" && (
+                    <Select
+                      value={newManualOperator}
+                      onValueChange={(op: FilterOperator) => setNewManualOperator(op)}
+                      disabled={disabled}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableOperators.map((op) => (
+                          <SelectItem key={op.value} value={op.value}>
+                            {op.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                  <Button
+                    type="button"
+                    onClick={addManualValue}
+                    disabled={disabled || !newManualValue.trim() || (operatorMode === "per-value" && !newManualOperator)}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  El valor de comparación es obligatorio. La etiqueta es opcional y se usará para mostrar en el frontend.
+                  {operatorMode === "per-value" && " Debes seleccionar un operador antes de agregar el valor."}
+                </p>
+                {value.type === "mixed" && value.manualValues && value.manualValues.length > 0 && (
+                  <div className="space-y-2">
+                    {value.manualValues.map((valueItem, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between p-2 border rounded gap-2"
+                      >
+                        <div className="flex items-center gap-2 flex-1">
+                          <Badge variant="secondary" className="flex flex-col items-start gap-1">
+                            <span>{valueItem.label || valueItem.value}</span>
+                            {valueItem.label && (
+                              <span className="text-xs text-muted-foreground font-normal">
+                                Valor: {valueItem.value}
+                              </span>
+                            )}
+                          </Badge>
+                          {operatorMode === "per-value" && (
+                            <Select
+                              value={valueItem.operator || "equal"}
+                              onValueChange={(op: FilterOperator) => updateValueOperator(valueItem, op, false, index)}
+                              disabled={disabled}
+                            >
+                              <SelectTrigger className="w-32 h-7 text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {availableOperators.map((op) => (
+                                  <SelectItem key={op.value} value={op.value}>
+                                    {op.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          )}
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeManualValue(index, true)}
+                          disabled={disabled}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
                       </div>
                     ))}
                   </div>
-                  {dynamicConfig.selectedValues.length > 0 && (
-                    <p className="text-xs text-muted-foreground">
-                      {dynamicConfig.selectedValues.length} valor(es) seleccionado(s)
-                    </p>
+                )}
+              </div>
+
+              {/* Ranges Section (if range operator) */}
+              {isRangeOperator && (
+                <div className="space-y-2 border-t pt-4">
+                  <Label>Rangos</Label>
+                  <div className="grid grid-cols-4 gap-2">
+                    <Input
+                      placeholder="Etiqueta"
+                      value={newRangeLabel}
+                      onChange={(e) => setNewRangeLabel(e.target.value)}
+                      disabled={disabled}
+                    />
+                    <Input
+                      type="number"
+                      placeholder="Mínimo"
+                      value={newRangeMin}
+                      onChange={(e) => setNewRangeMin(e.target.value)}
+                      disabled={disabled}
+                    />
+                    <Input
+                      type="number"
+                      placeholder="Máximo"
+                      value={newRangeMax}
+                      onChange={(e) => setNewRangeMax(e.target.value)}
+                      disabled={disabled}
+                    />
+                    <Button
+                      type="button"
+                      onClick={addRange}
+                      disabled={disabled || !newRangeLabel || !newRangeMin || !newRangeMax}
+                      size="sm"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  {value.type === "mixed" && value.ranges && value.ranges.length > 0 && (
+                    <div className="space-y-2">
+                      {value.ranges.map((range, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between p-2 border rounded gap-2"
+                        >
+                          <div className="flex items-center gap-2 flex-1">
+                            <span className="text-sm">
+                              {range.label}: {range.min} - {range.max}
+                            </span>
+                            {operatorMode === "per-value" && (
+                              <Select
+                                value={range.operator || "equal"}
+                                onValueChange={(op: FilterOperator) => updateRangeOperator(range, op, index)}
+                                disabled={disabled}
+                              >
+                                <SelectTrigger className="w-32 h-7 text-xs">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {availableOperators.map((op) => (
+                                    <SelectItem key={op.value} value={op.value}>
+                                      {op.label}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            )}
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeRange(index)}
+                            disabled={disabled}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
                   )}
                 </div>
-              );
-            })()
-          )}
-        </CardContent>
-      </Card>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
-
