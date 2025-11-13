@@ -31,7 +31,7 @@ const DISPLAY_TYPE_OPTIONS: Array<{
     label: "Checkboxes",
     description: "Selección múltiple con casillas",
     icon: CheckSquare,
-    compatibleOperators: ["includes", "in", "not_in", "equal"],
+    compatibleOperators: ["includes", "equal"],
   },
   {
     value: "radio",
@@ -52,7 +52,7 @@ const DISPLAY_TYPE_OPTIONS: Array<{
     label: "Multi-Select",
     description: "Dropdown con selección múltiple",
     icon: List,
-    compatibleOperators: ["includes", "in", "not_in"],
+    compatibleOperators: ["includes"],
   },
   {
     value: "single_select",

@@ -36,8 +36,7 @@ export type FilterOperator =
   | "starts_with" // String starts with
   | "ends_with" // String ends with
   | "not_equal" // Not equal
-  | "not_in" // Not in array
-  | "in"; // In array
+ 
 
 /**
  * Display types for filters in the frontend
