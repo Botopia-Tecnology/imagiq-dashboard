@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -20,11 +20,15 @@ import { DynamicValueConfig, ManualValueConfig, MixedValueConfig } from "@/types
 export default function VerFiltroPage() {
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
   const filterId = params.id as string;
   const { categories, loading: categoriesLoading } = useCategories();
   const { columns } = useProductColumns();
   const [viewingFilter, setViewingFilter] = useState<DynamicFilter | undefined>();
   const [loading, setLoading] = useState(true);
+  
+  // Get the view type from query parameter to know where to return
+  const vista = searchParams.get("vista") || "agrupada";
 
   // Load filter by ID from API
   useEffect(() => {
@@ -59,12 +63,12 @@ export default function VerFiltroPage() {
           setViewingFilter(filter);
         } else {
           toast.error(response.message || "Filtro no encontrado");
-          router.push("/pagina-web/filtros");
+          router.push(`/pagina-web/filtros?vista=${vista}`);
         }
       } catch (error) {
         console.error("Error loading filter:", error);
         toast.error("Error al cargar el filtro");
-        router.push("/pagina-web/filtros");
+        router.push(`/pagina-web/filtros?vista=${vista}`);
       } finally {
         setLoading(false);
       }
@@ -157,7 +161,7 @@ export default function VerFiltroPage() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => router.push("/pagina-web/filtros")}
+            onClick={() => router.push(`/pagina-web/filtros?vista=${vista}`)}
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Volver
@@ -172,7 +176,7 @@ export default function VerFiltroPage() {
             </p>
           </div>
         </div>
-        <Button onClick={() => router.push(`/pagina-web/filtros/${filterId}/editar`)}>
+        <Button onClick={() => router.push(`/pagina-web/filtros/${filterId}/editar?vista=${vista}`)}>
           <Edit className="h-4 w-4 mr-2" />
           Editar Filtro
         </Button>

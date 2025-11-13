@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -59,6 +59,7 @@ interface GroupedFilters {
 
 export default function FiltrosPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { categories, loading: categoriesLoading } = useCategories();
   const { columns } = useProductColumns();
   const { filters, isLoading: filtersLoading, deleteFilter, deleteBulk, createFilter, refreshFilters } = useFilters();
@@ -74,6 +75,16 @@ export default function FiltrosPage() {
   const [draggedFilter, setDraggedFilter] = useState<{ filter: DynamicFilter; scopeType: 'category' | 'menu' | 'submenu'; scopeId: string } | null>(null);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [expandedMenus, setExpandedMenus] = useState<Set<string>>(new Set());
+  
+  // Get active tab from URL query parameter, default to "agrupada"
+  const activeTab = searchParams.get("vista") || "agrupada";
+  const [currentTab, setCurrentTab] = useState<"grouped" | "table">(activeTab === "tabla" ? "table" : "grouped");
+  
+  // Update tab when URL parameter changes
+  useEffect(() => {
+    const vista = searchParams.get("vista") || "agrupada";
+    setCurrentTab(vista === "tabla" ? "table" : "grouped");
+  }, [searchParams]);
 
   // Group filters by category/menu/submenu
   const groupedFilters = useMemo(() => {
@@ -142,11 +153,13 @@ export default function FiltrosPage() {
   };
 
   const handleEdit = (filter: DynamicFilter) => {
-    router.push(`/pagina-web/filtros/${filter.id}/editar`);
+    const vista = currentTab === "table" ? "tabla" : "agrupada";
+    router.push(`/pagina-web/filtros/${filter.id}/editar?vista=${vista}`);
   };
 
   const handleView = (filter: DynamicFilter) => {
-    router.push(`/pagina-web/filtros/${filter.id}/ver`);
+    const vista = currentTab === "table" ? "tabla" : "agrupada";
+    router.push(`/pagina-web/filtros/${filter.id}/ver?vista=${vista}`);
   };
 
   const handleDelete = (filter: DynamicFilter) => {
@@ -576,7 +589,11 @@ export default function FiltrosPage() {
       </div>
 
       {/* Tabs for different views */}
-      <Tabs defaultValue="grouped" className="w-full">
+      <Tabs value={currentTab} onValueChange={(value) => {
+        setCurrentTab(value as "grouped" | "table");
+        const vista = value === "table" ? "tabla" : "agrupada";
+        router.push(`/pagina-web/filtros?vista=${vista}`, { scroll: false });
+      }} className="w-full">
         <TabsList>
           <TabsTrigger value="grouped">Vista Agrupada</TabsTrigger>
           <TabsTrigger value="table">Vista de Tabla</TabsTrigger>

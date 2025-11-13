@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
@@ -16,12 +16,16 @@ import { toast } from "sonner";
 export default function EditarFiltroPage() {
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
   const filterId = params.id as string;
   const { categories, loading: categoriesLoading } = useCategories();
   const { updateFilter } = useFilters();
   const [editingFilter, setEditingFilter] = useState<DynamicFilter | undefined>();
   const [isSaving, setIsSaving] = useState(false);
   const [loading, setLoading] = useState(true);
+  
+  // Get the view type from query parameter to know where to return
+  const vista = searchParams.get("vista") || "agrupada";
 
   // Load filter by ID from API
   useEffect(() => {
@@ -56,12 +60,12 @@ export default function EditarFiltroPage() {
           setEditingFilter(filter);
         } else {
           toast.error(response.message || "Filtro no encontrado");
-          router.push("/pagina-web/filtros");
+          router.push(`/pagina-web/filtros?vista=${vista}`);
         }
       } catch (error) {
         console.error("Error loading filter:", error);
         toast.error("Error al cargar el filtro");
-        router.push("/pagina-web/filtros");
+        router.push(`/pagina-web/filtros?vista=${vista}`);
       } finally {
         setLoading(false);
       }
@@ -107,7 +111,7 @@ export default function EditarFiltroPage() {
       const updatedFilter = await updateFilter(filterId, updatePayload);
       
       if (updatedFilter) {
-        router.push("/pagina-web/filtros");
+        router.push(`/pagina-web/filtros?vista=${vista}`);
       }
     } catch (error) {
       toast.error("Error al guardar el filtro");
@@ -118,7 +122,7 @@ export default function EditarFiltroPage() {
   };
 
   const handleCancel = () => {
-    router.push("/pagina-web/filtros");
+    router.push(`/pagina-web/filtros?vista=${vista}`);
   };
 
   if (loading || categoriesLoading) {
@@ -142,7 +146,7 @@ export default function EditarFiltroPage() {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => router.push("/pagina-web/filtros")}
+          onClick={() => router.push(`/pagina-web/filtros?vista=${vista}`)}
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
           Volver
