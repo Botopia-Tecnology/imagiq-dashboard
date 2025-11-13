@@ -149,4 +149,37 @@ export interface ProductColumn {
   operators?: OperatorMetadata[]; // Supported operators for this column
 }
 
+/**
+ * Requirements for a display type
+ */
+export interface DisplayTypeRequirements {
+  columnType?: ("string" | "number" | "array" | "boolean")[];
+  supportsRange?: boolean;
+  supportsDynamic?: boolean;
+  minValues?: number | null;
+  maxValues?: number | null;
+}
+
+/**
+ * Display type metadata from API
+ */
+export interface DisplayTypeMetadata {
+  value: FilterDisplayType;
+  label: string;
+  description: string;
+  icon?: string;
+  isDefault?: boolean;
+  compatibleOperators: FilterOperator[];
+  requirements?: DisplayTypeRequirements;
+}
+
+/**
+ * Response from display types endpoint
+ */
+export interface DisplayTypesResponse {
+  availableTypes: DisplayTypeMetadata[];
+  defaultType: FilterDisplayType;
+  reason?: string;
+}
+
 

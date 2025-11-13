@@ -29,6 +29,7 @@ import { ValueConfigurator } from "./value-configurator";
 import { DisplayTypeSelector } from "./display-type-selector";
 import { toast } from "sonner";
 import { useProductColumns } from "@/hooks/use-product-columns";
+import { useDisplayTypes } from "@/hooks/use-display-types";
 
 interface FilterFormProps {
   filter?: DynamicFilter;
@@ -81,18 +82,24 @@ export function FilterForm({
 
   const { columns } = useProductColumns();
   const selectedColumn = columns.find((col) => col.key === column);
+  
+  // Get display types from API
+  const { displayTypes } = useDisplayTypes({
+    columnKey: column,
+    operator: operatorMode === "column" ? operator : undefined,
+  });
 
-  // Reset display type when operator changes if incompatible
+  // Reset display type when operator or column changes using API defaultType
   useEffect(() => {
-    const isRangeOperator = operator === "range";
-    const isCompatible =
-      (isRangeOperator && displayType === "slider") ||
-      (!isRangeOperator && displayType !== "slider");
-
-    if (!isCompatible) {
-      setDisplayType(isRangeOperator ? "slider" : "checkbox");
+    if (displayTypes && displayTypes.availableTypes.length > 0) {
+      const isCurrentValueAvailable = displayTypes.availableTypes.some(
+        (type) => type.value === displayType
+      );
+      if (!isCurrentValueAvailable && displayTypes.defaultType) {
+        setDisplayType(displayTypes.defaultType);
+      }
     }
-  }, [operator, displayType]);
+  }, [displayTypes, operator, column, operatorMode]);
 
   // Reset value config when operator or column changes
   useEffect(() => {
@@ -286,6 +293,7 @@ export function FilterForm({
         value={displayType}
         onValueChange={setDisplayType}
         operator={operator}
+        columnKey={column}
         disabled={isLoading}
       />
 

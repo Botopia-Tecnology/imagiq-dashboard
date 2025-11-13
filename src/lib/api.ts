@@ -10,7 +10,7 @@
 
 import { BackendCategory, BackendMenu, BackendSubmenu, CreateCategoryRequest, UpdateCategoryRequest, CreateMenuRequest, UpdateMenuRequest, CreateSubmenuRequest, UpdateSubmenuRequest, BackendWhatsAppTemplate } from "@/types";
 import { BackendBanner, BannerPaginationData } from "@/types/banner";
-import { ProductColumn } from "@/types/filters";
+import { ProductColumn, DisplayTypesResponse, FilterOperator } from "@/types/filters";
 
 
 // API Client configuration
@@ -286,6 +286,15 @@ export const productEndpoints = {
     const queryString = searchParams.toString();
     const url = `/api/products/distinct/${columnKey}${queryString ? `?${queryString}` : ""}`;
     return apiClient.get<string[]>(url);
+  },
+  getDisplayTypes: (columnKey: string, operator?: FilterOperator) => {
+    const searchParams = new URLSearchParams();
+    if (operator) {
+      searchParams.append("operator", operator);
+    }
+    const queryString = searchParams.toString();
+    const url = `/api/products/columns/${columnKey}/display-types${queryString ? `?${queryString}` : ""}`;
+    return apiClient.get<DisplayTypesResponse>(url);
   },
   updateMedia: (id: string, data: ProductMediaUpdateData) =>
     apiClient.put<ProductMediaUpdateResponse>(`/api/products/${id}/media`, data),
