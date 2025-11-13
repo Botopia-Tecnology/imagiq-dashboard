@@ -24,29 +24,14 @@ export interface FilterOrderConfig {
 }
 
 /**
- * Available filter operators
+ * Filter operator - values come from API
  */
-export type FilterOperator =
-  | "equal" // Exact match
-  | "includes" // Array contains value
-  | "range" // Between min and max (for numbers)
-  | "greater_than" // Greater than value
-  | "less_than" // Less than value
-  | "contains" // String contains substring
-  | "starts_with" // String starts with
-  | "ends_with" // String ends with
-  | "not_equal" // Not equal
- 
+export type FilterOperator = string;
 
 /**
- * Display types for filters in the frontend
+ * Display type for filters - values come from API
  */
-export type FilterDisplayType =
-  | "checkbox" // Multiple selection checkboxes
-  | "radio" // Single selection radio buttons
-  | "slider" // Range slider (for price ranges, etc.)
-  | "multi_select" // Multi-select dropdown
-  | "single_select"; // Single select dropdown
+export type FilterDisplayType = string;
 
 /**
  * Value source configuration

@@ -183,7 +183,7 @@ export function ValueConfigurator({
       return;
     }
     
-    setLoadingDynamic(true);
+      setLoadingDynamic(true);
     lastRequestRef.current = requestKey;
     
     const apiParams = mapScopeToApiParams(scope, categories);
@@ -279,7 +279,7 @@ export function ValueConfigurator({
       if (existingIndex >= 0) {
         const newDynamicValues = mixedConfig.dynamicValues.filter((v) => v.value !== val);
         onValueChange({ ...mixedConfig, dynamicValues: newDynamicValues });
-      } else {
+    } else {
         const newValue: ValueItem = {
           value: val,
           operator: operatorMode === "per-value" ? defaultOp : undefined,
@@ -632,7 +632,7 @@ export function ValueConfigurator({
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <Label>Selecciona los valores a incluir en el filtro</Label>
-                        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2">
                           <Button
                             type="button"
                             variant="outline"
@@ -670,8 +670,8 @@ export function ValueConfigurator({
                                 id={`dynamic-${val}`}
                                 checked={isSelected}
                                 onCheckedChange={() => toggleDynamicValue(val)}
-                                disabled={disabled}
-                              />
+              disabled={disabled}
+            />
                               <Label
                                 htmlFor={`dynamic-${val}`}
                                 className="flex-1 cursor-pointer text-sm"
@@ -701,7 +701,7 @@ export function ValueConfigurator({
                                   </SelectContent>
                                 </Select>
                               )}
-                            </div>
+          </div>
                           );
                         })}
                       </div>
@@ -709,8 +709,8 @@ export function ValueConfigurator({
                         <p className="text-xs text-muted-foreground">
                           {dynamicConfig.selectedValues.length} valor(es) seleccionado(s)
                         </p>
-                      )}
-                    </div>
+        )}
+      </div>
                   );
                 })()
               )}
@@ -720,54 +720,54 @@ export function ValueConfigurator({
 
         {/* Manual Tab */}
         <TabsContent value="manual" className="mt-4">
-          <Card>
-            <CardContent className="pt-4">
-              {isRangeOperator ? (
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Rangos de Valores</Label>
-                    <div className="grid grid-cols-4 gap-2">
-                      <Input
-                        placeholder="Etiqueta (ej: $500k-$1M)"
-                        value={newRangeLabel}
-                        onChange={(e) => setNewRangeLabel(e.target.value)}
-                        disabled={disabled}
-                      />
-                      <Input
-                        type="number"
-                        placeholder="Mínimo"
-                        value={newRangeMin}
-                        onChange={(e) => setNewRangeMin(e.target.value)}
-                        disabled={disabled}
-                      />
-                      <Input
-                        type="number"
-                        placeholder="Máximo"
-                        value={newRangeMax}
-                        onChange={(e) => setNewRangeMax(e.target.value)}
-                        disabled={disabled}
-                      />
-                      <Button
-                        type="button"
-                        onClick={addRange}
-                        disabled={disabled || !newRangeLabel || !newRangeMin || !newRangeMax}
-                        size="sm"
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </div>
+        <Card>
+          <CardContent className="pt-4">
+            {isRangeOperator ? (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Rangos de Valores</Label>
+                  <div className="grid grid-cols-4 gap-2">
+                    <Input
+                      placeholder="Etiqueta (ej: $500k-$1M)"
+                      value={newRangeLabel}
+                      onChange={(e) => setNewRangeLabel(e.target.value)}
+                      disabled={disabled}
+                    />
+                    <Input
+                      type="number"
+                      placeholder="Mínimo"
+                      value={newRangeMin}
+                      onChange={(e) => setNewRangeMin(e.target.value)}
+                      disabled={disabled}
+                    />
+                    <Input
+                      type="number"
+                      placeholder="Máximo"
+                      value={newRangeMax}
+                      onChange={(e) => setNewRangeMax(e.target.value)}
+                      disabled={disabled}
+                    />
+                    <Button
+                      type="button"
+                      onClick={addRange}
+                      disabled={disabled || !newRangeLabel || !newRangeMin || !newRangeMax}
+                      size="sm"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
                   </div>
+                </div>
                   {value.type === "manual" && value.ranges && value.ranges.length > 0 && (
-                    <div className="space-y-2">
-                      {value.ranges.map((range, index) => (
-                        <div
-                          key={index}
+                  <div className="space-y-2">
+                    {value.ranges.map((range, index) => (
+                      <div
+                        key={index}
                           className="flex items-center justify-between p-2 border rounded gap-2"
-                        >
+                      >
                           <div className="flex items-center gap-2 flex-1">
-                            <span className="text-sm">
-                              {range.label}: {range.min} - {range.max}
-                            </span>
+                        <span className="text-sm">
+                          {range.label}: {range.min} - {range.max}
+                        </span>
                             {operatorMode === "per-value" && (
                               <Select
                                 value={range.operator || "equal"}
@@ -787,28 +787,28 @@ export function ValueConfigurator({
                               </Select>
                             )}
                           </div>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeRange(index)}
-                            disabled={disabled}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Valores de Lista</Label>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeRange(index)}
+                          disabled={disabled}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Valores de Lista</Label>
                     {operatorMode === "per-value" && newManualOperator === "range" ? (
                       // UI para rangos cuando el operador es "range"
                       <div className="grid grid-cols-5 gap-2">
-                        <Input
+                    <Input
                           placeholder="Etiqueta *"
                           value={newManualLabel}
                           onChange={(e) => setNewManualLabel(e.target.value)}
@@ -836,9 +836,9 @@ export function ValueConfigurator({
                             if (op !== "range") {
                               setNewManualMin("");
                               setNewManualMax("");
-                            }
-                          }}
-                          disabled={disabled}
+                        }
+                      }}
+                      disabled={disabled}
                         >
                           <SelectTrigger>
                             <SelectValue />
@@ -898,14 +898,14 @@ export function ValueConfigurator({
                             </SelectContent>
                           </Select>
                         )}
-                        <Button
-                          type="button"
+                    <Button
+                      type="button"
                           onClick={addManualValue}
                           disabled={disabled || !newManualValue.trim() || (operatorMode === "per-value" && !newManualOperator)}
-                        >
-                          <Plus className="h-4 w-4" />
-                        </Button>
-                      </div>
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
                     )}
                     <p className="text-xs text-muted-foreground">
                       {operatorMode === "per-value" && newManualOperator === "range" 
@@ -913,7 +913,7 @@ export function ValueConfigurator({
                         : "El valor de comparación es obligatorio. La etiqueta es opcional y se usará para mostrar en el frontend."}
                       {operatorMode === "per-value" && newManualOperator !== "range" && " Debes seleccionar un operador antes de agregar el valor."}
                     </p>
-                  </div>
+                </div>
                   {value.type === "manual" && value.values && value.values.length > 0 && (
                     <div className="space-y-2">
                       {value.values.map((valueItem, index) => {
@@ -924,7 +924,7 @@ export function ValueConfigurator({
 
                         return (
                           <div
-                            key={index}
+                        key={index}
                             className="flex items-center justify-between p-2 border rounded gap-2"
                           >
                             {isEditing ? (
@@ -1024,7 +1024,7 @@ export function ValueConfigurator({
                                 </div>
                                 <div className="flex items-center gap-1">
                                   <Button
-                                    type="button"
+                          type="button"
                                     variant="ghost"
                                     size="sm"
                                     onClick={saveEditedValue}
@@ -1037,8 +1037,8 @@ export function ValueConfigurator({
                                     variant="ghost"
                                     size="sm"
                                     onClick={cancelEditingValue}
-                                    disabled={disabled}
-                                  >
+                          disabled={disabled}
+                        >
                                     <X className="h-4 w-4" />
                                   </Button>
                                 </div>
@@ -1052,7 +1052,7 @@ export function ValueConfigurator({
                                       <span className="text-xs text-muted-foreground font-normal">
                                         Rango: {valueItem.min} - {valueItem.max}
                                       </span>
-                                    </Badge>
+                      </Badge>
                                   ) : (
                                     <Badge variant="secondary" className="flex flex-col items-start gap-1">
                                       <span>{valueItem.label || valueItem.value}</span>
@@ -1081,7 +1081,7 @@ export function ValueConfigurator({
                                       </SelectContent>
                                     </Select>
                                   )}
-                                </div>
+                  </div>
                                 <div className="flex items-center gap-1">
                                   <Button
                                     type="button"
@@ -1108,23 +1108,23 @@ export function ValueConfigurator({
                         );
                       })}
                     </div>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
         </TabsContent>
 
         {/* Mixed Tab */}
         <TabsContent value="mixed" className="mt-4">
-          <Card>
+        <Card>
             <CardContent className="pt-4 space-y-6">
               {/* Dynamic Values Section */}
               <div className="space-y-2">
                 <Label>Valores Dinámicos</Label>
-                {loadingDynamic ? (
+            {loadingDynamic ? (
                   <p className="text-sm text-muted-foreground">Cargando valores únicos...</p>
-                ) : dynamicValues.length === 0 ? (
+            ) : dynamicValues.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-4 space-y-2">
                     <p className="text-sm text-muted-foreground text-center">
                       Cargar valores desde la API
@@ -1144,7 +1144,7 @@ export function ValueConfigurator({
                     const mixedConfig = value.type === "mixed" ? value as MixedValueConfig : { dynamicValues: [] as ValueItem[] };
                     const selectedValues = mixedConfig.dynamicValues.map(v => v.value);
                     return (
-                      <div className="space-y-2">
+              <div className="space-y-2">
                         <div className="flex items-center justify-between">
                           <span className="text-xs text-muted-foreground">Selecciona valores dinámicos</span>
                           <div className="flex items-center gap-2">
@@ -1176,22 +1176,22 @@ export function ValueConfigurator({
                             const valueItem = mixedConfig.dynamicValues.find(v => v.value === val);
                             const isSelected = !!valueItem;
                             return (
-                              <div
-                                key={val}
-                                className="flex items-center gap-2 p-2 border rounded hover:bg-muted/50"
-                              >
-                                <Checkbox
+                    <div
+                      key={val}
+                      className="flex items-center gap-2 p-2 border rounded hover:bg-muted/50"
+                    >
+                      <Checkbox
                                   id={`mixed-dynamic-${val}`}
                                   checked={isSelected}
-                                  onCheckedChange={() => toggleDynamicValue(val)}
-                                  disabled={disabled}
-                                />
-                                <Label
+                        onCheckedChange={() => toggleDynamicValue(val)}
+                        disabled={disabled}
+                      />
+                      <Label
                                   htmlFor={`mixed-dynamic-${val}`}
-                                  className="flex-1 cursor-pointer text-sm"
-                                >
-                                  {val}
-                                </Label>
+                        className="flex-1 cursor-pointer text-sm"
+                      >
+                        {val}
+                      </Label>
                                 {isSelected && operatorMode === "per-value" && (
                                   <Select
                                     value={valueItem?.operator || "equal"}
@@ -1215,7 +1215,7 @@ export function ValueConfigurator({
                                     </SelectContent>
                                   </Select>
                                 )}
-                              </div>
+                    </div>
                             );
                           })}
                         </div>
@@ -1281,7 +1281,7 @@ export function ValueConfigurator({
                     >
                       <Plus className="h-4 w-4" />
                     </Button>
-                  </div>
+                </div>
                 ) : (
                   // UI normal para valores no-rango
                   <div className={`grid gap-2 ${operatorMode === "per-value" ? "grid-cols-4" : "grid-cols-3"}`}>
@@ -1330,7 +1330,7 @@ export function ValueConfigurator({
                     </Button>
                   </div>
                 )}
-                <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-muted-foreground">
                   {operatorMode === "per-value" && newManualOperator === "range" 
                     ? "Para rangos, ingresa etiqueta, valor mínimo y máximo. Todos son obligatorios."
                     : "El valor de comparación es obligatorio. La etiqueta es opcional y se usará para mostrar en el frontend."}
@@ -1609,11 +1609,11 @@ export function ValueConfigurator({
                         </div>
                       ))}
                     </div>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
         </TabsContent>
       </Tabs>
     </div>

@@ -241,16 +241,12 @@ export default function FiltrosPage() {
     return uniqueOperators.sort();
   }, [filters]);
 
-  // Helper to get display type label
+  // Helper to get display type label from API metadata
+  // Note: In the table view, we don't have column context, so we show the value directly
+  // For better UX, we could fetch display types for each filter's column, but that would be inefficient
   const getDisplayTypeLabel = (type: FilterDisplayType): string => {
-    const labels: Record<FilterDisplayType, string> = {
-      checkbox: "Checkboxes",
-      radio: "Radio Buttons",
-      slider: "Slider de Rango",
-      multi_select: "Multi-Select",
-      single_select: "Single Select",
-    };
-    return labels[type] || type;
+    // Return the value directly since labels come from API per column
+    return type;
   };
 
   const availableTypes = useMemo(() => {
