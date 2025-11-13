@@ -207,6 +207,8 @@ export function FilterForm({
         onValueChange={setValueConfig}
         operator={operator}
         column={selectedColumn}
+        scope={scope}
+        categories={categories}
         disabled={isLoading}
       />
 

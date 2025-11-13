@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -19,39 +19,83 @@ import { X, Plus } from "lucide-react";
 import {
   FilterValueConfig,
   FilterOperator,
+  FilterScope,
   ProductColumn,
   ManualValueConfig,
   DynamicValueConfig,
 } from "@/types/filters";
+import { WebsiteCategory } from "@/types";
+import { productEndpoints } from "@/lib/api";
 
 interface ValueConfiguratorProps {
   value: FilterValueConfig;
   onValueChange: (config: FilterValueConfig) => void;
   operator: FilterOperator;
   column: ProductColumn | undefined;
+  scope?: FilterScope;
+  categories?: WebsiteCategory[];
   disabled?: boolean;
 }
 
-// Mock function to simulate fetching unique values from DB
-// In the future, this will call an API endpoint
-const fetchUniqueValues = async (
-  columnKey: string
-): Promise<string[]> => {
-  // Simulate API call delay
-  await new Promise((resolve) => setTimeout(resolve, 500));
+// Helper function to convert column key to camelCase for API
+const toCamelCase = (str: string): string => {
+  // Handle specific cases
+  if (str === "nombrecolor") {
+    return "nombreColor";
+  }
+  // nombreMarket and codigoMarket are already in camelCase, but ensure consistency
+  if (str === "nombreMarket" || str === "codigoMarket") {
+    return str;
+  }
+  // For other cases, convert snake_case or lowercase to camelCase
+  return str.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+};
 
-  // Mock data based on column
-  const mockData: Record<string, string[]> = {
-    color: ["Negro", "Blanco", "Azul", "Rosa", "Verde", "Morado", "Dorado", "Plateado"],
-    capacidad: ["64GB", "128GB", "256GB", "512GB", "1T"],
-    memoriaram: ["4GB", "6GB", "8GB", "12GB", "16GB"],
-    categoria: ["IM", "AV", "DA"],
-    menu: ["Dispositivos Móviles", "Galaxy Buds", "Aspiradoras"],
-    modelo: ["Galaxy A", "Galaxy S", "Galaxy Note"],
-    segmento: ["Premium", "Estándar", "Básico"],
-  };
+// Helper function to map scope IDs to API parameter names
+const mapScopeToApiParams = (
+  scope: FilterScope | undefined,
+  categories: WebsiteCategory[]
+): { categoria?: string; menu?: string } => {
+  if (!scope) {
+    return {};
+  }
 
-  return mockData[columnKey] || [];
+  const params: { categoria?: string; menu?: string } = {};
+
+  // Map category IDs to names
+  if (scope.categories.length > 0) {
+    const categoryNames = scope.categories
+      .map((categoryId) => {
+        const category = categories.find((c) => c.id === categoryId);
+        return category?.nombreVisible || category?.name;
+      })
+      .filter((name): name is string => !!name);
+    
+    if (categoryNames.length > 0) {
+      params.categoria = categoryNames.join(",");
+    }
+  }
+
+  // Map menu IDs to names
+  if (scope.menus.length > 0) {
+    const menuNames = scope.menus
+      .map((menuId) => {
+        for (const category of categories) {
+          const menu = category.menus.find((m) => m.id === menuId);
+          if (menu) {
+            return menu.nombreVisible || menu.name;
+          }
+        }
+        return null;
+      })
+      .filter((name): name is string => !!name);
+    
+    if (menuNames.length > 0) {
+      params.menu = menuNames.join(",");
+    }
+  }
+
+  return params;
 };
 
 export function ValueConfigurator({
@@ -59,6 +103,8 @@ export function ValueConfigurator({
   onValueChange,
   operator,
   column,
+  scope,
+  categories = [],
   disabled = false,
 }: ValueConfiguratorProps) {
   const [dynamicValues, setDynamicValues] = useState<string[]>([]);
@@ -67,20 +113,132 @@ export function ValueConfigurator({
   const [newRangeMin, setNewRangeMin] = useState("");
   const [newRangeMax, setNewRangeMax] = useState("");
   const [newListValue, setNewListValue] = useState("");
+  
+  // Use ref to track the last request to avoid duplicate calls
+  const lastRequestRef = useRef<string>("");
 
   const isRangeOperator = operator === "range";
   const supportsDynamic = column?.supportsDynamic ?? false;
 
-  // Fetch dynamic values when switching to dynamic mode
-  useEffect(() => {
-    if (value.type === "dynamic" && column && !loadingDynamic && dynamicValues.length === 0) {
-      setLoadingDynamic(true);
-      fetchUniqueValues(column.key).then((values) => {
-        setDynamicValues(values);
-        setLoadingDynamic(false);
-      });
+  // Memoize scope keys to avoid recreating strings on every render
+  const scopeCategoriesKey = useMemo(() => scope?.categories.join(",") || "", [scope?.categories]);
+  const scopeMenusKey = useMemo(() => scope?.menus.join(",") || "", [scope?.menus]);
+  const scopeSubmenusKey = useMemo(() => scope?.submenus.join(",") || "", [scope?.submenus]);
+  const selectedValuesKey = useMemo(() => {
+    if (value.type === "dynamic") {
+      const dynamicConfig = value as DynamicValueConfig;
+      return dynamicConfig.selectedValues.join(",");
     }
-  }, [value.type, column, loadingDynamic, dynamicValues.length]);
+    return "";
+  }, [value]);
+
+  // Fetch dynamic values when switching to dynamic mode or when scope/column changes
+  useEffect(() => {
+    if (value.type === "dynamic" && column && !loadingDynamic) {
+      // Convert column key to camelCase for API (e.g., nombrecolor -> nombreColor)
+      const apiColumnKey = toCamelCase(column.key);
+      
+      // Create a unique key for this request to avoid duplicates
+      const scopeKey = scope 
+        ? `${scopeCategoriesKey}|${scopeMenusKey}|${scopeSubmenusKey}`
+        : "";
+      const requestKey = `${apiColumnKey}|${scopeKey}`;
+      
+      // Skip if this is the same request as the last one
+      if (lastRequestRef.current === requestKey) {
+        return;
+      }
+      
+      setLoadingDynamic(true);
+      setDynamicValues([]); // Reset values when scope/column changes
+      lastRequestRef.current = requestKey;
+      
+      // Map scope to API parameters
+      const apiParams = mapScopeToApiParams(scope, categories);
+      
+      // Call the API endpoint
+      productEndpoints
+        .getDistinctValues(apiColumnKey, apiParams)
+        .then((response) => {
+          if (response.success) {
+            // Handle different response formats
+            let valuesArray: string[] = [];
+            
+            if (Array.isArray(response.data)) {
+              // Direct array response
+              valuesArray = response.data;
+            } else if (response.data && typeof response.data === 'object') {
+              const data = response.data as any;
+              if ('values' in data && Array.isArray(data.values)) {
+                // Wrapped in { values: [...] }
+                valuesArray = data.values;
+              } else if ('data' in data && Array.isArray(data.data)) {
+                // Double-wrapped response
+                valuesArray = data.data;
+              }
+            }
+            
+            if (valuesArray.length > 0) {
+              setDynamicValues(valuesArray);
+              // Reset selected values if they're no longer in the new list
+              const dynamicConfig = value as DynamicValueConfig;
+              if (dynamicConfig.selectedValues.length > 0) {
+                const validSelectedValues = dynamicConfig.selectedValues.filter((val) =>
+                  valuesArray.includes(val)
+                );
+                if (validSelectedValues.length !== dynamicConfig.selectedValues.length) {
+                  onValueChange({ ...value, selectedValues: validSelectedValues } as DynamicValueConfig);
+                }
+              }
+            } else {
+              console.warn("No values found in response", {
+                columnKey: column.key,
+                apiColumnKey: apiColumnKey,
+                apiParams,
+                responseData: response.data
+              });
+              setDynamicValues([]);
+            }
+          } else {
+            const errorMessage = response.message || 
+              (response.data && typeof response.data === 'object' && 'message' in response.data 
+                ? String(response.data.message) 
+                : 'Error desconocido al obtener valores');
+            console.error("Failed to fetch distinct values:", errorMessage, {
+              columnKey: column.key,
+              apiColumnKey: apiColumnKey,
+              apiParams,
+              response
+            });
+            setDynamicValues([]);
+          }
+        })
+        .catch((error) => {
+          console.error("Error fetching distinct values:", error, {
+            columnKey: column.key,
+            apiColumnKey: apiColumnKey,
+            apiParams
+          });
+          setDynamicValues([]);
+          lastRequestRef.current = ""; // Reset on error to allow retry
+        })
+        .finally(() => {
+          setLoadingDynamic(false);
+        });
+    } else if (value.type !== "dynamic") {
+      // Clear dynamic values when switching to manual mode
+      setDynamicValues([]);
+      lastRequestRef.current = "";
+    }
+  }, [
+    value.type, 
+    selectedValuesKey,
+    column?.key, 
+    scopeCategoriesKey,
+    scopeMenusKey,
+    scopeSubmenusKey,
+    categories.length
+  ]);
 
   const handleSourceToggle = (isDynamic: boolean) => {
     if (isDynamic) {

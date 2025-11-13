@@ -272,6 +272,18 @@ export const productEndpoints = {
     apiClient.get<ProductApiResponse>(`/api/products/filtered?nombre=${query}`),
   getSummary: () => apiClient.get<ProductSummary>("/api/products/summary"),
   getColumnNames: () => apiClient.get<ProductColumn[]>("/api/products/columns/metadata"),
+  getDistinctValues: (columnKey: string, params?: { categoria?: string; menu?: string }) => {
+    const searchParams = new URLSearchParams();
+    if (params?.categoria) {
+      searchParams.append("categoria", params.categoria);
+    }
+    if (params?.menu) {
+      searchParams.append("menu", params.menu);
+    }
+    const queryString = searchParams.toString();
+    const url = `/api/products/distinct/${columnKey}${queryString ? `?${queryString}` : ""}`;
+    return apiClient.get<string[]>(url);
+  },
   updateMedia: (id: string, data: ProductMediaUpdateData) =>
     apiClient.put<ProductMediaUpdateResponse>(`/api/products/${id}/media`, data),
   getMultimedia: (sku: string) =>
