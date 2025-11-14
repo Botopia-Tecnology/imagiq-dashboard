@@ -11,7 +11,6 @@ import {
   BannerCtaCell,
   BannerColorCell,
   BannerCoordinatesCell,
-  BannerLinkCell,
   BannerPlacementCell,
 } from "./cells/simple-cells";
 import { placementLabels } from "./constants";
@@ -122,13 +121,6 @@ export function createBannerColumns(actions?: BannerColumnActions): ColumnDef<Ba
       cell: ({ row }) => (
         <BannerStatusCell banner={row.original} onStatusChange={actions?.onStatusChange} />
       ),
-    },
-
-    // Columna de enlace
-    {
-      accessorKey: "link_url",
-      header: "Enlace",
-      cell: ({ row }) => <BannerLinkCell value={row.original.link_url} />,
     },
 
     // Columna de fecha de creación

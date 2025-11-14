@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { bannerEndpoints } from "@/lib/api";
+import type { BannerPosition } from "@/types/banner";
+import { gridToPercentage, getDefaultPosition } from "@/components/banners/utils/position-utils";
 import {
   buildCreateBannerFormData,
   buildUpdateBannerFormData,
@@ -8,6 +10,33 @@ import {
   type BannerMediaFiles,
   type ExistingMediaUrls,
 } from "@/components/banners/utils/banner-form-builder";
+
+// Helpers extraídos para reducir la complejidad cognitiva del hook
+function parsePlacementString(placement?: string) {
+  let parsedCategoryId = "";
+  let parsedSubcategoryId = "none";
+
+  if (placement?.startsWith("banner-")) {
+    const parts = placement.replace("banner-", "").split("-") ?? [];
+    if (parts.length > 0) parsedCategoryId = parts[0];
+    if (parts.length > 1) parsedSubcategoryId = parts.slice(1).join("-");
+  }
+
+  return { parsedCategoryId, parsedSubcategoryId };
+}
+
+function parsePositionFromBackend(pos: any): BannerPosition | null {
+  if (!pos) return null;
+  if (typeof pos === "string") {
+    try {
+      pos = JSON.parse(pos);
+    } catch {
+      return null;
+    }
+  }
+  if (typeof pos.x === "number" && typeof pos.y === "number") return pos as BannerPosition;
+  return null;
+}
 
 export interface BannerFormData extends BannerFormFields, BannerMediaFiles {}
 
@@ -46,6 +75,10 @@ export function useBannerForm({ mode, bannerId, initialPlacement }: UseBannerFor
   });
 
   const [existingUrls, setExistingUrls] = useState<ExistingMediaUrls>({});
+
+  // NUEVO: Estado para posiciones basadas en porcentajes
+  const [positionDesktop, setPositionDesktop] = useState<BannerPosition>(getDefaultPosition());
+  const [positionMobile, setPositionMobile] = useState<BannerPosition>(getDefaultPosition());
 
   // Cargar banner existente si estamos en modo edición
   useEffect(() => {
@@ -102,6 +135,35 @@ export function useBannerForm({ mode, bannerId, initialPlacement }: UseBannerFor
               category_id: parsedCategoryId,
               subcategory_id: parsedSubcategoryId,
             });
+
+            // NUEVO: Cargar posiciones basadas en porcentajes (o convertir desde grid)
+            // Helper para validar y parsear posiciones del backend
+            const parsePosition = (pos: any): BannerPosition | null => {
+              if (!pos) return null;
+              // Si es string, intentar parsear JSON
+              if (typeof pos === 'string') {
+                try {
+                  pos = JSON.parse(pos);
+                } catch {
+                  return null;
+                }
+              }
+              // Validar que tenga x e y numéricos
+              if (typeof pos.x === 'number' && typeof pos.y === 'number') {
+                return pos as BannerPosition;
+              }
+              return null;
+            };
+
+            const desktopPos = parsePosition(banner.position_desktop)
+              || gridToPercentage(banner.coordinates)
+              || getDefaultPosition();
+            const mobilePos = parsePosition(banner.position_mobile)
+              || gridToPercentage(banner.coordinates_mobile)
+              || getDefaultPosition();
+
+            setPositionDesktop(desktopPos);
+            setPositionMobile(mobilePos);
           } else {
             alert("No se pudo cargar el banner");
             router.push("/marketing/banners");
@@ -136,6 +198,15 @@ export function useBannerForm({ mode, bannerId, initialPlacement }: UseBannerFor
     setFormData((prev) => ({ ...prev, coordinates_mobile: newCoordinates }));
   };
 
+  // NUEVO: Handlers para posiciones basadas en porcentajes
+  const handlePositionDesktopChange = (position: BannerPosition) => {
+    setPositionDesktop(position);
+  };
+
+  const handlePositionMobileChange = (position: BannerPosition) => {
+    setPositionMobile(position);
+  };
+
   // Validación - retorna un objeto con success y error message
   const validate = (): { success: boolean; error?: string } => {
     if (!formData.name) {
@@ -163,49 +234,51 @@ export function useBannerForm({ mode, bannerId, initialPlacement }: UseBannerFor
   };
 
   // Envío del formulario
+  const prepareAndSend = async (status: "draft" | "active") => {
+    const fields: BannerFormFields = {
+      name: formData.name,
+      placement: formData.placement,
+      link_url: formData.link_url,
+      title: formData.title,
+      description: formData.description,
+      cta: formData.cta,
+      color_font: formData.color_font,
+      coordinates: formData.coordinates,
+      coordinates_mobile: formData.coordinates_mobile,
+      category_id: formData.category_id,
+      subcategory_id: formData.subcategory_id === "none" ? "" : formData.subcategory_id,
+      // NUEVO: Posiciones basadas en porcentajes
+      position_desktop: positionDesktop,
+      position_mobile: positionMobile,
+    };
+
+    const files: BannerMediaFiles = {
+      desktop_image: formData.desktop_image,
+      desktop_video: formData.desktop_video,
+      mobile_image: formData.mobile_image,
+      mobile_video: formData.mobile_video,
+    };
+
+    if (mode === "create") {
+      const data = buildCreateBannerFormData(fields, files, status);
+      return bannerEndpoints.create(data);
+    }
+
+    if (!bannerId) throw new Error("Banner ID is required for edit mode");
+    const data = buildUpdateBannerFormData(bannerId, fields, files, existingUrls, status);
+    return bannerEndpoints.update(data);
+  };
+
   const handleSubmit = async (status: "draft" | "active", onValidationError?: (error: string) => void) => {
     const validation = validate();
     if (!validation.success) {
-      if (validation.error && onValidationError) {
-        onValidationError(validation.error);
-      }
+      if (validation.error && onValidationError) onValidationError(validation.error);
       return;
     }
 
     setIsLoading(true);
     try {
-      const fields: BannerFormFields = {
-        name: formData.name,
-        placement: formData.placement,
-        link_url: formData.link_url,
-        title: formData.title,
-        description: formData.description,
-        cta: formData.cta,
-        color_font: formData.color_font,
-        coordinates: formData.coordinates,
-        coordinates_mobile: formData.coordinates_mobile,
-        category_id: formData.category_id,
-        subcategory_id: formData.subcategory_id === "none" ? "" : formData.subcategory_id,
-      };
-
-      const files: BannerMediaFiles = {
-        desktop_image: formData.desktop_image,
-        desktop_video: formData.desktop_video,
-        mobile_image: formData.mobile_image,
-        mobile_video: formData.mobile_video,
-      };
-
-      let response;
-
-      if (mode === "create") {
-        const data = buildCreateBannerFormData(fields, files, status);
-        response = await bannerEndpoints.create(data);
-      } else {
-        if (!bannerId) throw new Error("Banner ID is required for edit mode");
-        const data = buildUpdateBannerFormData(bannerId, fields, files, existingUrls, status);
-        response = await bannerEndpoints.update(data);
-      }
-
+      const response = await prepareAndSend(status);
       if (response.success) {
         router.push("/marketing/banners");
       } else {
@@ -231,5 +304,10 @@ export function useBannerForm({ mode, bannerId, initialPlacement }: UseBannerFor
     handleCoordinatesChange,
     handleCoordinatesMobileChange,
     handleSubmit,
+    // NUEVO: Posiciones basadas en porcentajes
+    positionDesktop,
+    positionMobile,
+    handlePositionDesktopChange,
+    handlePositionMobileChange,
   };
 }

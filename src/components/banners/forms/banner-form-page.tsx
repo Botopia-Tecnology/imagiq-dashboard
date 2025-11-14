@@ -40,6 +40,11 @@ export function BannerFormPage({ mode, bannerId, initialPlacement }: BannerFormP
     handleCoordinatesChange,
     handleCoordinatesMobileChange,
     handleSubmit,
+    // NUEVO: Posiciones basadas en porcentajes
+    positionDesktop,
+    positionMobile,
+    handlePositionDesktopChange,
+    handlePositionMobileChange,
   } = useBannerForm({ mode, bannerId, initialPlacement });
 
   // Definir textos según el modo
@@ -210,9 +215,13 @@ export function BannerFormPage({ mode, bannerId, initialPlacement }: BannerFormP
               cta={formData.cta}
               color_font={formData.color_font}
               link_url={formData.link_url}
+              placement={formData.placement}
+              position_desktop={positionDesktop}
+              position_mobile={positionMobile}
+              onPositionDesktopChange={handlePositionDesktopChange}
+              onPositionMobileChange={handlePositionMobileChange}
               coordinates={formData.coordinates}
               coordinatesMobile={formData.coordinates_mobile}
-              placement={formData.placement}
               onCoordinatesChange={handleCoordinatesChange}
               onCoordinatesMobileChange={handleCoordinatesMobileChange}
             />
