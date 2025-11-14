@@ -1,3 +1,31 @@
+// Posición basada en porcentajes de imagen
+export interface BannerPosition {
+  x: number;  // 0-100 (% del ancho de la imagen)
+  y: number;  // 0-100 (% del alto de la imagen)
+  imageWidth?: number;   // Metadata opcional para validación
+  imageHeight?: number;  // Metadata opcional para validación
+}
+
+// Estilos de texto personalizables
+export interface BannerTextStyles {
+  title: {
+    fontSize: string;      // Ej: "1.25rem" o "clamp(0.9rem, 1.6vw, 1.25rem)"
+    fontWeight: string;    // Ej: "700", "bold"
+    lineHeight: string;    // Ej: "1.2"
+  };
+  description: {
+    fontSize: string;
+    fontWeight: string;
+    lineHeight: string;
+  };
+  cta: {
+    fontSize: string;
+    fontWeight: string;
+    padding: string;       // Ej: "8px 14px"
+    borderWidth: string;   // Ej: "1.2px"
+  };
+}
+
 // Backend Banner Interface (API Response)
 export interface BackendBanner {
   id: string;
@@ -13,8 +41,18 @@ export interface BackendBanner {
   description?: string;
   cta?: string;
   color_font?: string;
+
+  // NUEVO: Sistema de posicionamiento basado en porcentajes de imagen
+  position_desktop?: BannerPosition;
+  position_mobile?: BannerPosition;
+
+  // NUEVO: Estilos de texto personalizables
+  text_styles?: BannerTextStyles;
+
+  // DEPRECADO: Mantener para compatibilidad hacia atrás con banners existentes
   coordinates?: string;
   coordinates_mobile?: string;
+
   category_id?: string;
   subcategory_id?: string;
   created_at: string;

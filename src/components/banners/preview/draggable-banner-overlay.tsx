@@ -1,23 +1,20 @@
 "use client";
 
-import { parseCoordinates } from "./banner-coordinates";
+import { useDraggable } from '@dnd-kit/core';
 import type { BannerPosition, BannerTextStyles } from "@/types/banner";
-import { getTextAlignment } from "../utils/position-utils";
+import { getTextAlignment } from '../utils/position-utils';
 
-interface BannerContentOverlayProps {
+interface DraggableBannerOverlayProps {
+  id: string;
   title?: string;
   description?: string;
   cta?: string;
   colorFont: string;
   linkUrl?: string;
-  device?: "desktop" | "mobile";
-
-  // NUEVO: Sistema basado en porcentajes de imagen
-  position?: BannerPosition;
+  position: BannerPosition;
   textStyles?: BannerTextStyles;
-
-  // DEPRECADO: Sistema antiguo (fallback para compatibilidad)
-  coordinates?: string;
+  device?: "desktop" | "mobile";
+  disabled?: boolean;
 }
 
 // Estilos por defecto para desktop
@@ -60,62 +57,58 @@ const DEFAULT_TEXT_STYLES_MOBILE: BannerTextStyles = {
   }
 };
 
-export function BannerContentOverlay({
+export function DraggableBannerOverlay({
+  id,
   title,
   description,
   cta,
   colorFont,
   linkUrl,
-  device = "desktop",
   position,
   textStyles,
-  coordinates, // fallback
-}: Readonly<BannerContentOverlayProps>) {
+  device = "desktop",
+  disabled = false
+}: Readonly<DraggableBannerOverlayProps>) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id,
+    disabled
+  });
+
+  // Si no hay contenido, no renderizar nada
   if (!title && !description && !cta) return null;
 
   // Usar estilos personalizados o defaults según el dispositivo
   const styles = textStyles || (device === "mobile" ? DEFAULT_TEXT_STYLES_MOBILE : DEFAULT_TEXT_STYLES_DESKTOP);
 
-  // Calcular posición: priorizar nuevo sistema (position) sobre antiguo (coordinates)
-  let leftPercent: number;
-  let topPercent: number;
+  // Determinar alineación del texto según posición X
+  const textAlign = getTextAlignment(position);
 
-  if (position) {
-    // ✅ NUEVO: Sistema basado en porcentajes de imagen
-    leftPercent = position.x;
-    topPercent = position.y;
-  } else if (coordinates) {
-    // ⚠️ FALLBACK: Sistema antiguo (grid 9x9)
-    const { x, y } = parseCoordinates(coordinates);
-    const cellSize = 100 / 9;
-    leftPercent = x * cellSize + cellSize / 2;
-    topPercent = y * cellSize + cellSize / 2;
-  } else {
-    // Default: centro
-    leftPercent = 50;
-    topPercent = 50;
-  }
+  // Determinar cursor según estado
+  const getCursor = () => {
+    if (isDragging) return "grabbing";
+    if (disabled) return "default";
+    return "grab";
+  };
 
-  // Determinar alineación del texto
-  let textAlign: "left" | "center" | "right";
-  if (position) {
-    textAlign = getTextAlignment(position);
-  } else if (leftPercent <= 33) {
-    textAlign = "left";
-  } else if (leftPercent >= 66) {
-    textAlign = "right";
-  } else {
-    textAlign = "center";
-  }
+  // Estilos del contenedor draggable
+  const containerStyle = {
+    left: `${position.x}%`,
+    top: `${position.y}%`,
+    transform: transform
+      ? `translate(-50%, -50%) translate(${transform.x}px, ${transform.y}px)`
+      : "translate(-50%, -50%)",
+    cursor: getCursor(),
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 999 : 10,
+  };
 
   return (
     <div
+      ref={setNodeRef}
       className="absolute pointer-events-auto"
-      style={{
-        left: `${leftPercent}%`,
-        top: `${topPercent}%`,
-        transform: "translate(-50%, -50%)",
-      }}
+      style={containerStyle}
+      {...listeners}
+      {...attributes}
     >
       <div
         className="space-y-1 px-4"
@@ -127,7 +120,7 @@ export function BannerContentOverlay({
         {/* Título */}
         {title && (
           <h2
-            className="leading-none"
+            className="leading-none select-none"
             style={{
               color: colorFont,
               fontSize: styles.title.fontSize,
@@ -142,7 +135,7 @@ export function BannerContentOverlay({
         {/* Descripción */}
         {description && (
           <p
-            className="opacity-90"
+            className="opacity-90 select-none"
             style={{
               color: colorFont,
               fontSize: styles.description.fontSize,
@@ -159,7 +152,7 @@ export function BannerContentOverlay({
         {cta && (
           <div className="pt-2">
             <button
-              className="rounded-full transition-all hover:scale-105"
+              className="rounded-full transition-all hover:scale-105 select-none"
               type="button"
               style={{
                 padding: styles.cta.padding,
@@ -169,7 +162,7 @@ export function BannerContentOverlay({
                 backdropFilter: "blur(8px)",
                 border: `${styles.cta.borderWidth} solid ${colorFont}`,
                 color: colorFont,
-                pointerEvents: "auto",
+                pointerEvents: "none", // Evitar que el botón capture clicks durante drag
               }}
             >
               {cta}
@@ -180,18 +173,33 @@ export function BannerContentOverlay({
         {/* Link URL */}
         {linkUrl && (
           <div className="pt-2">
-            <a
-              href={linkUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:underline"
-              style={{ fontSize: device === "mobile" ? "0.7rem" : "0.8rem", color: "#7fb4ff" }}
+            <span
+              className="select-none text-sm"
+              style={{
+                fontSize: device === "mobile" ? "0.7rem" : "0.8rem",
+                color: "#7fb4ff"
+              }}
             >
               Ver enlace
-            </a>
+            </span>
           </div>
         )}
       </div>
+
+      {/* Indicador visual de drag (opcional) */}
+      {!disabled && (
+        <div
+          className="absolute -top-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity"
+          style={{
+            pointerEvents: "none",
+            display: isDragging ? "none" : "block"
+          }}
+        >
+          <span className="text-xs text-white/60 bg-black/30 px-2 py-1 rounded whitespace-nowrap">
+            Arrastra para mover
+          </span>
+        </div>
+      )}
     </div>
   );
 }
