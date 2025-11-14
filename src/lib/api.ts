@@ -39,15 +39,37 @@ export class ApiClient {
     };
   }
 
+  // Helper para obtener el token de localStorage
+  private getAuthToken(): string | null {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('imagiq_token');
+    }
+    return null;
+  }
+
+  // Helper para agregar el token de autorización a los headers
+  private getAuthHeaders(): Record<string, string> {
+    const token = this.getAuthToken();
+    if (token) {
+      return {
+        ...this.headers,
+        'Authorization': `Bearer ${token}`,
+      };
+    }
+    return this.headers;
+  }
+
 
   // Generic request method
   private async request<T>(
     endpoint: string,
-    options: RequestInit = {}
+    options: RequestInit = {},
+    useAuth: boolean = false
   ): Promise<ApiResponse<T>> {
     const url = `${this.baseURL}${endpoint}`;
+    const headers = useAuth ? this.getAuthHeaders() : this.headers;
     const config: RequestInit = {
-      headers: this.headers,
+      headers,
       ...options,
     };
 
@@ -112,36 +134,36 @@ export class ApiClient {
   }
 
   // HTTP methods
-  async get<T>(endpoint: string): Promise<ApiResponse<T>> {
-    return this.request<T>(endpoint, { method: "GET" });
+  async get<T>(endpoint: string, useAuth: boolean = false): Promise<ApiResponse<T>> {
+    return this.request<T>(endpoint, { method: "GET" }, useAuth);
   }
 
-  async post<T>(endpoint: string, data?: unknown): Promise<ApiResponse<T>> {
+  async post<T>(endpoint: string, data?: unknown, useAuth: boolean = false): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
       method: "POST",
       body: JSON.stringify(data),
-    });
+    }, useAuth);
   }
 
-  async put<T>(endpoint: string, data?: unknown): Promise<ApiResponse<T>> {
+  async put<T>(endpoint: string, data?: unknown, useAuth: boolean = false): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
       method: "PUT",
       body: JSON.stringify(data),
-    });
+    }, useAuth);
   }
 
-  async delete<T>(endpoint: string, data?: unknown): Promise<ApiResponse<T>> {
+  async delete<T>(endpoint: string, data?: unknown, useAuth: boolean = false): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
       method: "DELETE",
       body: data ? JSON.stringify(data) : undefined,
-    });
+    }, useAuth);
   }
 
-  async patch<T>(endpoint: string, data?: unknown): Promise<ApiResponse<T>> {
+  async patch<T>(endpoint: string, data?: unknown, useAuth: boolean = false): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
       method: "PATCH",
       body: JSON.stringify(data),
-    });
+    }, useAuth);
   }
 
   async postFormData<T>(endpoint: string, formData: FormData): Promise<ApiResponse<T>> {
@@ -1156,4 +1178,34 @@ export const filterEndpoints = {
   deleteBulk: (data: DeleteBulkRequest) => apiClient.delete<{ success: boolean; message?: string; data?: { deletedCount: number } }>("/api/filters/bulk", data),
   updateOrder: (data: UpdateOrderRequest) => apiClient.put<{ success: boolean; message?: string; data?: { updatedFilters: Array<{ filterId: string; order: FilterOrderConfig }> } }>("/api/filters/order", data),
   updateFilterOrder: (id: string, order: FilterOrderConfig) => apiClient.patch<DynamicFilter>(`/api/filters/${id}/order`, { order }),
+};
+
+// User API endpoints
+export interface CreateUserRequest {
+  nombre: string;
+  apellido: string;
+  email: string;
+  contrasena: string;
+  fecha_nacimiento?: string;
+  numero_documento?: string;
+  tipo_documento?: string;
+  telefono?: string;
+  rol: string;
+}
+
+export interface CreateUserResponse {
+  success: boolean;
+  message?: string;
+  user?: {
+    id: string;
+    nombre: string;
+    apellido: string;
+    email: string;
+    rol: string;
+  };
+}
+
+export const userEndpoints = {
+  create: (data: CreateUserRequest) =>
+    apiClient.post<CreateUserResponse>("/api/admin/users/add", data, true),
 };

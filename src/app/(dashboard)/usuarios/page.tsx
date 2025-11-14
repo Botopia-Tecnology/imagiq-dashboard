@@ -22,6 +22,7 @@ import { UserFormModal } from "@/components/users/user-form-modal";
 import { userColumns } from "@/components/users/user-columns";
 import { mockUsers, mockUserActivity, mockUserStats, rolePermissions } from "@/lib/mock-data/users";
 import { User, UserActivity, UserRole, Permission } from "@/types/users";
+import { userEndpoints, CreateUserRequest } from "@/lib/api";
 import {
   Users,
   UserPlus,
@@ -45,38 +46,63 @@ export default function UsuariosPage() {
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
   const [usersToDelete, setUsersToDelete] = useState<string[]>([]);
 
-  const handleCreateUser = (userData: any) => {
-    const newUser: User = {
-      id: `user-${Date.now()}`,
-      email: userData.email,
-      name: userData.name,
-      role: userData.role,
-      permissions: userData.customPermissions || (rolePermissions as Record<UserRole, Permission[]>)[userData.role as UserRole],
-      status: userData.status,
-      department: userData.department,
-      phoneNumber: userData.phoneNumber,
-      location: userData.location,
-      timezone: userData.timezone || 'Europe/Madrid',
-      twoFactorEnabled: userData.twoFactorEnabled,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      createdBy: 'current-user',
-      loginAttempts: 0,
-    };
+  const handleCreateUser = async (userData: any) => {
+    try {
+      const requestData: CreateUserRequest = {
+        nombre: userData.name,
+        apellido: userData.apellido,
+        email: userData.email,
+        contrasena: userData.contrasena,
+        fecha_nacimiento: userData.fecha_nacimiento || undefined,
+        numero_documento: userData.numero_documento || undefined,
+        tipo_documento: userData.tipo_documento || "CC",
+        telefono: userData.telefono || undefined,
+        rol: userData.rol,
+      };
 
-    setUsers([...users, newUser]);
-    toast.success("Usuario creado exitosamente");
+      console.log("Datos enviados a la API:", requestData);
 
-    // Update stats
-    setStats(prev => ({
-      ...prev,
-      totalUsers: prev.totalUsers + 1,
-      newUsersThisMonth: prev.newUsersThisMonth + 1,
-      usersByRole: {
-        ...prev.usersByRole,
-        [userData.role as UserRole]: (prev.usersByRole as Record<UserRole, number>)[userData.role as UserRole] + 1
+      const response = await userEndpoints.create(requestData);
+
+      if (response.success && response.data.user) {
+        const newUser: User = {
+          id: response.data.user.id,
+          email: response.data.user.email,
+          name: `${response.data.user.nombre} ${response.data.user.apellido}`,
+          role: userData.role,
+          permissions: userData.customPermissions || (rolePermissions as Record<UserRole, Permission[]>)[userData.role as UserRole],
+          status: userData.status,
+          department: userData.department,
+          phoneNumber: userData.phoneNumber,
+          location: userData.location,
+          timezone: userData.timezone || 'Europe/Madrid',
+          twoFactorEnabled: userData.twoFactorEnabled,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          createdBy: 'current-user',
+          loginAttempts: 0,
+        };
+
+        setUsers([...users, newUser]);
+        toast.success(response.message || "Usuario creado exitosamente");
+
+        // Update stats
+        setStats(prev => ({
+          ...prev,
+          totalUsers: prev.totalUsers + 1,
+          newUsersThisMonth: prev.newUsersThisMonth + 1,
+          usersByRole: {
+            ...prev.usersByRole,
+            [userData.role as UserRole]: (prev.usersByRole as Record<UserRole, number>)[userData.role as UserRole] + 1
+          }
+        }));
+      } else {
+        toast.error(response.message || "Error al crear usuario");
       }
-    }));
+    } catch (error) {
+      console.error("Error creating user:", error);
+      toast.error("Error al crear usuario");
+    }
   };
 
   const handleEditUser = (userData: any) => {

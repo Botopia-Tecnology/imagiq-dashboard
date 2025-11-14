@@ -51,7 +51,14 @@ import {
 
 const userFormSchema = z.object({
   name: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
+  apellido: z.string().min(2, "El apellido debe tener al menos 2 caracteres"),
   email: z.string().email("Email inválido"),
+  contrasena: z.string().min(6, "La contraseña debe tener al menos 6 caracteres").optional(),
+  fecha_nacimiento: z.string().optional(),
+  numero_documento: z.string().optional(),
+  tipo_documento: z.string().optional(),
+  telefono: z.string().optional(),
+  rol: z.string().min(1, "El rol es requerido"),
   role: z.enum(["super_admin", "admin", "manager", "editor", "viewer"]),
   status: z.enum(["active", "inactive", "pending", "suspended"]),
   department: z.string().optional(),
@@ -87,7 +94,14 @@ export function UserFormModal({ open, onClose, user, onSave }: UserFormModalProp
     resolver: zodResolver(userFormSchema),
     defaultValues: {
       name: user?.name || "",
+      apellido: "",
       email: user?.email || "",
+      contrasena: "",
+      fecha_nacimiento: "",
+      numero_documento: "",
+      tipo_documento: "CC",
+      telefono: "",
+      rol: "admin",
       role: user?.role || "viewer",
       status: user?.status || "pending",
       department: user?.department || "",
@@ -212,11 +226,28 @@ export function UserFormModal({ open, onClose, user, onSave }: UserFormModalProp
                     name="name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Nombre completo</FormLabel>
+                        <FormLabel>Nombre</FormLabel>
                         <FormControl>
                           <div className="relative">
                             <UserIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                             <Input placeholder="Nombre del usuario" className="pl-9" {...field} />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="apellido"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Apellido</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <UserIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                            <Input placeholder="Apellido del usuario" className="pl-9" {...field} />
                           </div>
                         </FormControl>
                         <FormMessage />
@@ -245,6 +276,30 @@ export function UserFormModal({ open, onClose, user, onSave }: UserFormModalProp
                       </FormItem>
                     )}
                   />
+
+                  {!isEditing && (
+                    <FormField
+                      control={form.control}
+                      name="contrasena"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Contraseña</FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                              <Key className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                              <Input
+                                type="password"
+                                placeholder="Contraseña"
+                                className="pl-9"
+                                {...field}
+                              />
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
 
                   <div className="grid grid-cols-2 gap-4">
                     <FormField
@@ -322,10 +377,97 @@ export function UserFormModal({ open, onClose, user, onSave }: UserFormModalProp
 
                   <FormField
                     control={form.control}
-                    name="phoneNumber"
+                    name="telefono"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Teléfono</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                            <Input placeholder="+57 300 123 4567" className="pl-9" {...field} />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="fecha_nacimiento"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Fecha de Nacimiento</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="tipo_documento"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Tipo Documento</FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            defaultValue={field.value || "CC"}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Seleccionar tipo" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="CC">CC</SelectItem>
+                              <SelectItem value="TI">TI</SelectItem>
+                              <SelectItem value="Pasaporte">Pasaporte</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="numero_documento"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Número Documento</FormLabel>
+                          <FormControl>
+                            <Input placeholder="123456789" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <FormField
+                    control={form.control}
+                    name="rol"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Rol API</FormLabel>
+                        <FormControl>
+                          <Input placeholder="admin, user, etc." {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="phoneNumber"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Teléfono (Adicional)</FormLabel>
                         <FormControl>
                           <div className="relative">
                             <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
