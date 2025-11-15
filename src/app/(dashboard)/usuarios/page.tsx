@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,7 +22,7 @@ import { UserFormModal } from "@/components/users/user-form-modal";
 import { userColumns } from "@/components/users/user-columns";
 import { mockUsers, mockUserActivity, mockUserStats, rolePermissions } from "@/lib/mock-data/users";
 import { User, UserActivity, UserRole, Permission } from "@/types/users";
-import { userEndpoints, CreateUserRequest } from "@/lib/api";
+import { userEndpoints, CreateUserRequest, BackendUser } from "@/lib/api";
 import {
   Users,
   UserPlus,
@@ -38,13 +38,72 @@ import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 
 export default function UsuariosPage() {
-  const [users, setUsers] = useState<User[]>(mockUsers);
+  const [users, setUsers] = useState<User[]>([]);
   const [userActivity, setUserActivity] = useState<UserActivity[]>(mockUserActivity);
   const [stats, setStats] = useState(mockUserStats);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | undefined>();
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
   const [usersToDelete, setUsersToDelete] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Función para convertir BackendUser a User
+  const convertBackendUserToUser = (backendUser: BackendUser): User => {
+    return {
+      id: backendUser.id || backendUser.uuid || '',
+      email: backendUser.email,
+      name: `${backendUser.nombre} ${backendUser.apellido}`,
+      role: 'viewer', // Por defecto, puedes mapear según el rol del backend
+      permissions: [],
+      status: 'active',
+      department: '',
+      phoneNumber: backendUser.telefono || '',
+      location: '',
+      timezone: 'America/Bogota',
+      twoFactorEnabled: false,
+      createdAt: backendUser.created_at ? new Date(backendUser.created_at) : new Date(),
+      updatedAt: backendUser.updated_at ? new Date(backendUser.updated_at) : new Date(),
+      createdBy: 'system',
+      loginAttempts: 0,
+    };
+  };
+
+  // Cargar usuarios al montar el componente
+  useEffect(() => {
+    const loadUsers = async () => {
+      try {
+        const response = await userEndpoints.getAll();
+        console.log("Respuesta de usuarios:", response);
+
+        if (response.success && response.data) {
+          // La API devuelve directamente un array
+          const backendUsers = Array.isArray(response.data) ? response.data : [];
+          const convertedUsers = backendUsers.map(convertBackendUserToUser);
+          setUsers(convertedUsers);
+
+          // Actualizar stats
+          setStats(prev => ({
+            ...prev,
+            totalUsers: convertedUsers.length,
+          }));
+        } else {
+          console.error("Error al cargar usuarios:", response.message);
+          toast.error("Error al cargar usuarios");
+          // Usar datos mock si falla
+          setUsers(mockUsers);
+        }
+      } catch (error) {
+        console.error("Error al cargar usuarios:", error);
+        toast.error("Error al cargar usuarios");
+        // Usar datos mock si falla
+        setUsers(mockUsers);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadUsers();
+  }, []);
 
   const handleCreateUser = async (userData: any) => {
     try {
@@ -85,6 +144,14 @@ export default function UsuariosPage() {
 
         setUsers([...users, newUser]);
         toast.success(response.message || "Usuario creado exitosamente");
+
+        // Recargar la lista de usuarios desde la API
+        const updatedResponse = await userEndpoints.getAll();
+        if (updatedResponse.success && updatedResponse.data) {
+          const backendUsers = Array.isArray(updatedResponse.data) ? updatedResponse.data : [];
+          const convertedUsers = backendUsers.map(convertBackendUserToUser);
+          setUsers(convertedUsers);
+        }
 
         // Update stats
         setStats(prev => ({

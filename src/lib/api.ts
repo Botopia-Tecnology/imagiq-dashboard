@@ -1205,7 +1205,25 @@ export interface CreateUserResponse {
   };
 }
 
+export interface BackendUser {
+  id: string;
+  uuid?: string;
+  nombre: string;
+  apellido: string;
+  email: string;
+  rol: number | string;
+  fecha_nacimiento?: string | null;
+  numero_documento?: string;
+  tipo_documento?: string;
+  telefono?: string;
+  codigo_pais?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export const userEndpoints = {
+  getAll: () =>
+    apiClient.get<BackendUser[]>("/api/admin/users", true),
   create: (data: CreateUserRequest) =>
     apiClient.post<CreateUserResponse>("/api/admin/users/add", data, true),
 };
