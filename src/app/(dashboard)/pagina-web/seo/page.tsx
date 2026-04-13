@@ -134,7 +134,7 @@ export default function SeoPage() {
       const formData = new FormData()
       formData.append("image", file)
 
-      const res = await fetch(`${API_URL}/api/multimedia/logo/upload/header-logo-dark`, {
+      const res = await fetch(`${API_URL}/api/multimedia/seo/og-image`, {
         method: "POST",
         headers: { ...(API_KEY && { "X-API-Key": API_KEY }) },
         body: formData,
