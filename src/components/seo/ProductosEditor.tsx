@@ -26,7 +26,7 @@ import { SerpPreview } from "./SerpPreview"
 import { OgPreview } from "./OgPreview"
 import { CharCounter } from "./CharCounter"
 import { useSeoProductos } from "@/hooks/use-seo-settings"
-import type { ProductSeoData } from "@/types/seo"
+import type { ProductSeoData, CatalogSearchResult } from "@/types/seo"
 import { cn } from "@/lib/utils"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"
@@ -97,7 +97,7 @@ export function ProductosEditor({
   defaultDescription,
   defaultOgImage,
 }: ProductosEditorProps) {
-  const { overrides, isLoading, upsertProductSeo, deleteProductSeo } = useSeoProductos()
+  const { overrides, isLoading, upsertProductSeo, deleteProductSeo, searchCatalog } = useSeoProductos()
 
   const [selectedSku, setSelectedSku] = useState<string | null>(null)
   const [form, setForm] = useState<FormState>(emptyForm)
@@ -106,8 +106,14 @@ export function ProductosEditor({
   const [isSaving, setIsSaving] = useState(false)
   const [isUploadingOg, setIsUploadingOg] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
+
+  // ─── Catalog search (for adding new overrides) ─────────────────────────
   const [isAddingSku, setIsAddingSku] = useState(false)
-  const [newSku, setNewSku] = useState("")
+  const [catalogQuery, setCatalogQuery] = useState("")
+  const [catalogResults, setCatalogResults] = useState<CatalogSearchResult[]>([])
+  const [isSearchingCatalog, setIsSearchingCatalog] = useState(false)
+  const [catalogSearched, setCatalogSearched] = useState(false)
+
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const selected = useMemo(
@@ -158,29 +164,59 @@ export function ProductosEditor({
     }
   }
 
-  const handleAddSku = async () => {
-    const sku = newSku.trim()
-    if (!sku) return
-    if (overrides.some((o) => o.sku === sku)) {
-      toast.info(`${sku} ya tiene override, seleccionado en la lista`)
-      setSelectedSku(sku)
-      setNewSku("")
+  const handleCatalogSearch = async () => {
+    const q = catalogQuery.trim()
+    if (!q) return
+    try {
+      setIsSearchingCatalog(true)
+      setCatalogSearched(true)
+      const results = await searchCatalog(q, 15)
+      setCatalogResults(results)
+    } catch {
+      toast.error("Error al buscar en el catálogo")
+      setCatalogResults([])
+    } finally {
+      setIsSearchingCatalog(false)
+    }
+  }
+
+  const handleSelectCatalogResult = async (row: CatalogSearchResult) => {
+    // If an override already exists for this SKU, just select it in the master list.
+    if (overrides.some((o) => o.sku === row.sku)) {
+      toast.info(`${row.sku} ya tiene override, seleccionado en la lista`)
+      setSelectedSku(row.sku)
       setIsAddingSku(false)
+      setCatalogQuery("")
+      setCatalogResults([])
+      setCatalogSearched(false)
       return
     }
     try {
       setIsSaving(true)
-      // Create an empty override row for this SKU so it appears in the list.
-      await upsertProductSeo(sku, { include_in_sitemap: true })
-      setSelectedSku(sku)
-      setNewSku("")
+      // Pre-populate meta_title with the product name so the editor starts
+      // with something useful instead of an empty form.
+      await upsertProductSeo(row.sku, {
+        meta_title: row.nombreMarket || "",
+        include_in_sitemap: true,
+      })
+      setSelectedSku(row.sku)
       setIsAddingSku(false)
-      toast.success(`Override creado para ${sku}`)
+      setCatalogQuery("")
+      setCatalogResults([])
+      setCatalogSearched(false)
+      toast.success(`Override creado para ${row.sku}`)
     } catch {
       toast.error("No se pudo crear el override")
     } finally {
       setIsSaving(false)
     }
+  }
+
+  const cancelAddSku = () => {
+    setIsAddingSku(false)
+    setCatalogQuery("")
+    setCatalogResults([])
+    setCatalogSearched(false)
   }
 
   const handleDelete = async () => {
@@ -274,40 +310,113 @@ export function ProductosEditor({
         <CardHeader className="space-y-3 pb-3 shrink-0">
           <div className="flex items-center justify-between gap-2">
             <CardTitle className="text-base">Productos con SEO personalizado</CardTitle>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setIsAddingSku((v) => !v)}
-            >
-              <Plus className="h-4 w-4 mr-1" />
-              Añadir SKU
-            </Button>
+            {!isAddingSku && (
+              <Button size="sm" variant="outline" onClick={() => setIsAddingSku(true)}>
+                <Plus className="h-4 w-4 mr-1" />
+                Añadir producto
+              </Button>
+            )}
           </div>
 
-          {isAddingSku && (
-            <div className="flex gap-2">
+          {isAddingSku ? (
+            <div className="space-y-2 rounded-lg border bg-muted/30 p-3">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-medium text-muted-foreground">
+                  Buscar en catálogo Novasoft
+                </p>
+                <button
+                  type="button"
+                  onClick={cancelAddSku}
+                  className="text-xs text-muted-foreground hover:text-foreground"
+                >
+                  Cancelar
+                </button>
+              </div>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    autoFocus
+                    placeholder="SKU o nombre del producto..."
+                    value={catalogQuery}
+                    onChange={(e) => setCatalogQuery(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleCatalogSearch()}
+                    className="pl-8 h-9"
+                  />
+                </div>
+                <Button
+                  size="sm"
+                  onClick={handleCatalogSearch}
+                  disabled={!catalogQuery.trim() || isSearchingCatalog}
+                >
+                  {isSearchingCatalog ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    "Buscar"
+                  )}
+                </Button>
+              </div>
+              {catalogSearched && !isSearchingCatalog && (
+                <div className="space-y-1 max-h-64 overflow-auto">
+                  {catalogResults.length === 0 ? (
+                    <p className="text-xs text-muted-foreground text-center py-3">
+                      Sin resultados en Novasoft para &quot;{catalogQuery}&quot;
+                    </p>
+                  ) : (
+                    catalogResults.map((row) => {
+                      const alreadyExists = overrides.some((o) => o.sku === row.sku)
+                      const firstImage = (row.urlImagenes || "").split(/[,;|]/)[0]?.trim()
+                      return (
+                        <button
+                          key={row.sku}
+                          type="button"
+                          onClick={() => handleSelectCatalogResult(row)}
+                          className="w-full flex items-center gap-2 p-2 rounded-md border bg-card hover:bg-muted text-left transition-colors"
+                        >
+                          {firstImage ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={firstImage}
+                              alt={row.nombreMarket}
+                              className="w-10 h-10 object-contain rounded bg-muted shrink-0"
+                            />
+                          ) : (
+                            <div className="w-10 h-10 rounded bg-muted flex items-center justify-center shrink-0">
+                              <Package className="h-4 w-4 text-muted-foreground/50" />
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium truncate">
+                              {row.nombreMarket || row.sku}
+                            </p>
+                            <p className="text-[10px] text-muted-foreground font-mono truncate">
+                              SKU: {row.sku}
+                              {row.modelo ? ` · ${row.modelo}` : ""}
+                            </p>
+                          </div>
+                          {alreadyExists && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-700 dark:text-amber-400 shrink-0">
+                              ya tiene override
+                            </span>
+                          )}
+                        </button>
+                      )
+                    })
+                  )}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="relative">
+              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="SKU del producto..."
-                value={newSku}
-                onChange={(e) => setNewSku(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleAddSku()}
-                className="h-9"
+                placeholder="Filtrar overrides por SKU o título..."
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                className="pl-8 h-9"
               />
-              <Button size="sm" onClick={handleAddSku} disabled={!newSku.trim()}>
-                Añadir
-              </Button>
             </div>
           )}
-
-          <div className="relative">
-            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Filtrar por SKU o título..."
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              className="pl-8 h-9"
-            />
-          </div>
         </CardHeader>
         <ScrollArea className="flex-1 min-h-0">
           <div className="px-3 pb-3 space-y-1">

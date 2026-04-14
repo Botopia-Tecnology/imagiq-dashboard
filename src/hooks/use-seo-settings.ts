@@ -2,7 +2,13 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { apiGet, apiPut, apiDelete } from "@/lib/api-client";
-import type { SeoSettings, PageSeoData, CategoriaSeoData, ProductSeoData } from "@/types/seo";
+import type {
+  SeoSettings,
+  PageSeoData,
+  CategoriaSeoData,
+  ProductSeoData,
+  CatalogSearchResult,
+} from "@/types/seo";
 
 // ---------------------------------------------------------------------------
 // Shared constants
@@ -12,6 +18,7 @@ const SEO_SETTINGS_ENDPOINT = "/api/multimedia/seo/settings";
 const SEO_PAGES_ENDPOINT = "/api/multimedia/pages?limit=500";
 const SEO_CATEGORIAS_ENDPOINT = "/api/multimedia/categorias";
 const SEO_PRODUCTOS_ENDPOINT = "/api/products/seo/overrides";
+const CATALOG_SEARCH_ENDPOINT = "/api/products/catalog/search";
 
 // ---------------------------------------------------------------------------
 // useSeoSettings
@@ -339,6 +346,11 @@ interface UseSeoProductosResult {
    * metadata derived from the catalog.
    */
   deleteProductSeo: (sku: string) => Promise<void>;
+  /**
+   * Search the Novasoft catalog (v_bot_productos view) by SKU or product
+   * name. Used to validate that a SKU exists before creating an override.
+   */
+  searchCatalog: (query: string, limit?: number) => Promise<CatalogSearchResult[]>;
 }
 
 /**
@@ -422,6 +434,26 @@ export function useSeoProductos(): UseSeoProductosResult {
     [overrides],
   );
 
+  const searchCatalog = useCallback(
+    async (query: string, limit = 10): Promise<CatalogSearchResult[]> => {
+      const q = query.trim();
+      if (!q) return [];
+      try {
+        const results = await apiGet<CatalogSearchResult[]>(
+          `${CATALOG_SEARCH_ENDPOINT}?q=${encodeURIComponent(q)}&limit=${limit}`,
+        );
+        return Array.isArray(results) ? results : [];
+      } catch (err) {
+        console.error(
+          "useSeoProductos: searchCatalog failed",
+          err instanceof Error ? err.message : err,
+        );
+        return [];
+      }
+    },
+    [],
+  );
+
   useEffect(() => {
     fetchOverrides();
   }, [fetchOverrides]);
@@ -432,5 +464,6 @@ export function useSeoProductos(): UseSeoProductosResult {
     refreshOverrides: fetchOverrides,
     upsertProductSeo,
     deleteProductSeo,
+    searchCatalog,
   };
 }

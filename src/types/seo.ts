@@ -202,6 +202,24 @@ export interface CategoriaSeoData {
 }
 
 // ---------------------------------------------------------------------------
+// Catalog search (Novasoft v_bot_productos)
+// ---------------------------------------------------------------------------
+
+/**
+ * Lightweight row returned by GET /api/products/catalog/search. Used by the
+ * admin dashboard SEO editor to validate a SKU against the Novasoft catalog
+ * before creating an override for it.
+ */
+export interface CatalogSearchResult {
+  sku: string;
+  codigoMarket: string;
+  nombreMarket: string;
+  modelo: string | null;
+  descGeneral: string | null;
+  urlImagenes: string | null;
+}
+
+// ---------------------------------------------------------------------------
 // Per-product SEO overrides
 // ---------------------------------------------------------------------------
 
