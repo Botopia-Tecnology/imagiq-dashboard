@@ -202,6 +202,31 @@ export interface CategoriaSeoData {
 }
 
 // ---------------------------------------------------------------------------
+// Per-product SEO overrides
+// ---------------------------------------------------------------------------
+
+/**
+ * Per-product SEO overrides stored in the product_seo side table (Postgres)
+ * that joins to v_bot_productos (MSSQL) by sku. Only products that an admin
+ * has explicitly customized appear here; products without a row use the
+ * derived defaults built from the catalog data (nombreMarket, descGeneral).
+ */
+export interface ProductSeoData {
+  sku: string;
+  meta_title?: string;
+  meta_description?: string;
+  meta_keywords?: string;
+  og_image?: string;
+  seo_og_title?: string;
+  seo_og_description?: string;
+  seo_canonical?: string;
+  seo_no_index: boolean;
+  seo_no_follow: boolean;
+  include_in_sitemap: boolean;
+  updated_at: string;
+}
+
+// ---------------------------------------------------------------------------
 // Computed SEO score
 // ---------------------------------------------------------------------------
 

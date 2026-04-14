@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { apiGet, apiPut } from "@/lib/api-client";
-import type { SeoSettings, PageSeoData, CategoriaSeoData } from "@/types/seo";
+import { apiGet, apiPut, apiDelete } from "@/lib/api-client";
+import type { SeoSettings, PageSeoData, CategoriaSeoData, ProductSeoData } from "@/types/seo";
 
 // ---------------------------------------------------------------------------
 // Shared constants
@@ -11,6 +11,7 @@ import type { SeoSettings, PageSeoData, CategoriaSeoData } from "@/types/seo";
 const SEO_SETTINGS_ENDPOINT = "/api/multimedia/seo/settings";
 const SEO_PAGES_ENDPOINT = "/api/multimedia/pages?limit=500";
 const SEO_CATEGORIAS_ENDPOINT = "/api/multimedia/categorias";
+const SEO_PRODUCTOS_ENDPOINT = "/api/products/seo/overrides";
 
 // ---------------------------------------------------------------------------
 // useSeoSettings
@@ -314,5 +315,122 @@ export function useSeoCategorias(): UseSeoCategoriasResult {
     isLoading,
     refreshCategorias: fetchCategorias,
     updateCategoriaSeo,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// useSeoProductos
+// ---------------------------------------------------------------------------
+
+interface UseSeoProductosResult {
+  overrides: ProductSeoData[];
+  isLoading: boolean;
+  refreshOverrides: () => Promise<void>;
+  /**
+   * Upsert SEO fields for a product by SKU. Works for both existing overrides
+   * and brand-new rows (the backend creates the row on first write).
+   */
+  upsertProductSeo: (
+    sku: string,
+    patch: Partial<ProductSeoData>,
+  ) => Promise<ProductSeoData>;
+  /**
+   * Remove an override entirely. The product will fall back to default
+   * metadata derived from the catalog.
+   */
+  deleteProductSeo: (sku: string) => Promise<void>;
+}
+
+/**
+ * Hook for managing per-product SEO overrides stored in the product_seo table.
+ * Only products an admin has explicitly customized show up here; the editor
+ * exposes an "Add SKU" affordance for creating new overrides on demand.
+ */
+export function useSeoProductos(): UseSeoProductosResult {
+  const [overrides, setOverrides] = useState<ProductSeoData[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  const fetchOverrides = useCallback(async (): Promise<void> => {
+    setIsLoading(true);
+    try {
+      const raw = await apiGet<ProductSeoData[]>(SEO_PRODUCTOS_ENDPOINT);
+      setOverrides(Array.isArray(raw) ? raw : []);
+    } catch (err) {
+      console.error(
+        "useSeoProductos: fetch failed",
+        err instanceof Error ? err.message : err,
+      );
+      setOverrides([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const upsertProductSeo = useCallback(
+    async (sku: string, patch: Partial<ProductSeoData>): Promise<ProductSeoData> => {
+      const previous = overrides;
+      // Optimistic merge
+      setOverrides((prev) => {
+        const existing = prev.find((o) => o.sku === sku);
+        if (existing) {
+          return prev.map((o) => (o.sku === sku ? { ...o, ...patch } : o));
+        }
+        return [
+          {
+            sku,
+            seo_no_index: false,
+            seo_no_follow: false,
+            include_in_sitemap: true,
+            updated_at: new Date().toISOString(),
+            ...patch,
+          } as ProductSeoData,
+          ...prev,
+        ];
+      });
+
+      try {
+        const saved = await apiPut<ProductSeoData>(
+          `${SEO_PRODUCTOS_ENDPOINT}/${sku}`,
+          patch,
+        );
+        // Reconcile with whatever the server persisted
+        setOverrides((prev) => prev.map((o) => (o.sku === sku ? saved : o)));
+        return saved;
+      } catch (err) {
+        setOverrides(previous);
+        console.error(
+          "useSeoProductos: upsertProductSeo failed",
+          err instanceof Error ? err.message : err,
+        );
+        throw err;
+      }
+    },
+    [overrides],
+  );
+
+  const deleteProductSeo = useCallback(
+    async (sku: string): Promise<void> => {
+      const previous = overrides;
+      setOverrides((prev) => prev.filter((o) => o.sku !== sku));
+      try {
+        await apiDelete(`${SEO_PRODUCTOS_ENDPOINT}/${sku}`);
+      } catch (err) {
+        setOverrides(previous);
+        throw err;
+      }
+    },
+    [overrides],
+  );
+
+  useEffect(() => {
+    fetchOverrides();
+  }, [fetchOverrides]);
+
+  return {
+    overrides,
+    isLoading,
+    refreshOverrides: fetchOverrides,
+    upsertProductSeo,
+    deleteProductSeo,
   };
 }
