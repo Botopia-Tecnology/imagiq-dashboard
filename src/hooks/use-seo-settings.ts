@@ -1,8 +1,14 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { apiGet, apiPut } from "@/lib/api-client";
-import type { SeoSettings, PageSeoData } from "@/types/seo";
+import { apiGet, apiPut, apiDelete } from "@/lib/api-client";
+import type {
+  SeoSettings,
+  PageSeoData,
+  CategoriaSeoData,
+  ProductSeoData,
+  CatalogSearchResult,
+} from "@/types/seo";
 
 // ---------------------------------------------------------------------------
 // Shared constants
@@ -10,6 +16,9 @@ import type { SeoSettings, PageSeoData } from "@/types/seo";
 
 const SEO_SETTINGS_ENDPOINT = "/api/multimedia/seo/settings";
 const SEO_PAGES_ENDPOINT = "/api/multimedia/pages?limit=500";
+const SEO_CATEGORIAS_ENDPOINT = "/api/multimedia/categorias";
+const SEO_PRODUCTOS_ENDPOINT = "/api/products/seo/overrides";
+const CATALOG_SEARCH_ENDPOINT = "/api/products/catalog/search";
 
 // ---------------------------------------------------------------------------
 // useSeoSettings
@@ -146,6 +155,11 @@ interface UseSeopagesResult {
   isLoading: boolean;
   /** Manually re-fetch the pages list */
   refreshPages: () => Promise<void>;
+  /**
+   * Persist a partial SEO update for a single page.
+   * Optimistically merges the patch into local state, then PUTs to the backend.
+   */
+  updatePage: (id: string, patch: Partial<PageSeoData>) => Promise<void>;
 }
 
 /**
@@ -201,6 +215,27 @@ export function useSeoPages(): UseSeopagesResult {
     }
   }, []);
 
+  const updatePage = useCallback(
+    async (id: string, patch: Partial<PageSeoData>): Promise<void> => {
+      const previous = pages;
+      setPages((prev) =>
+        prev.map((p) => (p.id === id ? { ...p, ...patch } : p))
+      );
+
+      try {
+        await apiPut<PageSeoData>(`/api/multimedia/pages/${id}`, patch);
+      } catch (err) {
+        setPages(previous);
+        console.error(
+          "useSeoPages: updatePage failed",
+          err instanceof Error ? err.message : err
+        );
+        throw err;
+      }
+    },
+    [pages]
+  );
+
   // Fetch on mount
   useEffect(() => {
     fetchPages();
@@ -210,5 +245,225 @@ export function useSeoPages(): UseSeopagesResult {
     pages,
     isLoading,
     refreshPages: fetchPages,
+    updatePage,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// useSeoCategorias
+// ---------------------------------------------------------------------------
+
+interface UseSeoCategoriasResult {
+  categorias: CategoriaSeoData[];
+  isLoading: boolean;
+  refreshCategorias: () => Promise<void>;
+  /**
+   * Persist a partial SEO update for a single category.
+   * Optimistically merges the patch into local state, then PUTs to the backend.
+   */
+  updateCategoriaSeo: (
+    uuid: string,
+    patch: Partial<CategoriaSeoData>,
+  ) => Promise<void>;
+}
+
+/**
+ * Hook for fetching all categorias_visibles with their SEO metadata.
+ * Uses the same /api/multimedia/categorias endpoint that already drives the
+ * storefront navbar — after the migration it also returns the SEO columns.
+ */
+export function useSeoCategorias(): UseSeoCategoriasResult {
+  const [categorias, setCategorias] = useState<CategoriaSeoData[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  const fetchCategorias = useCallback(async (): Promise<void> => {
+    setIsLoading(true);
+    try {
+      const raw = await apiGet<CategoriaSeoData[]>(SEO_CATEGORIAS_ENDPOINT);
+      setCategorias(Array.isArray(raw) ? raw : []);
+    } catch (err) {
+      console.error(
+        "useSeoCategorias: fetch failed",
+        err instanceof Error ? err.message : err,
+      );
+      setCategorias([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const updateCategoriaSeo = useCallback(
+    async (uuid: string, patch: Partial<CategoriaSeoData>): Promise<void> => {
+      const previous = categorias;
+      setCategorias((prev) =>
+        prev.map((c) => (c.uuid === uuid ? { ...c, ...patch } : c)),
+      );
+
+      try {
+        await apiPut(`/api/multimedia/categorias/${uuid}/seo`, patch);
+      } catch (err) {
+        setCategorias(previous);
+        console.error(
+          "useSeoCategorias: updateCategoriaSeo failed",
+          err instanceof Error ? err.message : err,
+        );
+        throw err;
+      }
+    },
+    [categorias],
+  );
+
+  useEffect(() => {
+    fetchCategorias();
+  }, [fetchCategorias]);
+
+  return {
+    categorias,
+    isLoading,
+    refreshCategorias: fetchCategorias,
+    updateCategoriaSeo,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// useSeoProductos
+// ---------------------------------------------------------------------------
+
+interface UseSeoProductosResult {
+  overrides: ProductSeoData[];
+  isLoading: boolean;
+  refreshOverrides: () => Promise<void>;
+  /**
+   * Upsert SEO fields for a product by SKU. Works for both existing overrides
+   * and brand-new rows (the backend creates the row on first write).
+   */
+  upsertProductSeo: (
+    sku: string,
+    patch: Partial<ProductSeoData>,
+  ) => Promise<ProductSeoData>;
+  /**
+   * Remove an override entirely. The product will fall back to default
+   * metadata derived from the catalog.
+   */
+  deleteProductSeo: (sku: string) => Promise<void>;
+  /**
+   * Search the Novasoft catalog (v_bot_productos view) by SKU or product
+   * name. Used to validate that a SKU exists before creating an override.
+   */
+  searchCatalog: (query: string, limit?: number) => Promise<CatalogSearchResult[]>;
+}
+
+/**
+ * Hook for managing per-product SEO overrides stored in the product_seo table.
+ * Only products an admin has explicitly customized show up here; the editor
+ * exposes an "Add SKU" affordance for creating new overrides on demand.
+ */
+export function useSeoProductos(): UseSeoProductosResult {
+  const [overrides, setOverrides] = useState<ProductSeoData[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  const fetchOverrides = useCallback(async (): Promise<void> => {
+    setIsLoading(true);
+    try {
+      const raw = await apiGet<ProductSeoData[]>(SEO_PRODUCTOS_ENDPOINT);
+      setOverrides(Array.isArray(raw) ? raw : []);
+    } catch (err) {
+      console.error(
+        "useSeoProductos: fetch failed",
+        err instanceof Error ? err.message : err,
+      );
+      setOverrides([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const upsertProductSeo = useCallback(
+    async (sku: string, patch: Partial<ProductSeoData>): Promise<ProductSeoData> => {
+      const previous = overrides;
+      // Optimistic merge
+      setOverrides((prev) => {
+        const existing = prev.find((o) => o.sku === sku);
+        if (existing) {
+          return prev.map((o) => (o.sku === sku ? { ...o, ...patch } : o));
+        }
+        return [
+          {
+            sku,
+            seo_no_index: false,
+            seo_no_follow: false,
+            include_in_sitemap: true,
+            updated_at: new Date().toISOString(),
+            ...patch,
+          } as ProductSeoData,
+          ...prev,
+        ];
+      });
+
+      try {
+        const saved = await apiPut<ProductSeoData>(
+          `${SEO_PRODUCTOS_ENDPOINT}/${sku}`,
+          patch,
+        );
+        // Reconcile with whatever the server persisted
+        setOverrides((prev) => prev.map((o) => (o.sku === sku ? saved : o)));
+        return saved;
+      } catch (err) {
+        setOverrides(previous);
+        console.error(
+          "useSeoProductos: upsertProductSeo failed",
+          err instanceof Error ? err.message : err,
+        );
+        throw err;
+      }
+    },
+    [overrides],
+  );
+
+  const deleteProductSeo = useCallback(
+    async (sku: string): Promise<void> => {
+      const previous = overrides;
+      setOverrides((prev) => prev.filter((o) => o.sku !== sku));
+      try {
+        await apiDelete(`${SEO_PRODUCTOS_ENDPOINT}/${sku}`);
+      } catch (err) {
+        setOverrides(previous);
+        throw err;
+      }
+    },
+    [overrides],
+  );
+
+  const searchCatalog = useCallback(
+    async (query: string, limit = 10): Promise<CatalogSearchResult[]> => {
+      const q = query.trim();
+      if (!q) return [];
+      try {
+        const results = await apiGet<CatalogSearchResult[]>(
+          `${CATALOG_SEARCH_ENDPOINT}?q=${encodeURIComponent(q)}&limit=${limit}`,
+        );
+        return Array.isArray(results) ? results : [];
+      } catch (err) {
+        console.error(
+          "useSeoProductos: searchCatalog failed",
+          err instanceof Error ? err.message : err,
+        );
+        return [];
+      }
+    },
+    [],
+  );
+
+  useEffect(() => {
+    fetchOverrides();
+  }, [fetchOverrides]);
+
+  return {
+    overrides,
+    isLoading,
+    refreshOverrides: fetchOverrides,
+    upsertProductSeo,
+    deleteProductSeo,
+    searchCatalog,
   };
 }

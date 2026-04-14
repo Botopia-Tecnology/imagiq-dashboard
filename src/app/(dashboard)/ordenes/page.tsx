@@ -8,6 +8,9 @@ import { apiOrdersColumns } from "@/components/tables/columns/api-orders-columns
 import { OrderMetricsCards } from "@/components/orders/order-metrics-cards";
 import { OrderMetricsChart } from "@/components/orders/order-metrics-chart";
 import { ExportDialog } from "@/components/orders/export-dialog";
+import { TestFilterToggle } from "@/components/dashboard/test-filter-toggle";
+import { DateRangeSelector } from "@/components/dashboard/date-range-selector";
+import { DateRange, makeDefaultRange } from "@/types/date-range";
 import { useOrders } from "@/hooks/use-orders";
 import { useOrdersMetrics } from "@/hooks/use-orders-metrics";
 import { ApiOrderStatus, OrderSortField, SortOrder } from "@/types/orders";
@@ -37,15 +40,19 @@ export default function OrdenesPage() {
   );
   const [activeTab, setActiveTab] = useState<string>("all");
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
+  const [range, setRange] = useState<DateRange>(() => makeDefaultRange());
 
   // Hook para obtener órdenes de la API
   const { orders, pagination, isLoading, error, refetch, setParams, params } =
-    useOrders({
-      page: 1,
-      limit: 20,
-      sortField: "serial_id",
-      sortOrder: "desc",
-    });
+    useOrders(
+      {
+        page: 1,
+        limit: 20,
+        sortField: "serial_id",
+        sortOrder: "desc",
+      },
+      { from: range.from, to: range.to },
+    );
 
   // Hook para obtener métricas de órdenes
   const {
@@ -54,7 +61,7 @@ export default function OrdenesPage() {
     isLoading: metricsLoading,
     error: metricsError,
     refetch: refetchMetrics,
-  } = useOrdersMetrics();
+  } = useOrdersMetrics({ from: range.from, to: range.to });
 
   // Filtrar órdenes localmente basado en tab y filtros
   const filteredOrders = useMemo(() => {
@@ -181,7 +188,9 @@ export default function OrdenesPage() {
             Gestiona y monitorea todas tus órdenes en tiempo real
           </p>
         </div>
-        <div className="flex gap-2 shrink-0">
+        <div className="flex gap-2 shrink-0 flex-wrap items-center">
+          <DateRangeSelector value={range} onChange={setRange} />
+          <TestFilterToggle />
           <Button
             variant="outline"
             onClick={handleRefresh}

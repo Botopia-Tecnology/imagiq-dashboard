@@ -93,6 +93,9 @@ export type PageSeoStatus = "draft" | "published" | "scheduled" | "archived";
  * All optional fields reflect that pages may not have SEO metadata populated.
  */
 export interface PageSeoData {
+  /** Page UUID (primary key); required to issue per-page PUT updates */
+  id: string;
+
   /** URL slug that uniquely identifies the page, e.g. "promo-verano-2026" */
   slug: string;
 
@@ -151,6 +154,94 @@ export interface PageSeoData {
 
   /** Current publication status */
   status: PageSeoStatus;
+}
+
+// ---------------------------------------------------------------------------
+// Per-category SEO data
+// ---------------------------------------------------------------------------
+
+/**
+ * SEO-relevant fields for a single category, extracted from the CategoriaEntity
+ * returned by GET /api/multimedia/categorias.
+ */
+export interface CategoriaSeoData {
+  /** Category UUID */
+  uuid: string;
+
+  /** Internal DB name (e.g. "dispositivos-moviles") */
+  nombre: string;
+
+  /** Display name shown in the storefront nav (e.g. "Dispositivos móviles") */
+  nombre_visible?: string;
+
+  /** Short description of the category */
+  descripcion?: string;
+
+  /** Category thumbnail image (separate from the OG image) */
+  imagen?: string | null;
+
+  /** Whether the category is currently shown on the site */
+  activo: boolean;
+
+  /** Display order in the navbar */
+  orden: number;
+
+  // SEO fields (same surface as PageSeoData)
+  meta_title?: string;
+  meta_description?: string;
+  meta_keywords?: string;
+  og_image?: string;
+  seo_og_title?: string;
+  seo_og_description?: string;
+  seo_canonical?: string;
+  seo_no_index: boolean;
+  seo_no_follow: boolean;
+  include_in_sitemap: boolean;
+
+  updated_at: string;
+}
+
+// ---------------------------------------------------------------------------
+// Catalog search (Novasoft v_bot_productos)
+// ---------------------------------------------------------------------------
+
+/**
+ * Lightweight row returned by GET /api/products/catalog/search. Used by the
+ * admin dashboard SEO editor to validate a SKU against the Novasoft catalog
+ * before creating an override for it.
+ */
+export interface CatalogSearchResult {
+  sku: string;
+  codigoMarket: string;
+  nombreMarket: string;
+  modelo: string | null;
+  descGeneral: string | null;
+  urlImagenes: string | null;
+}
+
+// ---------------------------------------------------------------------------
+// Per-product SEO overrides
+// ---------------------------------------------------------------------------
+
+/**
+ * Per-product SEO overrides stored in the product_seo side table (Postgres)
+ * that joins to v_bot_productos (MSSQL) by sku. Only products that an admin
+ * has explicitly customized appear here; products without a row use the
+ * derived defaults built from the catalog data (nombreMarket, descGeneral).
+ */
+export interface ProductSeoData {
+  sku: string;
+  meta_title?: string;
+  meta_description?: string;
+  meta_keywords?: string;
+  og_image?: string;
+  seo_og_title?: string;
+  seo_og_description?: string;
+  seo_canonical?: string;
+  seo_no_index: boolean;
+  seo_no_follow: boolean;
+  include_in_sitemap: boolean;
+  updated_at: string;
 }
 
 // ---------------------------------------------------------------------------

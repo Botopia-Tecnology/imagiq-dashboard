@@ -1,11 +1,14 @@
 "use client";
 import { CategoryChart } from "@/components/charts/category-chart";
 import { OverviewChart } from "@/components/charts/overview-chart";
+import { DateRangeSelector } from "@/components/dashboard/date-range-selector";
 import { MetricCard } from "@/components/dashboard/metric-card";
 import { RecentActivity } from "@/components/dashboard/recent-activity";
+import { TestFilterToggle } from "@/components/dashboard/test-filter-toggle";
 import { BrandIcon } from "@/components/icons/BrandIcon";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useDashboardMetrics } from "@/hooks/use-dashboard-metrics";
+import { DateRange, makeDefaultRange } from "@/types/date-range";
 import {
   mockCategoryData,
   mockDashboardMetrics,
@@ -24,8 +27,15 @@ import {
 import { useEffect, useState } from "react";
 
 export default function InicioPage() {
-  const { getMetrics } = useDashboardMetrics();
+  const [range, setRange] = useState<DateRange>(() => makeDefaultRange());
+  const { getMetrics, excludeTest } = useDashboardMetrics({
+    from: range.from,
+    to: range.to,
+  });
   const [metrics, setMetrics] = useState<DashboardMetrics>();
+
+  const rangeFromMs = range.from.getTime();
+  const rangeToMs = range.to.getTime();
 
   useEffect(() => {
     async function fetchMetrics() {
@@ -33,12 +43,19 @@ export default function InicioPage() {
       setMetrics(data);
     }
     fetchMetrics();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [excludeTest, rangeFromMs, rangeToMs]);
   return (
     <div className="space-y-3">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground">Vista general de tu e-commerce</p>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-muted-foreground">Vista general de tu e-commerce</p>
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <DateRangeSelector value={range} onChange={setRange} />
+          <TestFilterToggle />
+        </div>
       </div>
 
       {/* Metric Cards */}

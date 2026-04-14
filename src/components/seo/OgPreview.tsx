@@ -14,7 +14,6 @@
  */
 
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 
@@ -201,42 +200,35 @@ export function OgPreview(props: OgPreviewProps) {
   const [platform, setPlatform] = useState<Platform>("facebook");
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-sm">Vista previa redes sociales</CardTitle>
-          <Tabs
-            value={platform}
-            onValueChange={(v) => setPlatform(v as Platform)}
-          >
-            <TabsList className="h-7">
-              <TabsTrigger value="facebook" className="text-xs px-2 h-5">
-                Facebook
-              </TabsTrigger>
-              <TabsTrigger value="twitter" className="text-xs px-2 h-5">
-                X / Twitter
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </div>
-      </CardHeader>
+    <div className="space-y-3">
+      {/* Platform switcher */}
+      <div className="flex justify-end">
+        <Tabs value={platform} onValueChange={(v) => setPlatform(v as Platform)}>
+          <TabsList className="h-7">
+            <TabsTrigger value="facebook" className="text-xs px-2 h-5">
+              Facebook
+            </TabsTrigger>
+            <TabsTrigger value="twitter" className="text-xs px-2 h-5">
+              X / Twitter
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
 
-      <CardContent>
-        <div className="flex justify-center">
-          {platform === "facebook" ? (
-            <FacebookCard {...props} />
-          ) : (
-            <TwitterCard {...props} />
-          )}
-        </div>
-
-        {/* OG image hint */}
-        {!props.image && (
-          <p className="mt-3 text-[11px] text-muted-foreground text-center">
-            Sin imagen OG configurada. Se recomienda una imagen de 1200x630 px.
-          </p>
+      <div className="flex justify-center">
+        {platform === "facebook" ? (
+          <FacebookCard {...props} />
+        ) : (
+          <TwitterCard {...props} />
         )}
-      </CardContent>
-    </Card>
+      </div>
+
+      {/* OG image hint */}
+      {!props.image && (
+        <p className="text-[11px] text-muted-foreground text-center">
+          Sin imagen OG configurada. Se recomienda una imagen de 1200x630 px.
+        </p>
+      )}
+    </div>
   );
 }

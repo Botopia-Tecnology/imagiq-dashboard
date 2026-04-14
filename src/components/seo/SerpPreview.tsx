@@ -13,7 +13,6 @@
  */
 
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 
@@ -185,84 +184,77 @@ export function SerpPreview(props: SerpPreviewProps) {
   const descOver = props.description.length > DESC_LIMIT;
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-sm">Vista previa SERP</CardTitle>
-          <Tabs
-            value={mode}
-            onValueChange={(v) => setMode(v as ViewMode)}
-          >
-            <TabsList className="h-7">
-              <TabsTrigger value="desktop" className="text-xs px-2 h-5">
-                Escritorio
-              </TabsTrigger>
-              <TabsTrigger value="mobile" className="text-xs px-2 h-5">
-                Movil
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </div>
-      </CardHeader>
+    <div className="space-y-3">
+      {/* Mode switcher */}
+      <div className="flex justify-end">
+        <Tabs value={mode} onValueChange={(v) => setMode(v as ViewMode)}>
+          <TabsList className="h-7">
+            <TabsTrigger value="desktop" className="text-xs px-2 h-5">
+              Escritorio
+            </TabsTrigger>
+            <TabsTrigger value="mobile" className="text-xs px-2 h-5">
+              Movil
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
 
-      <CardContent>
-        {/* Google-style container */}
-        <div
-          className={cn(
-            "bg-white rounded-lg border border-gray-200 p-4 transition-all duration-200",
-            mode === "mobile" && "max-w-[400px]"
-          )}
-        >
-          {/* Simulated Google search bar */}
-          <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-200">
-            <div className="flex gap-[3px] items-center">
-              <span className="text-[22px] font-bold text-[#4285F4]">G</span>
-              <span className="text-[22px] font-bold text-[#EA4335]">o</span>
-              <span className="text-[22px] font-bold text-[#FBBC04]">o</span>
-              <span className="text-[22px] font-bold text-[#4285F4]">g</span>
-              <span className="text-[22px] font-bold text-[#34A853]">l</span>
-              <span className="text-[22px] font-bold text-[#EA4335]">e</span>
-            </div>
-            <div
-              className={cn(
-                "flex-1 h-8 rounded-full border border-gray-300 bg-white flex items-center px-3",
-                mode === "mobile" ? "text-[12px]" : "text-[14px]"
-              )}
-            >
-              <span className="text-gray-400 truncate">
-                {new URL(
-                  props.url.startsWith("http")
-                    ? props.url
-                    : `https://${props.url}`
-                ).hostname.replace(/^www\./, "") || "busqueda..."}
-              </span>
-            </div>
-          </div>
-
-          {/* Actual result preview */}
-          {mode === "desktop" ? (
-            <DesktopResult {...props} />
-          ) : (
-            <MobileResult {...props} />
-          )}
-        </div>
-
-        {/* Overflow warnings */}
-        {(titleOver || descOver) && (
-          <div className="mt-3 flex flex-wrap gap-2">
-            {titleOver && (
-              <span className="text-[11px] text-amber-600 bg-amber-50 border border-amber-200 rounded px-2 py-0.5">
-                Titulo excede {TITLE_LIMIT} caracteres — sera truncado
-              </span>
-            )}
-            {descOver && (
-              <span className="text-[11px] text-amber-600 bg-amber-50 border border-amber-200 rounded px-2 py-0.5">
-                Descripcion excede {DESC_LIMIT} caracteres — sera truncada
-              </span>
-            )}
-          </div>
+      {/* Google-style container */}
+      <div
+        className={cn(
+          "bg-white rounded-lg border border-gray-200 p-4 transition-all duration-200",
+          mode === "mobile" && "max-w-[400px]"
         )}
-      </CardContent>
-    </Card>
+      >
+        {/* Simulated Google search bar */}
+        <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-200">
+          <div className="flex gap-[3px] items-center">
+            <span className="text-[22px] font-bold text-[#4285F4]">G</span>
+            <span className="text-[22px] font-bold text-[#EA4335]">o</span>
+            <span className="text-[22px] font-bold text-[#FBBC04]">o</span>
+            <span className="text-[22px] font-bold text-[#4285F4]">g</span>
+            <span className="text-[22px] font-bold text-[#34A853]">l</span>
+            <span className="text-[22px] font-bold text-[#EA4335]">e</span>
+          </div>
+          <div
+            className={cn(
+              "flex-1 h-8 rounded-full border border-gray-300 bg-white flex items-center px-3",
+              mode === "mobile" ? "text-[12px]" : "text-[14px]"
+            )}
+          >
+            <span className="text-gray-400 truncate">
+              {new URL(
+                props.url.startsWith("http")
+                  ? props.url
+                  : `https://${props.url}`
+              ).hostname.replace(/^www\./, "") || "busqueda..."}
+            </span>
+          </div>
+        </div>
+
+        {/* Actual result preview */}
+        {mode === "desktop" ? (
+          <DesktopResult {...props} />
+        ) : (
+          <MobileResult {...props} />
+        )}
+      </div>
+
+      {/* Overflow warnings */}
+      {(titleOver || descOver) && (
+        <div className="flex flex-wrap gap-2">
+          {titleOver && (
+            <span className="text-[11px] text-amber-600 bg-amber-50 border border-amber-200 rounded px-2 py-0.5">
+              Titulo excede {TITLE_LIMIT} caracteres — sera truncado
+            </span>
+          )}
+          {descOver && (
+            <span className="text-[11px] text-amber-600 bg-amber-50 border border-amber-200 rounded px-2 py-0.5">
+              Descripcion excede {DESC_LIMIT} caracteres — sera truncada
+            </span>
+          )}
+        </div>
+      )}
+    </div>
   );
 }

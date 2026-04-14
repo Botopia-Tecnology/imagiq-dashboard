@@ -4,6 +4,7 @@ import { Separator } from "@/components/ui/separator"
 import { DynamicBreadcrumb } from "@/components/dashboard/dynamic-breadcrumb"
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute"
 import { UserProfile } from "@/components/auth/UserProfile"
+import { TestFilterProvider } from "@/contexts/TestFilterContext"
 
 export default function DashboardLayout({
   children,
@@ -12,6 +13,7 @@ export default function DashboardLayout({
 }) {
   return (
     <ProtectedRoute>
+      <TestFilterProvider>
       <SidebarProvider>
         <AppSidebar />
     {/* Añadir `min-w-0` para permitir que la columna principal se encoja
@@ -32,6 +34,7 @@ export default function DashboardLayout({
           </div>
         </main>
       </SidebarProvider>
+      </TestFilterProvider>
     </ProtectedRoute>
   )
 }
