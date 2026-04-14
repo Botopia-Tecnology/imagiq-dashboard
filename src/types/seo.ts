@@ -157,6 +157,51 @@ export interface PageSeoData {
 }
 
 // ---------------------------------------------------------------------------
+// Per-category SEO data
+// ---------------------------------------------------------------------------
+
+/**
+ * SEO-relevant fields for a single category, extracted from the CategoriaEntity
+ * returned by GET /api/multimedia/categorias.
+ */
+export interface CategoriaSeoData {
+  /** Category UUID */
+  uuid: string;
+
+  /** Internal DB name (e.g. "dispositivos-moviles") */
+  nombre: string;
+
+  /** Display name shown in the storefront nav (e.g. "Dispositivos móviles") */
+  nombre_visible?: string;
+
+  /** Short description of the category */
+  descripcion?: string;
+
+  /** Category thumbnail image (separate from the OG image) */
+  imagen?: string | null;
+
+  /** Whether the category is currently shown on the site */
+  activo: boolean;
+
+  /** Display order in the navbar */
+  orden: number;
+
+  // SEO fields (same surface as PageSeoData)
+  meta_title?: string;
+  meta_description?: string;
+  meta_keywords?: string;
+  og_image?: string;
+  seo_og_title?: string;
+  seo_og_description?: string;
+  seo_canonical?: string;
+  seo_no_index: boolean;
+  seo_no_follow: boolean;
+  include_in_sitemap: boolean;
+
+  updated_at: string;
+}
+
+// ---------------------------------------------------------------------------
 // Computed SEO score
 // ---------------------------------------------------------------------------
 

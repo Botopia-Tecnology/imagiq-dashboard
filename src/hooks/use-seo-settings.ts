@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { apiGet, apiPut } from "@/lib/api-client";
-import type { SeoSettings, PageSeoData } from "@/types/seo";
+import type { SeoSettings, PageSeoData, CategoriaSeoData } from "@/types/seo";
 
 // ---------------------------------------------------------------------------
 // Shared constants
@@ -10,6 +10,7 @@ import type { SeoSettings, PageSeoData } from "@/types/seo";
 
 const SEO_SETTINGS_ENDPOINT = "/api/multimedia/seo/settings";
 const SEO_PAGES_ENDPOINT = "/api/multimedia/pages?limit=500";
+const SEO_CATEGORIAS_ENDPOINT = "/api/multimedia/categorias";
 
 // ---------------------------------------------------------------------------
 // useSeoSettings
@@ -237,5 +238,81 @@ export function useSeoPages(): UseSeopagesResult {
     isLoading,
     refreshPages: fetchPages,
     updatePage,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// useSeoCategorias
+// ---------------------------------------------------------------------------
+
+interface UseSeoCategoriasResult {
+  categorias: CategoriaSeoData[];
+  isLoading: boolean;
+  refreshCategorias: () => Promise<void>;
+  /**
+   * Persist a partial SEO update for a single category.
+   * Optimistically merges the patch into local state, then PUTs to the backend.
+   */
+  updateCategoriaSeo: (
+    uuid: string,
+    patch: Partial<CategoriaSeoData>,
+  ) => Promise<void>;
+}
+
+/**
+ * Hook for fetching all categorias_visibles with their SEO metadata.
+ * Uses the same /api/multimedia/categorias endpoint that already drives the
+ * storefront navbar — after the migration it also returns the SEO columns.
+ */
+export function useSeoCategorias(): UseSeoCategoriasResult {
+  const [categorias, setCategorias] = useState<CategoriaSeoData[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  const fetchCategorias = useCallback(async (): Promise<void> => {
+    setIsLoading(true);
+    try {
+      const raw = await apiGet<CategoriaSeoData[]>(SEO_CATEGORIAS_ENDPOINT);
+      setCategorias(Array.isArray(raw) ? raw : []);
+    } catch (err) {
+      console.error(
+        "useSeoCategorias: fetch failed",
+        err instanceof Error ? err.message : err,
+      );
+      setCategorias([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const updateCategoriaSeo = useCallback(
+    async (uuid: string, patch: Partial<CategoriaSeoData>): Promise<void> => {
+      const previous = categorias;
+      setCategorias((prev) =>
+        prev.map((c) => (c.uuid === uuid ? { ...c, ...patch } : c)),
+      );
+
+      try {
+        await apiPut(`/api/multimedia/categorias/${uuid}/seo`, patch);
+      } catch (err) {
+        setCategorias(previous);
+        console.error(
+          "useSeoCategorias: updateCategoriaSeo failed",
+          err instanceof Error ? err.message : err,
+        );
+        throw err;
+      }
+    },
+    [categorias],
+  );
+
+  useEffect(() => {
+    fetchCategorias();
+  }, [fetchCategorias]);
+
+  return {
+    categorias,
+    isLoading,
+    refreshCategorias: fetchCategorias,
+    updateCategoriaSeo,
   };
 }

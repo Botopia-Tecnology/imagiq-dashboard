@@ -10,13 +10,14 @@ import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ArrowLeft, Save, Loader2, Globe, Bot, Map, FileText, Plus, X, ExternalLink, Copy, Upload, ImageIcon } from "lucide-react"
+import { ArrowLeft, Save, Loader2, Globe, Bot, Map, FileText, LayoutGrid, Plus, X, ExternalLink, Copy, Upload, ImageIcon } from "lucide-react"
 import { toast } from "sonner"
 import { SerpPreview } from "@/components/seo/SerpPreview"
 import { OgPreview } from "@/components/seo/OgPreview"
 import { CharCounter } from "@/components/seo/CharCounter"
 import { RobotsPreview } from "@/components/seo/RobotsPreview"
 import { PaginasEditor } from "@/components/seo/PaginasEditor"
+import { CategoriasEditor } from "@/components/seo/CategoriasEditor"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"
 const API_KEY = process.env.NEXT_PUBLIC_API_KEY
@@ -187,7 +188,7 @@ export default function SeoPage() {
       </div>
 
       <Tabs defaultValue="general" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="general" className="flex items-center gap-2">
             <Globe className="h-4 w-4" /> General
           </TabsTrigger>
@@ -199,6 +200,9 @@ export default function SeoPage() {
           </TabsTrigger>
           <TabsTrigger value="pages" className="flex items-center gap-2">
             <FileText className="h-4 w-4" /> Paginas
+          </TabsTrigger>
+          <TabsTrigger value="categorias" className="flex items-center gap-2">
+            <LayoutGrid className="h-4 w-4" /> Categorias
           </TabsTrigger>
         </TabsList>
 
@@ -543,6 +547,17 @@ export default function SeoPage() {
         {/* ─── TAB: Paginas ─── */}
         <TabsContent value="pages" className="space-y-4">
           <PaginasEditor
+            siteUrl={settings.site_url || "https://imagiq.com"}
+            siteName={settings.site_name || "Imagiq"}
+            titleTemplate={settings.title_template || "%s | Imagiq"}
+            defaultDescription={settings.default_description || ""}
+            defaultOgImage={settings.default_og_image || ""}
+          />
+        </TabsContent>
+
+        {/* ─── TAB: Categorias ─── */}
+        <TabsContent value="categorias" className="space-y-4">
+          <CategoriasEditor
             siteUrl={settings.site_url || "https://imagiq.com"}
             siteName={settings.site_name || "Imagiq"}
             titleTemplate={settings.title_template || "%s | Imagiq"}
