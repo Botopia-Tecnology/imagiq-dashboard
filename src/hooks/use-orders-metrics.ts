@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { getOrdersMetrics } from "@/services/orders";
+import { useTestFilter } from "@/contexts/TestFilterContext";
 import {
   OrderMetrics,
   OrdersMetricsResponse,
@@ -38,7 +39,12 @@ function getAuthToken(): string | null {
  *   console.log(metrics.total_ordenes, metrics.total_ingresos);
  * }
  */
-export function useOrdersMetrics(): UseOrdersMetricsReturn {
+export function useOrdersMetrics(
+  range?: { from: Date; to: Date },
+): UseOrdersMetricsReturn {
+  const { excludeTest } = useTestFilter();
+  const rangeFromMs = range?.from.getTime();
+  const rangeToMs = range?.to.getTime();
   const [state, setState] = useState<UseOrdersMetricsState>({
     metrics: null,
     statusDistribution: [],
@@ -51,7 +57,11 @@ export function useOrdersMetrics(): UseOrdersMetricsReturn {
 
     try {
       const token = getAuthToken();
-      const response: OrdersMetricsResponse = await getOrdersMetrics(token);
+      const response: OrdersMetricsResponse = await getOrdersMetrics(token, {
+        excludeTest,
+        dateFrom: range ? range.from.toISOString() : undefined,
+        dateTo: range ? range.to.toISOString() : undefined,
+      });
 
       setState({
         metrics: response.metrics,
@@ -68,7 +78,8 @@ export function useOrdersMetrics(): UseOrdersMetricsReturn {
         error,
       }));
     }
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [excludeTest, rangeFromMs, rangeToMs]);
 
   // Fetch on mount
   useEffect(() => {

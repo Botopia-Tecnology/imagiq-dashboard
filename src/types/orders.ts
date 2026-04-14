@@ -72,6 +72,9 @@ export interface OrdersQueryParams {
   sortField?: OrderSortField;
   sortOrder?: SortOrder;
   search?: string;
+  excludeTest?: boolean;
+  dateFrom?: string;
+  dateTo?: string;
 }
 
 /**

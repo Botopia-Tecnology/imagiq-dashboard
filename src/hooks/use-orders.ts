@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { getOrders } from "@/services/orders";
+import { useTestFilter } from "@/contexts/TestFilterContext";
 import {
   ApiOrder,
   OrdersApiResponse,
@@ -45,8 +46,10 @@ function getAuthToken(): string | null {
  * });
  */
 export function useOrders(
-  initialParams: OrdersQueryParams = {}
+  initialParams: OrdersQueryParams = {},
+  range?: { from: Date; to: Date }
 ): UseOrdersReturn {
+  const { excludeTest } = useTestFilter();
   const [params, setParamsState] = useState<OrdersQueryParams>({
     page: 1,
     limit: 20,
@@ -62,12 +65,23 @@ export function useOrders(
     error: null,
   });
 
+  const rangeFromMs = range?.from.getTime();
+  const rangeToMs = range?.to.getTime();
+
   const fetchOrders = useCallback(async () => {
     setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
     try {
       const token = getAuthToken();
-      const response: OrdersApiResponse = await getOrders(params, token);
+      const response: OrdersApiResponse = await getOrders(
+        {
+          ...params,
+          excludeTest,
+          dateFrom: range ? range.from.toISOString() : undefined,
+          dateTo: range ? range.to.toISOString() : undefined,
+        },
+        token,
+      );
 
       setState({
         orders: response.data,
@@ -84,12 +98,18 @@ export function useOrders(
         error,
       }));
     }
-  }, [params]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [params, excludeTest, rangeFromMs, rangeToMs]);
 
   // Fetch on mount and when params change
   useEffect(() => {
     fetchOrders();
   }, [fetchOrders]);
+
+  // Reset page to 1 when filters toggle (avoid landing on an empty page)
+  useEffect(() => {
+    setParamsState((prev) => ({ ...prev, page: 1 }));
+  }, [excludeTest, rangeFromMs, rangeToMs]);
 
   const setParams = useCallback((newParams: Partial<OrdersQueryParams>) => {
     setParamsState((prev) => ({

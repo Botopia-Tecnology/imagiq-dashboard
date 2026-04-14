@@ -33,6 +33,15 @@ function buildQueryString(params: OrdersQueryParams): string {
   if (params.search) {
     searchParams.set("search", params.search);
   }
+  if (params.excludeTest) {
+    searchParams.set("excludeTest", "true");
+  }
+  if (params.dateFrom) {
+    searchParams.set("dateFrom", params.dateFrom);
+  }
+  if (params.dateTo) {
+    searchParams.set("dateTo", params.dateTo);
+  }
 
   const queryString = searchParams.toString();
   return queryString ? `?${queryString}` : "";
@@ -76,9 +85,15 @@ export async function getOrders(
  * console.log(metrics.total_ordenes, metrics.total_ingresos);
  */
 export async function getOrdersMetrics(
-  token?: string | null
+  token?: string | null,
+  options?: { excludeTest?: boolean; dateFrom?: string; dateTo?: string }
 ): Promise<OrdersMetricsResponse> {
-  return apiGet<OrdersMetricsResponse>("/api/admin/orders/metrics", {
+  const sp = new URLSearchParams();
+  if (options?.excludeTest) sp.set("excludeTest", "true");
+  if (options?.dateFrom) sp.set("dateFrom", options.dateFrom);
+  if (options?.dateTo) sp.set("dateTo", options.dateTo);
+  const query = sp.toString() ? `?${sp.toString()}` : "";
+  return apiGet<OrdersMetricsResponse>(`/api/admin/orders/metrics${query}`, {
     headers: {
       ...(token && { Authorization: `Bearer ${token}` }),
     },

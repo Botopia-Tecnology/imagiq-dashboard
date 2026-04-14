@@ -1,6 +1,7 @@
 "use client";
 
 import { apiGet } from "@/lib/api-client";
+import { useTestFilter } from "@/contexts/TestFilterContext";
 import { DashboardMetrics } from "@/types/dasboard";
 
 function getAuthToken(): string | null {
@@ -8,14 +9,22 @@ function getAuthToken(): string | null {
   return localStorage.getItem("imagiq_token");
 }
 
-export function useDashboardMetrics() {
+export function useDashboardMetrics(range?: { from: Date; to: Date }) {
+  const { excludeTest } = useTestFilter();
   const getMetrics = async () => {
     const token = getAuthToken();
-    return await apiGet<DashboardMetrics>("/api/admin/metrics", {
+    const sp = new URLSearchParams();
+    if (excludeTest) sp.set("excludeTest", "true");
+    if (range) {
+      sp.set("dateFrom", range.from.toISOString());
+      sp.set("dateTo", range.to.toISOString());
+    }
+    const query = sp.toString() ? `?${sp.toString()}` : "";
+    return await apiGet<DashboardMetrics>(`/api/admin/metrics${query}`, {
       headers: {
         ...(token && { Authorization: `Bearer ${token}` }),
       },
     });
   };
-  return { getMetrics };
+  return { getMetrics, excludeTest };
 }
