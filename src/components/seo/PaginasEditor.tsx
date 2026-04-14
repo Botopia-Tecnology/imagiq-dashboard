@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useRef, DragEvent } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -9,7 +9,17 @@ import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Save, Loader2, Search, FileText, AlertCircle, CheckCircle2 } from "lucide-react"
+import {
+  Save,
+  Loader2,
+  Search,
+  FileText,
+  AlertCircle,
+  CheckCircle2,
+  Upload,
+  ImageIcon,
+  X,
+} from "lucide-react"
 import { toast } from "sonner"
 import { SerpPreview } from "./SerpPreview"
 import { OgPreview } from "./OgPreview"
@@ -17,6 +27,11 @@ import { CharCounter } from "./CharCounter"
 import { useSeoPages } from "@/hooks/use-seo-settings"
 import type { PageSeoData } from "@/types/seo"
 import { cn } from "@/lib/utils"
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"
+const API_KEY = process.env.NEXT_PUBLIC_API_KEY
+const MAX_OG_IMAGE_BYTES = 2 * 1024 * 1024 // 2MB (matches backend)
+const ALLOWED_OG_MIMES = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
 
 interface PaginasEditorProps {
   /** Site URL used for building canonical/preview URLs when the page has none */
@@ -101,6 +116,9 @@ export function PaginasEditor({
   const [query, setQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<"all" | PageSeoData["status"]>("all")
   const [isSaving, setIsSaving] = useState(false)
+  const [isUploadingOg, setIsUploadingOg] = useState(false)
+  const [isDragging, setIsDragging] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const selected = useMemo(
     () => pages.find((p) => p.id === selectedId) || null,
@@ -155,6 +173,66 @@ export function PaginasEditor({
     }
   }
 
+  const handleOgFileUpload = async (file: File) => {
+    if (!selected) return
+
+    if (!ALLOWED_OG_MIMES.includes(file.type)) {
+      toast.error("Formato no soportado. Usa JPG, PNG o WebP.")
+      return
+    }
+    if (file.size > MAX_OG_IMAGE_BYTES) {
+      toast.error("Archivo muy grande (máx 2MB)")
+      return
+    }
+
+    try {
+      setIsUploadingOg(true)
+      const formData = new FormData()
+      formData.append("image", file)
+
+      const res = await fetch(
+        `${API_URL}/api/multimedia/pages/${selected.id}/og-image`,
+        {
+          method: "POST",
+          headers: { ...(API_KEY && { "X-API-Key": API_KEY }) },
+          body: formData,
+        }
+      )
+      if (!res.ok) throw new Error(`Upload failed: ${res.status}`)
+
+      const json = (await res.json()) as { url: string }
+      // Persist the new URL in both form state and the underlying page list
+      setForm((f) => ({ ...f, og_image: json.url }))
+      setOriginalForm((f) => ({ ...f, og_image: json.url }))
+      await updatePage(selected.id, { og_image: json.url })
+      toast.success("OG image subida")
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Error al subir imagen")
+    } finally {
+      setIsUploadingOg(false)
+      if (fileInputRef.current) fileInputRef.current.value = ""
+    }
+  }
+
+  const handleOgFileDrop = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    setIsDragging(false)
+    const file = e.dataTransfer.files?.[0]
+    if (file) handleOgFileUpload(file)
+  }
+
+  const clearOgImage = async () => {
+    if (!selected) return
+    setForm((f) => ({ ...f, og_image: "" }))
+    setOriginalForm((f) => ({ ...f, og_image: "" }))
+    try {
+      await updatePage(selected.id, { og_image: "" })
+      toast.success("OG image eliminada")
+    } catch {
+      toast.error("No se pudo eliminar la imagen")
+    }
+  }
+
   // ─── Preview values (with fallbacks) ─────────────────────────────────────
   const previewTitle = (() => {
     const base = form.meta_title || selected?.title || ""
@@ -171,10 +249,10 @@ export function PaginasEditor({
   const previewOgImage = form.og_image || defaultOgImage
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-4">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       {/* ─── Master: page list ─── */}
-      <Card className="flex flex-col h-[calc(100vh-260px)] min-h-[500px]">
-        <CardHeader className="space-y-3 pb-3">
+      <Card className="flex flex-col overflow-hidden h-[calc(100vh-260px)] min-h-[500px]">
+        <CardHeader className="space-y-3 pb-3 shrink-0">
           <CardTitle className="text-base">Páginas del sitio</CardTitle>
           <div className="relative">
             <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -202,8 +280,8 @@ export function PaginasEditor({
             ))}
           </div>
         </CardHeader>
-        <ScrollArea className="flex-1">
-          <div className="p-2 space-y-1">
+        <ScrollArea className="flex-1 min-h-0">
+          <div className="px-3 pb-3 space-y-1">
             {isLoading && (
               <div className="flex items-center gap-2 p-4 text-sm text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin" /> Cargando páginas...
@@ -222,10 +300,10 @@ export function PaginasEditor({
                   key={p.id}
                   onClick={() => setSelectedId(p.id)}
                   className={cn(
-                    "w-full text-left p-2 rounded-md transition-colors",
+                    "w-full text-left p-2.5 rounded-md border transition-colors",
                     isSelected
-                      ? "bg-primary/10 border border-primary/30"
-                      : "hover:bg-muted border border-transparent"
+                      ? "bg-primary/10 border-primary/40"
+                      : "border-transparent hover:bg-muted hover:border-border"
                   )}
                 >
                   <div className="flex items-start justify-between gap-2">
@@ -241,7 +319,7 @@ export function PaginasEditor({
                       <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
                     )}
                   </div>
-                  <div className="flex items-center gap-1 mt-1">
+                  <div className="flex flex-wrap items-center gap-1 mt-1.5">
                     <span
                       className={cn(
                         "text-[10px] px-1.5 py-0.5 rounded",
@@ -359,7 +437,9 @@ export function PaginasEditor({
                   placeholder={`${siteUrl}/${selected.slug}`}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Déjalo vacío para usar la URL por defecto
+                  URL oficial de esta página. Le dice a Google cuál es la versión
+                  canónica cuando hay contenido duplicado. Déjalo vacío para usar
+                  la URL por defecto.
                 </p>
               </div>
             </CardContent>
@@ -394,13 +474,98 @@ export function PaginasEditor({
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="og_image">OG imagen (URL)</Label>
-                <Input
-                  id="og_image"
-                  value={form.og_image || ""}
-                  onChange={(e) => setForm({ ...form, og_image: e.target.value })}
-                  placeholder={defaultOgImage || "https://..."}
+                <Label>OG imagen</Label>
+                {form.og_image ? (
+                  <div className="relative group rounded-lg overflow-hidden border bg-muted">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={form.og_image}
+                      alt="OG preview"
+                      className="w-full h-48 object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isUploadingOg}
+                      >
+                        <Upload className="h-4 w-4 mr-2" />
+                        Cambiar
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        onClick={clearOgImage}
+                        disabled={isUploadingOg}
+                      >
+                        <X className="h-4 w-4 mr-2" />
+                        Quitar
+                      </Button>
+                    </div>
+                    {isUploadingOg && (
+                      <div className="absolute inset-0 bg-black/70 flex items-center justify-center">
+                        <Loader2 className="h-6 w-6 animate-spin text-white" />
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div
+                    onClick={() => !isUploadingOg && fileInputRef.current?.click()}
+                    onDragOver={(e) => {
+                      e.preventDefault()
+                      setIsDragging(true)
+                    }}
+                    onDragLeave={() => setIsDragging(false)}
+                    onDrop={handleOgFileDrop}
+                    className={cn(
+                      "border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors",
+                      isDragging
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:border-primary/50 hover:bg-muted/30"
+                    )}
+                  >
+                    {isUploadingOg ? (
+                      <div className="flex flex-col items-center gap-2">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                        <p className="text-sm text-muted-foreground">Subiendo imagen...</p>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center gap-2">
+                        <ImageIcon className="h-8 w-8 text-muted-foreground/60" />
+                        <p className="text-sm font-medium">
+                          Arrastra una imagen o haz click para subir
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          JPG, PNG o WebP · máx 2MB · recomendado 1200×630
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (file) handleOgFileUpload(file)
+                  }}
                 />
+                <details className="text-xs text-muted-foreground">
+                  <summary className="cursor-pointer hover:text-foreground">
+                    ¿Ya tienes una URL? Pégala aquí
+                  </summary>
+                  <Input
+                    className="mt-2"
+                    value={form.og_image || ""}
+                    onChange={(e) => setForm({ ...form, og_image: e.target.value })}
+                    placeholder={defaultOgImage || "https://..."}
+                  />
+                </details>
               </div>
             </CardContent>
           </Card>
