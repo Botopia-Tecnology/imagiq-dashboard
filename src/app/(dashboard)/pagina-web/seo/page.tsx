@@ -16,6 +16,7 @@ import { SerpPreview } from "@/components/seo/SerpPreview"
 import { OgPreview } from "@/components/seo/OgPreview"
 import { CharCounter } from "@/components/seo/CharCounter"
 import { RobotsPreview } from "@/components/seo/RobotsPreview"
+import { PaginasEditor } from "@/components/seo/PaginasEditor"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"
 const API_KEY = process.env.NEXT_PUBLIC_API_KEY
@@ -541,17 +542,13 @@ export default function SeoPage() {
 
         {/* ─── TAB: Paginas ─── */}
         <TabsContent value="pages" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">SEO por pagina</CardTitle>
-              <CardDescription>Revisa y edita los metadatos de cada pagina de tu sitio</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground py-8 text-center">
-                El editor de SEO por pagina estara disponible proximamente. Por ahora, los metadatos se configuran en la seccion General.
-              </p>
-            </CardContent>
-          </Card>
+          <PaginasEditor
+            siteUrl={settings.site_url || "https://imagiq.com"}
+            siteName={settings.site_name || "Imagiq"}
+            titleTemplate={settings.title_template || "%s | Imagiq"}
+            defaultDescription={settings.default_description || ""}
+            defaultOgImage={settings.default_og_image || ""}
+          />
         </TabsContent>
       </Tabs>
     </div>

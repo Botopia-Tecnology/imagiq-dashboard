@@ -146,6 +146,11 @@ interface UseSeopagesResult {
   isLoading: boolean;
   /** Manually re-fetch the pages list */
   refreshPages: () => Promise<void>;
+  /**
+   * Persist a partial SEO update for a single page.
+   * Optimistically merges the patch into local state, then PUTs to the backend.
+   */
+  updatePage: (id: string, patch: Partial<PageSeoData>) => Promise<void>;
 }
 
 /**
@@ -201,6 +206,27 @@ export function useSeoPages(): UseSeopagesResult {
     }
   }, []);
 
+  const updatePage = useCallback(
+    async (id: string, patch: Partial<PageSeoData>): Promise<void> => {
+      const previous = pages;
+      setPages((prev) =>
+        prev.map((p) => (p.id === id ? { ...p, ...patch } : p))
+      );
+
+      try {
+        await apiPut<PageSeoData>(`/api/multimedia/pages/${id}`, patch);
+      } catch (err) {
+        setPages(previous);
+        console.error(
+          "useSeoPages: updatePage failed",
+          err instanceof Error ? err.message : err
+        );
+        throw err;
+      }
+    },
+    [pages]
+  );
+
   // Fetch on mount
   useEffect(() => {
     fetchPages();
@@ -210,5 +236,6 @@ export function useSeoPages(): UseSeopagesResult {
     pages,
     isLoading,
     refreshPages: fetchPages,
+    updatePage,
   };
 }

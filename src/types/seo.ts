@@ -93,6 +93,9 @@ export type PageSeoStatus = "draft" | "published" | "scheduled" | "archived";
  * All optional fields reflect that pages may not have SEO metadata populated.
  */
 export interface PageSeoData {
+  /** Page UUID (primary key); required to issue per-page PUT updates */
+  id: string;
+
   /** URL slug that uniquely identifies the page, e.g. "promo-verano-2026" */
   slug: string;
 
