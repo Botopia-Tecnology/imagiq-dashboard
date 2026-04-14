@@ -616,18 +616,33 @@ export function PaginasEditor({
           </Card>
 
           {/* Live previews */}
-          <SerpPreview
-            title={previewTitle}
-            description={previewDescription}
-            url={previewUrl}
-          />
-          <OgPreview
-            title={previewOgTitle}
-            description={previewOgDescription}
-            image={previewOgImage}
-            siteName={siteName}
-            url={previewUrl}
-          />
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Vista previa en Google</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <SerpPreview
+                title={previewTitle}
+                description={previewDescription}
+                url={previewUrl}
+              />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Vista previa en redes sociales</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <OgPreview
+                title={previewOgTitle}
+                description={previewOgDescription}
+                image={previewOgImage}
+                siteName={siteName}
+                url={previewUrl}
+              />
+            </CardContent>
+          </Card>
         </div>
       )}
     </div>

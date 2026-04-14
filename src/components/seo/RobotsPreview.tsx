@@ -12,7 +12,6 @@
  */
 
 import { useMemo, useCallback } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
@@ -257,63 +256,55 @@ export function RobotsPreview({
   const lineCount = tokenizedLines.filter((l) => l.raw !== "").length;
 
   return (
-    <Card className={className}>
-      <CardHeader>
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <div className="flex items-center gap-2">
-            <CardTitle className="text-sm">Vista previa robots.txt</CardTitle>
-            <Badge variant={POLICY_VARIANTS[aiPolicy]} className="text-[10px] px-1.5 py-0">
-              {POLICY_LABELS[aiPolicy]}
-            </Badge>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-[11px] text-muted-foreground">
-              {lineCount} lineas
-            </span>
-            <CopyButton text={content} />
-          </div>
+    <div className={cn("space-y-3", className)}>
+      {/* Top controls row (no inner card wrapper — the parent supplies one) */}
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <Badge variant={POLICY_VARIANTS[aiPolicy]} className="text-[10px] px-1.5 py-0">
+          {POLICY_LABELS[aiPolicy]}
+        </Badge>
+        <div className="flex items-center gap-3">
+          <span className="text-[11px] text-muted-foreground">
+            {lineCount} lineas
+          </span>
+          <CopyButton text={content} />
         </div>
-      </CardHeader>
+      </div>
 
-      <CardContent>
-        {/* Terminal-style code block */}
-        <div
-          className="relative rounded-lg overflow-hidden border border-[#374151]"
-          role="region"
-          aria-label="Contenido generado de robots.txt"
-        >
-          {/* Window chrome */}
-          <div className="flex items-center gap-1.5 px-3 py-2 bg-[#111827] border-b border-[#374151]">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#ef4444]" aria-hidden="true" />
-            <span className="w-2.5 h-2.5 rounded-full bg-[#f59e0b]" aria-hidden="true" />
-            <span className="w-2.5 h-2.5 rounded-full bg-[#10b981]" aria-hidden="true" />
-            <span className="ml-3 text-[11px] text-[#6b7280] font-mono">
-              /robots.txt
-            </span>
-          </div>
+      {/* Terminal-style code block */}
+      <div
+        className="relative rounded-lg overflow-hidden border border-[#374151]"
+        role="region"
+        aria-label="Contenido generado de robots.txt"
+      >
+        {/* Window chrome */}
+        <div className="flex items-center gap-1.5 px-3 py-2 bg-[#111827] border-b border-[#374151]">
+          <span className="w-2.5 h-2.5 rounded-full bg-[#ef4444]" aria-hidden="true" />
+          <span className="w-2.5 h-2.5 rounded-full bg-[#f59e0b]" aria-hidden="true" />
+          <span className="w-2.5 h-2.5 rounded-full bg-[#10b981]" aria-hidden="true" />
+          <span className="ml-3 text-[11px] text-[#6b7280] font-mono">
+            /robots.txt
+          </span>
+        </div>
 
-          {/* Code area */}
-          <div
-            className="bg-[#0d1117] overflow-auto max-h-[420px] p-4"
+        {/* Code area */}
+        <div className="bg-[#0d1117] overflow-auto max-h-[420px] p-4">
+          <pre
+            className="font-mono text-[13px] leading-5 text-[#e5e7eb] space-y-0.5"
+            aria-readonly="true"
           >
-            <pre
-              className="font-mono text-[13px] leading-5 text-[#e5e7eb] space-y-0.5"
-              aria-readonly="true"
-            >
-              {tokenizedLines.map((line, i) => (
-                <HighlightedLine key={i} line={line} index={i} />
-              ))}
-            </pre>
-          </div>
+            {tokenizedLines.map((line, i) => (
+              <HighlightedLine key={i} line={line} index={i} />
+            ))}
+          </pre>
         </div>
+      </div>
 
-        {/* Disallow paths summary */}
-        {disallowPaths.length > 0 && (
-          <p className="mt-2 text-[11px] text-muted-foreground">
-            {disallowPaths.filter((p) => p.trim().startsWith("/")).length} ruta(s) bloqueada(s) para todos los robots
-          </p>
-        )}
-      </CardContent>
-    </Card>
+      {/* Disallow paths summary */}
+      {disallowPaths.length > 0 && (
+        <p className="text-[11px] text-muted-foreground">
+          {disallowPaths.filter((p) => p.trim().startsWith("/")).length} ruta(s) bloqueada(s) para todos los robots
+        </p>
+      )}
+    </div>
   );
 }
