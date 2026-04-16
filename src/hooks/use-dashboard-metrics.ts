@@ -9,7 +9,12 @@ function getAuthToken(): string | null {
   return localStorage.getItem("imagiq_token");
 }
 
-export function useDashboardMetrics(range?: { from: Date; to: Date }) {
+export type OrderType = "todos" | "ecommerce" | "soporte";
+
+export function useDashboardMetrics(
+  range?: { from: Date; to: Date },
+  orderType?: OrderType
+) {
   const { excludeTest } = useTestFilter();
   const getMetrics = async () => {
     const token = getAuthToken();
@@ -19,6 +24,7 @@ export function useDashboardMetrics(range?: { from: Date; to: Date }) {
       sp.set("dateFrom", range.from.toISOString());
       sp.set("dateTo", range.to.toISOString());
     }
+    if (orderType) sp.set("orderType", orderType);
     const query = sp.toString() ? `?${sp.toString()}` : "";
     return await apiGet<DashboardMetrics>(`/api/admin/metrics${query}`, {
       headers: {
