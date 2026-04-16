@@ -17,7 +17,8 @@ import {
   User2,
   MapPin,
   Newspaper,
-  HelpCircle
+  HelpCircle,
+  Wrench,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 
@@ -69,6 +70,11 @@ const navMain = [
     title: "Órdenes",
     url: "/ordenes",
     icon: FileText,
+  },
+  {
+    title: "Servicio Técnico",
+    url: "/servicio-tecnico",
+    icon: Wrench,
   },
   {
     title: "Página Web",

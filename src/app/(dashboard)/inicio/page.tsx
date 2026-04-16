@@ -7,7 +7,14 @@ import { RecentActivity } from "@/components/dashboard/recent-activity";
 import { TestFilterToggle } from "@/components/dashboard/test-filter-toggle";
 import { BrandIcon } from "@/components/icons/BrandIcon";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useDashboardMetrics } from "@/hooks/use-dashboard-metrics";
+import { useDashboardMetrics, OrderType } from "@/hooks/use-dashboard-metrics";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { DateRange, makeDefaultRange } from "@/types/date-range";
 import {
   mockCategoryData,
@@ -28,10 +35,11 @@ import { useEffect, useState } from "react";
 
 export default function InicioPage() {
   const [range, setRange] = useState<DateRange>(() => makeDefaultRange());
-  const { getMetrics, excludeTest } = useDashboardMetrics({
-    from: range.from,
-    to: range.to,
-  });
+  const [orderType, setOrderType] = useState<OrderType>("todos");
+  const { getMetrics, excludeTest } = useDashboardMetrics(
+    { from: range.from, to: range.to },
+    orderType
+  );
   const [metrics, setMetrics] = useState<DashboardMetrics>();
 
   const rangeFromMs = range.from.getTime();
@@ -44,7 +52,7 @@ export default function InicioPage() {
     }
     fetchMetrics();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [excludeTest, rangeFromMs, rangeToMs]);
+  }, [excludeTest, rangeFromMs, rangeToMs, orderType]);
   return (
     <div className="space-y-3">
       <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -53,6 +61,19 @@ export default function InicioPage() {
           <p className="text-muted-foreground">Vista general de tu e-commerce</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
+          <Select
+            value={orderType}
+            onValueChange={(v) => setOrderType(v as OrderType)}
+          >
+            <SelectTrigger className="w-[160px] h-10">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos</SelectItem>
+              <SelectItem value="ecommerce">E-commerce</SelectItem>
+              <SelectItem value="soporte">Servicio Técnico</SelectItem>
+            </SelectContent>
+          </Select>
           <DateRangeSelector value={range} onChange={setRange} />
           <TestFilterToggle />
         </div>
