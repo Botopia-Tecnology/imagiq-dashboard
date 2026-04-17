@@ -7,6 +7,7 @@
 
 import { apiGet } from "@/lib/api-client";
 import {
+  AdminOrderDetail,
   OrdersApiResponse,
   OrdersQueryParams,
   OrdersMetricsResponse,
@@ -84,6 +85,20 @@ export async function getOrders(
  * const { metrics, statusDistribution } = await getOrdersMetrics('jwt-token');
  * console.log(metrics.total_ordenes, metrics.total_ingresos);
  */
+export async function getOrderDetail(
+  orderId: string,
+  token?: string | null,
+): Promise<AdminOrderDetail> {
+  return apiGet<AdminOrderDetail>(
+    `/api/admin/orders/${encodeURIComponent(orderId)}`,
+    {
+      headers: {
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+    },
+  );
+}
+
 export async function getOrdersMetrics(
   token?: string | null,
   options?: { excludeTest?: boolean; dateFrom?: string; dateTo?: string }

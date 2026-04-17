@@ -33,6 +33,7 @@ export type SortOrder = "asc" | "desc";
  * Orden devuelta por la API
  */
 export interface ApiOrder {
+  id: string;
   serial_id: number;
   cliente: string;
   numero_documento: string;
@@ -41,6 +42,206 @@ export interface ApiOrder {
   medio_pago: ApiPaymentMethod;
   info_pago: string;
   fecha_creacion: string;
+}
+
+export interface AdminOrderDetail {
+  order: {
+    id: string;
+    serialId: number;
+    estado: ApiOrderStatus;
+    total: number;
+    shipping: number;
+    taxes: number | null;
+    currency: string;
+    fechaCreacion: string;
+    medioPago: string | null;
+    metodoEnvio: string | null;
+    referencia: string | null;
+    transactionId: string | null;
+    couponCode: string | null;
+    couponDiscount: number | null;
+    latitude: string | null;
+    longitude: string | null;
+  };
+  customer: {
+    id: string;
+    nombre: string;
+    apellido: string | null;
+    email: string;
+    telefono: string | null;
+    codigoPais: string | null;
+    tipoDocumento: string | null;
+    numeroDocumento: string | null;
+    fechaCreacion: string | null;
+    emailVerificado: boolean | null;
+    telefonoVerificado: boolean | null;
+  };
+  billing: {
+    type: string;
+    nombre_completo: string;
+    tipo_documento: string;
+    numero_documento: string;
+    email: string;
+    telefono: string;
+    razon_social: string;
+    nit: string;
+    representante_legal: string;
+    direccion_id: string | null;
+    linea_uno: string | null;
+    ciudad: string | null;
+    departamento: string | null;
+    pais: string | null;
+    complemento: string | null;
+    barrio: string | null;
+    codigo_postal: string | null;
+    direccion_formateada: string | null;
+  } | null;
+  shippingAddress: {
+    id: string;
+    linea_uno: string;
+    complemento: string | null;
+    barrio: string | null;
+    localidad: string | null;
+    ciudad: string | null;
+    departamento: string | null;
+    pais: string;
+    codigo_postal: string | null;
+    tipo_direccion: string | null;
+    nombre_direccion: string | null;
+    latitud: string | null;
+    longitud: string | null;
+    direccion_formateada: string | null;
+    google_place_id: string | null;
+    google_url: string | null;
+  } | null;
+  items: Array<{
+    id: string;
+    sku: string;
+    nombre: string;
+    desdetallada: string;
+    cantidad: number;
+    unit_price: string;
+    tax: string;
+    picture_url: string | null;
+    categoria: string | null;
+    cod_campana: string | null;
+    skupostback: string;
+    ean: string;
+    codigo_market: string | null;
+    bundle_id: string | null;
+    bundle_product_sku: string | null;
+  }>;
+  beneficios: unknown;
+  payment: {
+    method: string | null;
+    pse: { id: number; bank: string } | null;
+    card: {
+      installments: number;
+      masked: string | null;
+      franchise: string | null;
+    } | null;
+  };
+  transactionAttempts: {
+    pse: Array<PseAttempt>;
+    card: Array<CardAttempt>;
+  };
+  envios: Array<{
+    id: string;
+    numero_guia: string;
+    activo: boolean;
+    tiempo_entrega_estimado: string | null;
+    url_seguimiento: string | null;
+    direccion_origen: string | null;
+    costoEnvioBase: number | null;
+    eventos: Array<{ evento: string; time_stamp: string }>;
+    items: Array<{ sku: string; cantidad: number }>;
+  }>;
+  kiosk: {
+    orden_id: string;
+    kiosk_store_id: string;
+    created_at: string;
+    usuario_id: string | null;
+    store_codigo: string | null;
+    store_descripcion: string | null;
+    store_ciudad: string | null;
+    store_direccion: string | null;
+    store_telefono: string | null;
+    store_email: string;
+    store_cod_bodega: string | null;
+  } | null;
+  pickup: {
+    id: string;
+    validado: boolean;
+    entregado: boolean;
+    codbodega: string;
+    activa: boolean | null;
+    hora_recogida_autorizada: string | null;
+    updated_at: string | null;
+  } | null;
+  session: {
+    clientIp: string | null;
+    posthogSessionId: string | null;
+    posthogCapturedAt: string | null;
+  };
+  rejection: {
+    estado: string | null;
+    respuesta: string | null;
+    codRespuesta: number | null;
+    codError: string | null;
+    banco: string | null;
+    timestamp: string;
+  } | null;
+}
+
+export interface PseAttempt {
+  id: string;
+  estado: string | null;
+  cod_respuesta: number | null;
+  respuesta: string | null;
+  autorizacion: string | null;
+  recibo: string | null;
+  banco: string | null;
+  urlbanco: string | null;
+  tipo_doc: string | null;
+  documento: string | null;
+  nombres: string | null;
+  apellidos: string | null;
+  email: string | null;
+  ip: string | null;
+  ref_payco: string | null;
+  transaction_id: string | null;
+  factura: string | null;
+  valor: string | null;
+  fecha: string | null;
+  raw_response: unknown;
+  created_at: string;
+}
+
+export interface CardAttempt {
+  id: string;
+  estado: string | null;
+  cod_respuesta: number | null;
+  cod_error: string | null;
+  respuesta: string | null;
+  autorizacion: string | null;
+  recibo: string | null;
+  banco: string | null;
+  franquicia: string | null;
+  country_card: string | null;
+  cc_network_code: string | null;
+  cc_network_message: string | null;
+  tipo_doc: string | null;
+  documento: string | null;
+  nombres: string | null;
+  apellidos: string | null;
+  email: string | null;
+  ip: string | null;
+  ref_payco: string | null;
+  factura: string | null;
+  valor: string | null;
+  fecha: string | null;
+  raw_response: unknown;
+  created_at: string;
 }
 
 /**

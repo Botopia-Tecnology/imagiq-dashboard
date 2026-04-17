@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import Link from "next/link";
 
 /**
  * Helper para obtener el icono del medio de pago
@@ -266,11 +267,13 @@ export const apiOrdersColumns: ColumnDef<ApiOrder>[] = [
               Copiar # orden
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <Eye className="mr-2 h-4 w-4" />
-              Ver detalles
+            <DropdownMenuItem asChild>
+              <Link href={`/ordenes/${order.id}`}>
+                <Eye className="mr-2 h-4 w-4" />
+                Ver detalles
+              </Link>
             </DropdownMenuItem>
-            <DropdownMenuItem>
+            <DropdownMenuItem disabled>
               <FileText className="mr-2 h-4 w-4" />
               Ver factura
             </DropdownMenuItem>
