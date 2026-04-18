@@ -29,6 +29,8 @@ import {
   Building2,
   ShoppingBag,
   Gift,
+  Mail,
+  ExternalLink,
 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -36,7 +38,12 @@ import { DetailSection } from "@/components/orders/detail/detail-section";
 import { CopyField } from "@/components/orders/detail/copy-field";
 import { JsonViewer } from "@/components/orders/detail/json-viewer";
 import { TransactionTimeline } from "@/components/orders/detail/transaction-timeline";
+import { CommunicationsTimeline } from "@/components/orders/detail/communications-timeline";
 import { ActionsMenu } from "@/components/orders/detail/actions-menu";
+
+const POSTHOG_PROJECT_URL =
+  process.env.NEXT_PUBLIC_POSTHOG_PROJECT_URL ||
+  "https://us.posthog.com/project/274592";
 
 function formatCurrency(amount: number | null | undefined): string {
   if (amount == null) return "—";
@@ -85,7 +92,7 @@ export default function OrderDetailPage({
     );
   }
 
-  const { order, customer, billing, shippingAddress, items, payment, envios, kiosk, pickup, session, rejection, transactionAttempts, beneficios } = detail;
+  const { order, customer, billing, shippingAddress, items, payment, envios, kiosk, pickup, session, rejection, transactionAttempts, beneficios, communications } = detail;
   const statusLabel = getApiOrderStatusLabel(order.estado);
   const statusVariant = getApiOrderStatusVariant(order.estado);
   const statusColor = getApiOrderStatusColor(order.estado);
@@ -401,7 +408,28 @@ export default function OrderDetailPage({
           <DetailSection title="Sesión & observabilidad" icon={Activity}>
             <div className="space-y-2">
               <CopyField label="IP del cliente" value={session.clientIp} mono />
-              <CopyField label="PostHog session" value={session.posthogSessionId} mono />
+              <div className="flex flex-col gap-1 min-w-0">
+                <span className="text-xs text-muted-foreground">PostHog session</span>
+                {session.posthogSessionId ? (
+                  <div className="flex flex-col gap-1">
+                    <span className="text-xs font-mono truncate" title={session.posthogSessionId}>
+                      {session.posthogSessionId}
+                    </span>
+                    <Button variant="outline" size="sm" asChild className="h-8 w-full">
+                      <a
+                        href={`${POSTHOG_PROJECT_URL}/replay/${session.posthogSessionId}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <ExternalLink className="h-3 w-3 mr-1" />
+                        Abrir en PostHog
+                      </a>
+                    </Button>
+                  </div>
+                ) : (
+                  <span className="text-sm text-muted-foreground">—</span>
+                )}
+              </div>
               <CopyField label="Capturado en PostHog" value={formatDate(session.posthogCapturedAt)} />
               {order.latitude && order.longitude && (
                 <CopyField label="Lat/Lng" value={`${order.latitude}, ${order.longitude}`} mono />
@@ -410,6 +438,13 @@ export default function OrderDetailPage({
           </DetailSection>
         </div>
       </div>
+
+      <DetailSection title="Comunicaciones enviadas" icon={Mail}>
+        <CommunicationsTimeline
+          whatsapp={communications.whatsapp}
+          emails={communications.emails}
+        />
+      </DetailSection>
     </div>
   );
 }

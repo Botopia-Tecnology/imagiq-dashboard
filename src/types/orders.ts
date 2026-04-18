@@ -183,6 +183,10 @@ export interface AdminOrderDetail {
     posthogSessionId: string | null;
     posthogCapturedAt: string | null;
   };
+  communications: {
+    whatsapp: Array<WhatsappMessage>;
+    emails: Array<EmailMessage>;
+  };
   rejection: {
     estado: string | null;
     respuesta: string | null;
@@ -191,6 +195,30 @@ export interface AdminOrderDetail {
     banco: string | null;
     timestamp: string;
   } | null;
+}
+
+export interface WhatsappMessage {
+  message_id: string;
+  template_name: string;
+  recipient_phone: string;
+  sent_at: string;
+  delivered_at: string | null;
+  read_at: string | null;
+  failed_at: string | null;
+  error_code: number | null;
+  error_title: string | null;
+}
+
+export interface EmailMessage {
+  id: string;
+  template_name: string;
+  recipient_email: string;
+  subject: string | null;
+  cc: string | null;
+  status: string;
+  message_id: string | null;
+  error_message: string | null;
+  sent_at: string;
 }
 
 export interface PseAttempt {
