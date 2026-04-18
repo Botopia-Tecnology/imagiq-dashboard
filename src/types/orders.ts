@@ -207,6 +207,11 @@ export interface WhatsappMessage {
   failed_at: string | null;
   error_code: number | null;
   error_title: string | null;
+  body_text: string | null;
+  header_media_url: string | null;
+  variables: string[] | null;
+  raw_payload: unknown;
+  orden_id: string | null;
 }
 
 export interface EmailMessage {
@@ -218,6 +223,9 @@ export interface EmailMessage {
   status: string;
   message_id: string | null;
   error_message: string | null;
+  body_html: string | null;
+  body_text: string | null;
+  attachments: Array<{ filename: string; contentType?: string; size?: number }> | null;
   sent_at: string;
 }
 
