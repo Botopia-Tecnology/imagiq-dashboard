@@ -1,9 +1,26 @@
 "use client";
 
+import Image from "next/image";
+import { useState } from "react";
 import { EmailMessage, WhatsappMessage } from "@/types/orders";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Mail, MessageCircle, Copy, AlertCircle, CheckCheck, Check, Clock } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { JsonViewer } from "./json-viewer";
+import {
+  Mail,
+  MessageCircle,
+  Copy,
+  AlertCircle,
+  CheckCheck,
+  Check,
+  Clock,
+  ChevronDown,
+  ChevronRight,
+  Paperclip,
+  Eye,
+  EyeOff,
+} from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { toast } from "sonner";
@@ -67,6 +84,41 @@ function emailStatusBadge(e: EmailMessage) {
       <Check className="h-3 w-3" />
       Enviado
     </Badge>
+  );
+}
+
+/**
+ * Renders the raw email HTML inside a sandboxed iframe so admins can see
+ * exactly what the customer received. Sandbox blocks scripts and
+ * same-origin access — the email HTML is treated as untrusted content
+ * to avoid any chance of XSS in the dashboard.
+ */
+function EmailHtmlPreview({ html }: { html: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <Collapsible open={open} onOpenChange={setOpen} className="border rounded-md">
+      <CollapsibleTrigger asChild>
+        <Button variant="ghost" size="sm" className="w-full justify-start gap-1 h-8">
+          {open ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+          <span className="text-xs">
+            {open ? "Ocultar" : "Ver"} HTML renderizado
+          </span>
+          {open ? (
+            <ChevronDown className="h-3 w-3 ml-auto" />
+          ) : (
+            <ChevronRight className="h-3 w-3 ml-auto" />
+          )}
+        </Button>
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <iframe
+          srcDoc={html}
+          sandbox=""
+          className="w-full h-96 border-t bg-white"
+          title="Email rendered preview"
+        />
+      </CollapsibleContent>
+    </Collapsible>
   );
 }
 
@@ -152,6 +204,34 @@ export function CommunicationsTimeline({ whatsapp, emails }: Props) {
                 {e.error_message && (
                   <p className="text-xs text-destructive">{e.error_message}</p>
                 )}
+                {e.attachments && e.attachments.length > 0 && (
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <Paperclip className="h-3 w-3" />
+                      <span>Adjuntos ({e.attachments.length})</span>
+                    </div>
+                    <ul className="text-xs space-y-0.5 pl-4">
+                      {e.attachments.map((a, i) => (
+                        <li key={i} className="font-mono truncate" title={a.filename}>
+                          {a.filename}
+                          {a.size ? ` · ${(a.size / 1024).toFixed(1)} KB` : ""}
+                          {a.contentType ? ` · ${a.contentType}` : ""}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {e.body_text && (
+                  <details className="text-xs">
+                    <summary className="cursor-pointer text-muted-foreground hover:text-foreground select-none">
+                      Ver texto plano
+                    </summary>
+                    <pre className="mt-2 p-2 bg-muted/30 rounded border whitespace-pre-wrap break-words font-mono">
+                      {e.body_text}
+                    </pre>
+                  </details>
+                )}
+                {e.body_html && <EmailHtmlPreview html={e.body_html} />}
               </div>
             ))}
           </div>
@@ -208,6 +288,50 @@ export function CommunicationsTimeline({ whatsapp, emails }: Props) {
                     </div>
                   )}
                 </div>
+                {w.header_media_url && (
+                  <div className="space-y-1">
+                    <span className="text-xs text-muted-foreground">Imagen header</span>
+                    <div className="relative h-40 w-40 rounded border overflow-hidden bg-muted">
+                      <Image
+                        src={w.header_media_url}
+                        alt="WhatsApp header"
+                        fill
+                        sizes="160px"
+                        className="object-contain"
+                        unoptimized
+                      />
+                    </div>
+                  </div>
+                )}
+                {w.body_text && (
+                  <div className="space-y-1">
+                    <span className="text-xs text-muted-foreground">Mensaje enviado</span>
+                    <div className="rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900 p-3 text-sm whitespace-pre-wrap break-words">
+                      {w.body_text}
+                    </div>
+                  </div>
+                )}
+                {w.variables && w.variables.length > 0 && (
+                  <details className="text-xs">
+                    <summary className="cursor-pointer text-muted-foreground hover:text-foreground select-none">
+                      Ver variables ({w.variables.length})
+                    </summary>
+                    <ol className="mt-2 pl-5 list-decimal space-y-0.5 font-mono">
+                      {w.variables.map((v, i) => (
+                        <li key={i} className="break-all">
+                          {v}
+                        </li>
+                      ))}
+                    </ol>
+                  </details>
+                )}
+                {w.raw_payload != null && (
+                  <JsonViewer
+                    data={w.raw_payload}
+                    title="raw_payload (Meta Graph API)"
+                    downloadName={`wa-${w.message_id}.json`}
+                  />
+                )}
               </div>
             ))}
           </div>
