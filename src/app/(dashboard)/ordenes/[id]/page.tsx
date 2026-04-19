@@ -418,29 +418,38 @@ export default function OrderDetailPage({
           <DetailSection title="Sesión & observabilidad" icon={Activity}>
             <div className="space-y-2">
               <CopyField label="IP del cliente" value={session.clientIp} mono />
-              <div className="flex flex-col gap-1 min-w-0">
-                <span className="text-xs text-muted-foreground">PostHog session</span>
-                {session.posthogSessionId ? (
-                  <div className="flex flex-col gap-1">
-                    <span className="text-xs font-mono truncate" title={session.posthogSessionId}>
-                      {session.posthogSessionId}
-                    </span>
-                    <Button variant="outline" size="sm" asChild className="h-8 w-full">
-                      <a
-                        href={`${POSTHOG_PROJECT_URL}/replay/${session.posthogSessionId}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <ExternalLink className="h-3 w-3 mr-1" />
-                        Abrir en PostHog
-                      </a>
-                    </Button>
-                  </div>
-                ) : (
-                  <span className="text-sm text-muted-foreground">—</span>
-                )}
-              </div>
+              <CopyField
+                label="PostHog session ID"
+                value={session.posthogSessionId}
+                mono
+              />
+              {session.posthogSessionId && (
+                <>
+                  <CopyField
+                    label="PostHog — replay de sesión (URL)"
+                    value={`${POSTHOG_PROJECT_URL}/replay/${session.posthogSessionId}`}
+                    mono
+                  />
+                  <Button variant="outline" size="sm" asChild className="h-8 w-full">
+                    <a
+                      href={`${POSTHOG_PROJECT_URL}/replay/${session.posthogSessionId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <ExternalLink className="h-3 w-3 mr-1" />
+                      Abrir replay
+                    </a>
+                  </Button>
+                </>
+              )}
               <CopyField label="Capturado en PostHog" value={formatDate(session.posthogCapturedAt)} />
+              {customer.email && (
+                <CopyField
+                  label="PostHog — búsqueda por email (URL)"
+                  value={`${POSTHOG_PROJECT_URL}/persons?search=${encodeURIComponent(customer.email)}`}
+                  mono
+                />
+              )}
               {order.latitude && order.longitude && (
                 <CopyField label="Lat/Lng" value={`${order.latitude}, ${order.longitude}`} mono />
               )}
