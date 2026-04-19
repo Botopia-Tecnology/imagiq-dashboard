@@ -85,7 +85,11 @@ export default function SupportOrderDetailPage({
     );
   }
 
-  const { order, customer, payment, transactionAttempts, communications, rejection } = detail;
+  const { order, customer, payment, transactionAttempts, communications, rejection, session } = detail;
+  const posthogPersonUrl = `${POSTHOG_PROJECT_URL}/persons?search=${encodeURIComponent(customer.email)}`;
+  const posthogReplayUrl = session.posthogSessionId
+    ? `${POSTHOG_PROJECT_URL}/replay/${session.posthogSessionId}`
+    : null;
   const statusKey = (order.estadoPago as SupportOrderStatus) ?? "PENDING";
   const statusLabel = getSupportStatusLabel(statusKey);
   const statusVariant = getSupportStatusVariant(statusKey);
@@ -227,19 +231,53 @@ export default function SupportOrderDetailPage({
         />
       </DetailSection>
 
-      {/* Observabilidad */}
-      <DetailSection title="Observabilidad" icon={Activity}>
-        <div className="flex flex-col sm:flex-row gap-3">
-          <Button variant="outline" asChild className="h-9">
-            <a
-              href={`${POSTHOG_PROJECT_URL}/persons?search=${encodeURIComponent(customer.email)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <ExternalLink className="h-3 w-3 mr-2" />
-              Buscar persona en PostHog
-            </a>
-          </Button>
+      {/* Sesión & observabilidad */}
+      <DetailSection title="Sesión & observabilidad" icon={Activity}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <CopyField
+              label="IP del cliente (último intento)"
+              value={session.clientIp}
+              mono
+            />
+            <CopyField
+              label="PostHog session ID"
+              value={session.posthogSessionId}
+              mono
+            />
+            <CopyField
+              label="Capturado en PostHog"
+              value={formatDate(session.posthogCapturedAt)}
+            />
+          </div>
+          <div className="space-y-2">
+            <CopyField
+              label="PostHog — búsqueda por email"
+              value={posthogPersonUrl}
+              mono
+            />
+            <Button variant="outline" size="sm" asChild className="h-8">
+              <a href={posthogPersonUrl} target="_blank" rel="noopener noreferrer">
+                <ExternalLink className="h-3 w-3 mr-2" />
+                Abrir búsqueda en PostHog
+              </a>
+            </Button>
+            {posthogReplayUrl && (
+              <>
+                <CopyField
+                  label="PostHog — replay de sesión"
+                  value={posthogReplayUrl}
+                  mono
+                />
+                <Button variant="outline" size="sm" asChild className="h-8">
+                  <a href={posthogReplayUrl} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="h-3 w-3 mr-2" />
+                    Abrir replay
+                  </a>
+                </Button>
+              </>
+            )}
+          </div>
         </div>
       </DetailSection>
     </div>

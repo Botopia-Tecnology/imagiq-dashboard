@@ -212,6 +212,11 @@ export interface AdminSupportOrderDetail {
     pse: Array<PseAttempt>;
     card: Array<CardAttempt>;
   };
+  session: {
+    clientIp: string | null;
+    posthogSessionId: string | null;
+    posthogCapturedAt: string | null;
+  };
   communications: {
     whatsapp: Array<WhatsappMessage>;
     emails: Array<EmailMessage>;
