@@ -3,6 +3,13 @@
  * y GET /admin/support-orders/metrics
  */
 
+import type {
+  WhatsappMessage,
+  EmailMessage,
+  PseAttempt,
+  CardAttempt,
+} from "./orders";
+
 // Estados de pago de soporte
 export type SupportOrderStatus = "APPROVED" | "PENDING" | "REJECTED";
 
@@ -86,6 +93,26 @@ export const getSupportStatusLabel = (
 };
 
 /**
+ * Helper para obtener la variante del badge (consistente con shadcn/ui)
+ */
+export const getSupportStatusVariant = (
+  status: SupportOrderStatus | null,
+): "default" | "destructive" | "secondary" | "outline" => {
+  switch (status) {
+    case "APPROVED":
+      return "default";
+    case "REJECTED":
+      return "destructive";
+    case "PENDING":
+    case null:
+    case undefined:
+      return "secondary";
+    default:
+      return "outline";
+  }
+};
+
+/**
  * Helper para obtener las clases de color del badge
  */
 export const getSupportStatusColor = (
@@ -145,4 +172,56 @@ export interface SupportOrdersMetricsResponse {
   metrics: SupportOrderMetrics;
   statusDistribution: SupportStatusDistribution[];
   paymentMethodDistribution: SupportPaymentDistribution[];
+}
+
+// ============================================
+// Tipos para GET /admin/support-orders/:id
+// ============================================
+
+export interface AdminSupportOrderDetail {
+  order: {
+    id: string;
+    ordenNumero: string;
+    estado: string;
+    estadoPago: string;
+    total: number;
+    referencia: string | null;
+    fechaCreacion: string;
+    fechaActualizacion: string;
+    medioPago: string | null;
+  };
+  customer: {
+    id: string | null;
+    nombre: string;
+    apellido: string | null;
+    email: string;
+    telefono: string | null;
+    codigoPais: string | null;
+    tipoDocumento: string | null;
+    numeroDocumento: string | null;
+    fechaCreacion: string | null;
+    emailVerificado: boolean | null;
+    telefonoVerificado: boolean | null;
+  };
+  payment: {
+    method: string | null;
+    pse: { banco: string } | null;
+    card: { last_four: string; franquicia: string } | null;
+  };
+  transactionAttempts: {
+    pse: Array<PseAttempt>;
+    card: Array<CardAttempt>;
+  };
+  communications: {
+    whatsapp: Array<WhatsappMessage>;
+    emails: Array<EmailMessage>;
+  };
+  rejection: {
+    estado: string | null;
+    respuesta: string | null;
+    codRespuesta: number | null;
+    codError: string | null;
+    banco: string | null;
+    timestamp: string;
+  } | null;
 }

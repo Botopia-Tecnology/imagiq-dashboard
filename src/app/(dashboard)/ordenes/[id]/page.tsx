@@ -38,6 +38,7 @@ import { DetailSection } from "@/components/orders/detail/detail-section";
 import { CopyField } from "@/components/orders/detail/copy-field";
 import { JsonViewer } from "@/components/orders/detail/json-viewer";
 import { TransactionTimeline } from "@/components/orders/detail/transaction-timeline";
+import { PaymentResponseCards } from "@/components/orders/detail/payment-response-cards";
 import { CommunicationsTimeline } from "@/components/orders/detail/communications-timeline";
 import { ActionsMenu } from "@/components/orders/detail/actions-menu";
 
@@ -260,6 +261,15 @@ export default function OrderDetailPage({
           {beneficios != null && (
             <DetailSection title="Beneficios aplicados" icon={Gift}>
               <JsonViewer data={beneficios} title="beneficios" defaultOpen />
+            </DetailSection>
+          )}
+
+          {(transactionAttempts.pse.length > 0 || transactionAttempts.card.length > 0) && (
+            <DetailSection title="Respuesta del banco y la pasarela" icon={CreditCard}>
+              <PaymentResponseCards
+                pseAttempts={transactionAttempts.pse}
+                cardAttempts={transactionAttempts.card}
+              />
             </DetailSection>
           )}
 

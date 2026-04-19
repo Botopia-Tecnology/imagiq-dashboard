@@ -15,6 +15,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -23,9 +24,11 @@ import {
   Copy,
   CreditCard,
   Building2,
+  Eye,
 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import Link from "next/link";
 
 const getPaymentMethodIcon = (medio: string) => {
   switch (medio) {
@@ -241,6 +244,13 @@ export const supportOrdersColumns: ColumnDef<SupportOrder>[] = [
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+            <DropdownMenuItem asChild>
+              <Link href={`/servicio-tecnico/${order.id}`}>
+                <Eye className="mr-2 h-4 w-4" />
+                Ver detalles
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={() =>
                 navigator.clipboard.writeText(order.orden_numero)

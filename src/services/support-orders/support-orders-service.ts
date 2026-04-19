@@ -7,10 +7,25 @@
 
 import { apiGet } from "@/lib/api-client";
 import {
+  AdminSupportOrderDetail,
   SupportOrdersApiResponse,
   SupportOrdersQueryParams,
   SupportOrdersMetricsResponse,
 } from "@/types/support-orders";
+
+export async function getSupportOrderDetail(
+  orderId: string,
+  token?: string | null,
+): Promise<AdminSupportOrderDetail> {
+  return apiGet<AdminSupportOrderDetail>(
+    `/api/admin/support-orders/${encodeURIComponent(orderId)}`,
+    {
+      headers: {
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+    },
+  );
+}
 
 /**
  * Construye los query params para la petición
