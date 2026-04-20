@@ -197,6 +197,11 @@ export interface AdminOrderDetail {
   } | null;
 }
 
+export type WhatsappTemplateButton =
+  | { type: "URL"; text: string; url: string }
+  | { type: "PHONE_NUMBER"; text: string; phone_number: string }
+  | { type: "QUICK_REPLY"; text: string };
+
 export interface WhatsappMessage {
   message_id: string;
   template_name: string;
@@ -211,6 +216,7 @@ export interface WhatsappMessage {
   header_media_url: string | null;
   variables: string[] | null;
   raw_payload: unknown;
+  buttons: WhatsappTemplateButton[] | null;
   orden_id: string | null;
 }
 
