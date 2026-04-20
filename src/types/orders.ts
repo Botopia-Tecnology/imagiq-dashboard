@@ -14,7 +14,7 @@ export type ApiOrderStatus =
   | "INTERNAL_ERROR";
 
 // Medios de pago
-export type ApiPaymentMethod = "Tarjeta" | "PSE" | "Addi";
+export type ApiPaymentMethod = "Tarjeta" | "PSE" | "Addi" | "Datafono";
 
 // Campos permitidos para ordenamiento
 export type OrderSortField =

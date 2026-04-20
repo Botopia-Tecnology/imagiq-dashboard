@@ -128,6 +128,7 @@ export default function OrdenesPage() {
         { label: "Tarjeta", value: "Tarjeta" },
         { label: "PSE", value: "PSE" },
         { label: "Addi", value: "Addi" },
+        { label: "Datafono", value: "Datafono" },
       ],
     },
   ];

@@ -28,6 +28,7 @@ import {
   CreditCard,
   Building2,
   Wallet,
+  Store,
 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -44,6 +45,8 @@ const getPaymentMethodIcon = (medio: string) => {
       return Building2;
     case "Addi":
       return Wallet;
+    case "Datafono":
+      return Store;
     default:
       return CreditCard;
   }
