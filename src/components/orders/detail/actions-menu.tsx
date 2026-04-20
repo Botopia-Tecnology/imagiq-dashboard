@@ -29,14 +29,16 @@ import { toast } from "sonner";
 
 interface ActionsMenuProps {
   detail: AdminOrderDetail;
+  onAnularGuia?: (numeroGuia: string) => void;
 }
 
 const POSTHOG_BASE_URL =
   process.env.NEXT_PUBLIC_POSTHOG_PROJECT_URL ||
   "https://us.posthog.com/project/274592";
 
-export function ActionsMenu({ detail }: ActionsMenuProps) {
-  const { order, customer, shippingAddress, payment, transactionAttempts, session } = detail;
+export function ActionsMenu({ detail, onAnularGuia }: ActionsMenuProps) {
+  const { order, customer, shippingAddress, payment, transactionAttempts, session, envios } = detail;
+  const firstActiveGuia = envios.find((e) => e.activo)?.numero_guia || envios[0]?.numero_guia || null;
   const lastPse = transactionAttempts.pse[transactionAttempts.pse.length - 1];
   const lastCard = transactionAttempts.card[transactionAttempts.card.length - 1];
   const refPayco = lastPse?.ref_payco || lastCard?.ref_payco || order.referencia;
@@ -145,7 +147,13 @@ export function ActionsMenu({ detail }: ActionsMenuProps) {
           )}
           <DisabledAction icon={Undo2} label="Reembolsar" />
           <DisabledAction icon={ShieldCheck} label="Forzar aprobación manual" />
-          <DisabledAction icon={FileX} label="Anular guía de envío" />
+          <DropdownMenuItem
+            disabled={!firstActiveGuia || !onAnularGuia}
+            onClick={() => firstActiveGuia && onAnularGuia?.(firstActiveGuia)}
+          >
+            <FileX className="mr-2 h-4 w-4" />
+            Anular guía de envío
+          </DropdownMenuItem>
           <DisabledAction icon={Ban} label="Eliminar orden" />
           <DisabledAction icon={Send} label="Reenviar con monto distinto" />
         </DropdownMenuContent>
