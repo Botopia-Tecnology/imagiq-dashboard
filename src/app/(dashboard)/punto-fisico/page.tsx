@@ -8,6 +8,7 @@ import { StoresDataTable } from "@/components/physical-stores/stores-data-table"
 import { PickupVerificationModal } from "@/components/physical-stores/pickup-verification-modal";
 import { KioskAccountDialog } from "@/components/physical-stores/kiosk-account-dialog";
 import { StoreDetailDialog } from "@/components/physical-stores/store-detail-dialog";
+import { KioskOrdersTab } from "@/components/physical-stores/kiosk-orders-tab";
 import type { BackendTienda } from "@/lib/api";
 import {
   Store,
@@ -15,11 +16,14 @@ import {
   QrCode,
   BarChart3,
   Settings,
+  Receipt,
 } from "lucide-react";
 import { useTiendas } from "@/hooks/use-tiendas";
 import { usePickupMetrics } from "@/hooks/use-pickup-metrics";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { Skeleton } from "@/components/ui/skeleton";
+import { DateRangeSelector } from "@/components/dashboard/date-range-selector";
+import { DateRange, makeDefaultRange } from "@/types/date-range";
 
 export default function PuntoFisicoPage() {
   const { tiendas, isLoading } = useTiendas();
@@ -34,6 +38,7 @@ export default function PuntoFisicoPage() {
   const [isKioskDialogOpen, setIsKioskDialogOpen] = useState(false);
   const [detailStore, setDetailStore] = useState<BackendTienda | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [range, setRange] = useState<DateRange>(() => makeDefaultRange());
 
   const handleVerificationSuccess = () => {
     // Refrescar métricas después de una verificación exitosa
@@ -53,7 +58,8 @@ export default function PuntoFisicoPage() {
             Gestión de tiendas físicas y verificación de recogidas
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <DateRangeSelector value={range} onChange={setRange} />
           <Button
             variant="outline"
             onClick={() => setIsVerificationModalOpen(true)}
@@ -106,8 +112,12 @@ export default function PuntoFisicoPage() {
       </div>
 
       {/* Main Content */}
-      <Tabs defaultValue="stores" className="space-y-3">
+      <Tabs defaultValue="kiosk-orders" className="space-y-3">
         <TabsList>
+          <TabsTrigger value="kiosk-orders" className="flex items-center gap-2">
+            <Receipt className="h-4 w-4" />
+            Órdenes Kiosko
+          </TabsTrigger>
           <TabsTrigger value="stores" className="flex items-center gap-2">
             <Store className="h-4 w-4" />
             Tiendas
@@ -121,6 +131,10 @@ export default function PuntoFisicoPage() {
             Configuración
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="kiosk-orders" className="space-y-3">
+          <KioskOrdersTab range={{ from: range.from, to: range.to }} />
+        </TabsContent>
 
         <TabsContent value="stores" className="space-y-3">
           {/* Stores Table */}
