@@ -455,15 +455,15 @@ export default function OrderDetailPage({
               )}
             </div>
           </DetailSection>
+
+          <DetailSection title="Comunicaciones enviadas" icon={Mail}>
+            <CommunicationsTimeline
+              whatsapp={communications.whatsapp}
+              emails={communications.emails}
+            />
+          </DetailSection>
         </div>
       </div>
-
-      <DetailSection title="Comunicaciones enviadas" icon={Mail}>
-        <CommunicationsTimeline
-          whatsapp={communications.whatsapp}
-          emails={communications.emails}
-        />
-      </DetailSection>
     </div>
   );
 }
