@@ -286,6 +286,13 @@ export default function OrderDetailPage({
               />
             )}
           </DetailSection>
+
+          <DetailSection title="Comunicaciones enviadas" icon={Mail}>
+            <CommunicationsTimeline
+              whatsapp={communications.whatsapp}
+              emails={communications.emails}
+            />
+          </DetailSection>
         </div>
 
         {/* Columna lateral: Pago, Envío, Sesión */}
@@ -454,13 +461,6 @@ export default function OrderDetailPage({
                 <CopyField label="Lat/Lng" value={`${order.latitude}, ${order.longitude}`} mono />
               )}
             </div>
-          </DetailSection>
-
-          <DetailSection title="Comunicaciones enviadas" icon={Mail}>
-            <CommunicationsTimeline
-              whatsapp={communications.whatsapp}
-              emails={communications.emails}
-            />
           </DetailSection>
         </div>
       </div>

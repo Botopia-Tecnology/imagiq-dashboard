@@ -437,7 +437,98 @@ function IncomingBubble({ msg, showTail }: IncomingBubbleProps) {
           <span className="tabular-nums">{time}</span>
         </div>
       </div>
+
+      {/* CTA button row — rendered as a separate rounded container below the
+          bubble with the same max-width, matching WhatsApp's native layout
+          for URL / phone / quick_reply template buttons. */}
+      {msg.buttons && msg.buttons.length > 0 && (
+        <div className="mt-1 bg-white rounded-[7.5px] overflow-hidden shadow-[0_1px_0.5px_rgba(11,20,26,0.13)]">
+          {msg.buttons.map((b, i) => (
+            <TemplateButton key={i} button={b} isLast={i === msg.buttons!.length - 1} />
+          ))}
+        </div>
+      )}
     </div>
+  );
+}
+
+function TemplateButton({
+  button,
+  isLast,
+}: {
+  button: NonNullable<WhatsappMessage["buttons"]>[number];
+  isLast: boolean;
+}) {
+  const icon = button.type === "URL"
+    ? <ExternalLinkIcon />
+    : button.type === "PHONE_NUMBER"
+      ? <PhoneIcon />
+      : <ReplyIcon />;
+
+  const content = (
+    <div
+      className={`flex items-center justify-center gap-2 py-[9px] px-3 text-[14.5px] font-medium text-[#027EB5] ${
+        isLast ? "" : "border-b border-[#E9EDEF]"
+      } hover:bg-[#F5F6F6] transition-colors`}
+      style={{
+        fontFamily: '-apple-system, "SF Pro Text", "Helvetica Neue", sans-serif',
+      }}
+    >
+      {icon}
+      <span className="truncate">{button.text}</span>
+    </div>
+  );
+
+  if (button.type === "URL") {
+    return (
+      <a href={button.url} target="_blank" rel="noopener noreferrer" className="block">
+        {content}
+      </a>
+    );
+  }
+  if (button.type === "PHONE_NUMBER") {
+    return (
+      <a href={`tel:${button.phone_number}`} className="block">
+        {content}
+      </a>
+    );
+  }
+  return <div className="cursor-default">{content}</div>;
+}
+
+function ExternalLinkIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M14 3h7v7M10 14L20.5 3.5M19 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h6"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function PhoneIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M19.2 14.9c-1.3 0-2.5-.2-3.6-.6-.4-.1-.8 0-1.1.3l-2.2 2.2c-2.8-1.5-5.2-3.8-6.6-6.6l2.2-2.2c.3-.3.4-.7.3-1.1-.4-1.2-.6-2.4-.6-3.6 0-.6-.4-1-1-1H2.9C2.4 2.3 2 2.7 2 3.3 2 12.3 9.7 20 18.7 20c.6 0 1-.4 1-1v-3.2c0-.5-.4-.9-.9-.9z" />
+    </svg>
+  );
+}
+
+function ReplyIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M9 17l-5-5 5-5M4 12h12a4 4 0 0 1 4 4v4"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
   );
 }
 
@@ -528,9 +619,86 @@ export function WhatsAppPhonePreview({ messages, now }: Props) {
   const recipient = sorted[0]?.recipient_phone ?? null;
 
   return (
-    <div className="space-y-4 py-2">
-      {/* Phone frame — centered in the (now narrower) right column */}
-      <div className="flex justify-center">
+    <div className="flex flex-col-reverse lg:flex-row lg:items-start gap-6 py-2">
+      {/* Info panel — left side on wider screens, stacks under phone on narrow */}
+      <div className="flex-1 min-w-0 space-y-4">
+        <div className="space-y-1.5">
+          <div className="font-semibold text-foreground uppercase tracking-wide text-[11px]">
+            Vista del cliente
+          </div>
+          <p className="text-sm text-muted-foreground max-w-prose">
+            Réplica de cómo {messages.length === 1 ? "el mensaje" : "los mensajes"} aparec
+            {messages.length === 1 ? "ió" : "ieron"} en el WhatsApp del cliente. La hora
+            de la status bar y dentro de cada burbuja es la hora exacta de Colombia en
+            que el cliente lo vio — independiente de la zona horaria del admin.
+          </p>
+          {recipient && (
+            <p className="text-xs text-muted-foreground">
+              Destinatario:{" "}
+              <span className="font-mono text-foreground/80">+{recipient}</span>
+            </p>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <div className="font-semibold text-foreground uppercase tracking-wide text-[11px]">
+            Entrega por mensaje
+          </div>
+          <ul className="space-y-1.5 text-sm">
+            {sorted.map((m) => {
+              const state = deliveryState(m);
+              return (
+                <li
+                  key={m.message_id}
+                  className="flex items-start gap-3 py-1.5 px-2 rounded-md bg-muted/40"
+                >
+                  <div className="shrink-0 pt-0.5">
+                    <DeliveryTick w={m} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-baseline justify-between gap-2">
+                      <span className="font-medium text-foreground truncate">
+                        {prettyTemplateName(m.template_name)}
+                      </span>
+                      <span className="text-xs tabular-nums text-muted-foreground shrink-0">
+                        {formatBogotaTime(m.sent_at)}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground flex-wrap">
+                      <span className={state.cls}>{state.label}</span>
+                      {m.delivered_at && (
+                        <span className="text-muted-foreground/70">
+                          · entregado {formatBogotaTime(m.delivered_at)}
+                        </span>
+                      )}
+                      {m.read_at && (
+                        <span className="text-[#53BDEB]">
+                          · leído {formatBogotaTime(m.read_at)}
+                        </span>
+                      )}
+                    </div>
+                    {m.buttons && m.buttons.length > 0 && (
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {m.buttons.map((b, i) => (
+                          <span
+                            key={i}
+                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-[#E1F3FB] text-[#027EB5] text-[10px] font-medium"
+                          >
+                            {b.text}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      </div>
+
+      {/* Phone frame — right side, fixed 360px */}
+      <div className="shrink-0 mx-auto lg:mx-0">
         <div
           className="relative rounded-[44px] bg-black p-[10px] shadow-2xl"
           style={{ width: 360 }}
@@ -604,60 +772,6 @@ export function WhatsAppPhonePreview({ messages, now }: Props) {
             aria-hidden
             className="absolute bottom-[6px] left-1/2 -translate-x-1/2 w-32 h-1 bg-white/80 rounded-full"
           />
-        </div>
-      </div>
-
-      {/* Info panel — below the phone, sized for the narrow right column */}
-      <div className="space-y-3 text-sm">
-        {recipient && (
-          <p className="text-xs text-muted-foreground">
-            Destinatario:{" "}
-            <span className="font-mono text-foreground/80">+{recipient}</span>
-          </p>
-        )}
-
-        <div className="space-y-1.5">
-          <div className="font-semibold text-foreground uppercase tracking-wide text-[10px]">
-            Entrega por mensaje
-          </div>
-          <ul className="space-y-1.5">
-            {sorted.map((m) => {
-              const state = deliveryState(m);
-              return (
-                <li
-                  key={m.message_id}
-                  className="flex items-start gap-2 py-1.5 px-2 rounded-md bg-muted/40"
-                >
-                  <div className="shrink-0 pt-0.5">
-                    <DeliveryTick w={m} />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-baseline justify-between gap-2">
-                      <span className="font-medium text-foreground truncate text-xs">
-                        {prettyTemplateName(m.template_name)}
-                      </span>
-                      <span className="text-[11px] tabular-nums text-muted-foreground shrink-0">
-                        {formatBogotaTime(m.sent_at)}
-                      </span>
-                    </div>
-                    <div className="text-[11px] text-muted-foreground flex flex-wrap gap-x-1.5">
-                      <span className={state.cls}>{state.label}</span>
-                      {m.delivered_at && (
-                        <span className="text-muted-foreground/70">
-                          · entregado {formatBogotaTime(m.delivered_at)}
-                        </span>
-                      )}
-                      {m.read_at && (
-                        <span className="text-[#53BDEB]">
-                          · leído {formatBogotaTime(m.read_at)}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
         </div>
       </div>
     </div>
