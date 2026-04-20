@@ -1,12 +1,12 @@
 "use client";
 
-import Image from "next/image";
 import { useState } from "react";
 import { EmailMessage, WhatsappMessage } from "@/types/orders";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { JsonViewer } from "./json-viewer";
+import { WhatsAppPhonePreview } from "./whatsapp-phone-preview";
 import {
   Mail,
   MessageCircle,
@@ -246,93 +246,82 @@ export function CommunicationsTimeline({ whatsapp, emails }: Props) {
               WhatsApp ({whatsapp.length})
             </span>
           </div>
+
+          {/* Phone preview — replica faithful to what the customer saw */}
+          <WhatsAppPhonePreview messages={whatsapp} />
+
+          {/* Technical details per message (collapsible) */}
           <div className="space-y-2">
             {whatsapp.map((w) => (
-              <div key={w.message_id} className="border rounded-md p-3 space-y-2">
-                <div className="flex items-start justify-between gap-2 flex-wrap">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-sm font-medium">
-                        {prettyTemplate(w.template_name)}
-                      </span>
-                      {whatsappDeliveryBadge(w)}
+              <Collapsible key={w.message_id}>
+                <div className="border rounded-md">
+                  <CollapsibleTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full justify-between h-auto px-3 py-2 text-left"
+                    >
+                      <div className="flex items-center gap-2 flex-wrap min-w-0">
+                        <span className="text-sm font-medium">
+                          {prettyTemplate(w.template_name)}
+                        </span>
+                        {whatsappDeliveryBadge(w)}
+                        <span className="text-xs text-muted-foreground">
+                          A: {w.recipient_phone}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          · {format(new Date(w.sent_at), "dd MMM HH:mm:ss", { locale: es })}
+                        </span>
+                      </div>
+                      <ChevronDown className="h-3 w-3 shrink-0 transition-transform data-[state=open]:rotate-180" />
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <div className="border-t p-3 space-y-2">
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                        {w.delivered_at && (
+                          <div>
+                            <span className="text-muted-foreground">Entregado: </span>
+                            {format(new Date(w.delivered_at), "HH:mm:ss", { locale: es })}
+                          </div>
+                        )}
+                        {w.read_at && (
+                          <div>
+                            <span className="text-muted-foreground">Leído: </span>
+                            {format(new Date(w.read_at), "HH:mm:ss", { locale: es })}
+                          </div>
+                        )}
+                        {w.error_code != null && (
+                          <div className="col-span-2 sm:col-span-4 text-destructive">
+                            Error {w.error_code}: {w.error_title}
+                          </div>
+                        )}
+                      </div>
+                      {w.variables && w.variables.length > 0 && (
+                        <details className="text-xs">
+                          <summary className="cursor-pointer text-muted-foreground hover:text-foreground select-none">
+                            Ver variables ({w.variables.length})
+                          </summary>
+                          <ol className="mt-2 pl-5 list-decimal space-y-0.5 font-mono">
+                            {w.variables.map((v, i) => (
+                              <li key={i} className="break-all">
+                                {v}
+                              </li>
+                            ))}
+                          </ol>
+                        </details>
+                      )}
+                      {w.raw_payload != null && (
+                        <JsonViewer
+                          data={w.raw_payload}
+                          title="raw_payload (Meta Graph API)"
+                          downloadName={`wa-${w.message_id}.json`}
+                        />
+                      )}
                     </div>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      A: {w.recipient_phone}
-                    </p>
-                  </div>
-                  <span className="text-xs text-muted-foreground whitespace-nowrap shrink-0">
-                    {format(new Date(w.sent_at), "dd MMM yyyy, HH:mm:ss", {
-                      locale: es,
-                    })}
-                  </span>
+                  </CollapsibleContent>
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-                  {w.delivered_at && (
-                    <div>
-                      <span className="text-muted-foreground">Entregado: </span>
-                      {format(new Date(w.delivered_at), "HH:mm:ss", {
-                        locale: es,
-                      })}
-                    </div>
-                  )}
-                  {w.read_at && (
-                    <div>
-                      <span className="text-muted-foreground">Leído: </span>
-                      {format(new Date(w.read_at), "HH:mm:ss", { locale: es })}
-                    </div>
-                  )}
-                  {w.error_code != null && (
-                    <div className="col-span-2 sm:col-span-4 text-destructive">
-                      Error {w.error_code}: {w.error_title}
-                    </div>
-                  )}
-                </div>
-                {w.header_media_url && (
-                  <div className="space-y-1">
-                    <span className="text-xs text-muted-foreground">Imagen header</span>
-                    <div className="relative h-40 w-40 rounded border overflow-hidden bg-muted">
-                      <Image
-                        src={w.header_media_url}
-                        alt="WhatsApp header"
-                        fill
-                        sizes="160px"
-                        className="object-contain"
-                        unoptimized
-                      />
-                    </div>
-                  </div>
-                )}
-                {w.body_text && (
-                  <div className="space-y-1">
-                    <span className="text-xs text-muted-foreground">Mensaje enviado</span>
-                    <div className="rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900 p-3 text-sm whitespace-pre-wrap break-words">
-                      {w.body_text}
-                    </div>
-                  </div>
-                )}
-                {w.variables && w.variables.length > 0 && (
-                  <details className="text-xs">
-                    <summary className="cursor-pointer text-muted-foreground hover:text-foreground select-none">
-                      Ver variables ({w.variables.length})
-                    </summary>
-                    <ol className="mt-2 pl-5 list-decimal space-y-0.5 font-mono">
-                      {w.variables.map((v, i) => (
-                        <li key={i} className="break-all">
-                          {v}
-                        </li>
-                      ))}
-                    </ol>
-                  </details>
-                )}
-                {w.raw_payload != null && (
-                  <JsonViewer
-                    data={w.raw_payload}
-                    title="raw_payload (Meta Graph API)"
-                    downloadName={`wa-${w.message_id}.json`}
-                  />
-                )}
-              </div>
+              </Collapsible>
             ))}
           </div>
         </div>
