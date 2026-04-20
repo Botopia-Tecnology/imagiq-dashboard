@@ -287,36 +287,34 @@ function WhatsAppHeader({ online }: { online: boolean }) {
           strokeLinejoin="round"
         />
       </svg>
-      {/* Avatar — Samsung Store logo on black, matches customer's real WA profile picture */}
+      {/* Avatar — Samsung Store wordmark on black, single line. ViewBox is
+          wider than the rendered square so "Samsung Store" fits in one line;
+          preserveAspectRatio keeps the aspect, and the circle clipping mask
+          gives the WhatsApp round profile picture shape. */}
       <div
         className="w-9 h-9 rounded-full overflow-hidden shrink-0 bg-black flex items-center justify-center"
         aria-hidden
       >
-        <svg viewBox="0 0 36 36" width="36" height="36" role="img" aria-label="Samsung Store">
-          <rect width="36" height="36" fill="#000" />
+        <svg
+          viewBox="0 0 80 80"
+          width="36"
+          height="36"
+          preserveAspectRatio="xMidYMid meet"
+          role="img"
+          aria-label="Samsung Store"
+        >
+          <rect width="80" height="80" fill="#000" />
           <text
-            x="18"
-            y="15.5"
+            x="40"
+            y="44"
             textAnchor="middle"
             fill="#fff"
-            fontSize="6.4"
+            fontSize="11"
             fontWeight="600"
-            letterSpacing="-0.1"
+            letterSpacing="-0.3"
             fontFamily='-apple-system, "SF Pro Text", "Helvetica Neue", Arial, sans-serif'
           >
-            Samsung
-          </text>
-          <text
-            x="18"
-            y="24"
-            textAnchor="middle"
-            fill="#fff"
-            fontSize="6.4"
-            fontWeight="600"
-            letterSpacing="-0.1"
-            fontFamily='-apple-system, "SF Pro Text", "Helvetica Neue", Arial, sans-serif'
-          >
-            Store
+            Samsung Store
           </text>
         </svg>
       </div>
@@ -530,74 +528,9 @@ export function WhatsAppPhonePreview({ messages, now }: Props) {
   const recipient = sorted[0]?.recipient_phone ?? null;
 
   return (
-    <div className="flex flex-col-reverse md:flex-row md:items-start gap-6 py-4">
-      {/* Info panel — takes remaining width on md+, stacks under phone on mobile */}
-      <div className="flex-1 min-w-0 space-y-4">
-        <div className="space-y-1.5">
-          <div className="font-semibold text-foreground uppercase tracking-wide text-[11px]">
-            Vista del cliente
-          </div>
-          <p className="text-sm text-muted-foreground max-w-prose">
-            Réplica de cómo {messages.length === 1 ? "el mensaje" : "los mensajes"} aparec
-            {messages.length === 1 ? "ió" : "ieron"} en el WhatsApp del cliente. La hora
-            de la status bar y dentro de cada burbuja es la hora exacta de Colombia en
-            que el cliente lo vio — independiente de la zona horaria del admin.
-          </p>
-          {recipient && (
-            <p className="text-xs text-muted-foreground">
-              Destinatario:{" "}
-              <span className="font-mono text-foreground/80">+{recipient}</span>
-            </p>
-          )}
-        </div>
-
-        <div className="space-y-2">
-          <div className="font-semibold text-foreground uppercase tracking-wide text-[11px]">
-            Entrega por mensaje
-          </div>
-          <ul className="space-y-1.5 text-sm">
-            {sorted.map((m) => {
-              const state = deliveryState(m);
-              return (
-                <li
-                  key={m.message_id}
-                  className="flex items-start gap-3 py-1.5 px-2 rounded-md bg-muted/40"
-                >
-                  <div className="shrink-0 pt-0.5">
-                    <DeliveryTick w={m} />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-baseline justify-between gap-2">
-                      <span className="font-medium text-foreground truncate">
-                        {prettyTemplateName(m.template_name)}
-                      </span>
-                      <span className="text-xs tabular-nums text-muted-foreground shrink-0">
-                        {formatBogotaTime(m.sent_at)}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                      <span className={state.cls}>{state.label}</span>
-                      {m.delivered_at && (
-                        <span className="text-muted-foreground/70">
-                          · entregado {formatBogotaTime(m.delivered_at)}
-                        </span>
-                      )}
-                      {m.read_at && (
-                        <span className="text-[#53BDEB]">
-                          · leído {formatBogotaTime(m.read_at)}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      </div>
-
-      {/* Phone frame — fixed width, right side on md+ */}
-      <div className="shrink-0 mx-auto md:mx-0">
+    <div className="space-y-4 py-2">
+      {/* Phone frame — centered in the (now narrower) right column */}
+      <div className="flex justify-center">
         <div
           className="relative rounded-[44px] bg-black p-[10px] shadow-2xl"
           style={{ width: 360 }}
@@ -671,6 +604,60 @@ export function WhatsAppPhonePreview({ messages, now }: Props) {
             aria-hidden
             className="absolute bottom-[6px] left-1/2 -translate-x-1/2 w-32 h-1 bg-white/80 rounded-full"
           />
+        </div>
+      </div>
+
+      {/* Info panel — below the phone, sized for the narrow right column */}
+      <div className="space-y-3 text-sm">
+        {recipient && (
+          <p className="text-xs text-muted-foreground">
+            Destinatario:{" "}
+            <span className="font-mono text-foreground/80">+{recipient}</span>
+          </p>
+        )}
+
+        <div className="space-y-1.5">
+          <div className="font-semibold text-foreground uppercase tracking-wide text-[10px]">
+            Entrega por mensaje
+          </div>
+          <ul className="space-y-1.5">
+            {sorted.map((m) => {
+              const state = deliveryState(m);
+              return (
+                <li
+                  key={m.message_id}
+                  className="flex items-start gap-2 py-1.5 px-2 rounded-md bg-muted/40"
+                >
+                  <div className="shrink-0 pt-0.5">
+                    <DeliveryTick w={m} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-baseline justify-between gap-2">
+                      <span className="font-medium text-foreground truncate text-xs">
+                        {prettyTemplateName(m.template_name)}
+                      </span>
+                      <span className="text-[11px] tabular-nums text-muted-foreground shrink-0">
+                        {formatBogotaTime(m.sent_at)}
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-muted-foreground flex flex-wrap gap-x-1.5">
+                      <span className={state.cls}>{state.label}</span>
+                      {m.delivered_at && (
+                        <span className="text-muted-foreground/70">
+                          · entregado {formatBogotaTime(m.delivered_at)}
+                        </span>
+                      )}
+                      {m.read_at && (
+                        <span className="text-[#53BDEB]">
+                          · leído {formatBogotaTime(m.read_at)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
         </div>
       </div>
     </div>
