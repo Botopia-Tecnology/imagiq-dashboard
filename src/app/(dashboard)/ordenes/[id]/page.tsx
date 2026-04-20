@@ -1,6 +1,6 @@
 "use client";
 
-import { use } from "react";
+import { use, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -14,6 +14,17 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { apiPost } from "@/lib/api-client";
+import { toast } from "sonner";
 import {
   ArrowLeft,
   AlertCircle,
@@ -31,6 +42,8 @@ import {
   Gift,
   Mail,
   ExternalLink,
+  Ban,
+  Loader2,
 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -72,6 +85,39 @@ export default function OrderDetailPage({
   const { id } = use(params);
   const router = useRouter();
   const { detail, isLoading, error, refetch } = useOrderDetail(id);
+
+  const [cancelGuiaOpen, setCancelGuiaOpen] = useState(false);
+  const [cancelGuiaInput, setCancelGuiaInput] = useState("");
+  const [cancelGuiaTarget, setCancelGuiaTarget] = useState("");
+  const [cancelGuiaLoading, setCancelGuiaLoading] = useState(false);
+
+  const openCancelGuiaModal = (numeroGuia: string) => {
+    setCancelGuiaTarget(numeroGuia);
+    setCancelGuiaInput("");
+    setCancelGuiaOpen(true);
+  };
+
+  const handleCancelGuia = async () => {
+    if (cancelGuiaInput !== cancelGuiaTarget) {
+      toast.error("El número de guía no coincide");
+      return;
+    }
+    setCancelGuiaLoading(true);
+    try {
+      await apiPost("/api/deliveries/coordinadora/anular-guia", {
+        codigo_remision: cancelGuiaTarget,
+      });
+      toast.success(`Guía ${cancelGuiaTarget} anulada exitosamente`);
+      setCancelGuiaOpen(false);
+      refetch();
+    } catch (err) {
+      toast.error(
+        `Error al anular guía: ${err instanceof Error ? err.message : "Error desconocido"}`
+      );
+    } finally {
+      setCancelGuiaLoading(false);
+    }
+  };
 
   if (isLoading) return <DetailSkeleton />;
 
@@ -365,6 +411,17 @@ export default function OrderDetailPage({
                         </a>
                       </Button>
                     )}
+                    {e.activo && (
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        className="h-8 w-full"
+                        onClick={() => openCancelGuiaModal(e.numero_guia)}
+                      >
+                        <Ban className="h-3 w-3 mr-1" />
+                        Cancelar guía
+                      </Button>
+                    )}
                     {e.eventos.length > 0 && (
                       <div className="space-y-1 pt-1">
                         <span className="text-xs text-muted-foreground">Eventos</span>
@@ -464,6 +521,41 @@ export default function OrderDetailPage({
           </DetailSection>
         </div>
       </div>
+
+      {/* Modal cancelar guía */}
+      <Dialog open={cancelGuiaOpen} onOpenChange={setCancelGuiaOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Cancelar guía de Coordinadora</DialogTitle>
+            <DialogDescription>
+              Estás a punto de anular la guía <strong>{cancelGuiaTarget}</strong>.
+              Esta acción no se puede deshacer. Escribe el número de guía para confirmar.
+            </DialogDescription>
+          </DialogHeader>
+          <Input
+            placeholder="Número de guía"
+            value={cancelGuiaInput}
+            onChange={(e) => setCancelGuiaInput(e.target.value)}
+          />
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setCancelGuiaOpen(false)}
+              disabled={cancelGuiaLoading}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleCancelGuia}
+              disabled={cancelGuiaInput !== cancelGuiaTarget || cancelGuiaLoading}
+            >
+              {cancelGuiaLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Anular guía
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
