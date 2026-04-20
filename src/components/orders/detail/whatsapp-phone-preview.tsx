@@ -287,16 +287,38 @@ function WhatsAppHeader({ online }: { online: boolean }) {
           strokeLinejoin="round"
         />
       </svg>
-      {/* Avatar */}
+      {/* Avatar — Samsung Store logo on black, matches customer's real WA profile picture */}
       <div
-        className="w-9 h-9 rounded-full flex items-center justify-center text-white font-semibold shrink-0"
-        style={{
-          background:
-            "linear-gradient(135deg, #1428A0 0%, #1F4AE0 100%)", // Samsung-blue gradient for store identity
-        }}
+        className="w-9 h-9 rounded-full overflow-hidden shrink-0 bg-black flex items-center justify-center"
         aria-hidden
       >
-        S
+        <svg viewBox="0 0 36 36" width="36" height="36" role="img" aria-label="Samsung Store">
+          <rect width="36" height="36" fill="#000" />
+          <text
+            x="18"
+            y="15.5"
+            textAnchor="middle"
+            fill="#fff"
+            fontSize="6.4"
+            fontWeight="600"
+            letterSpacing="-0.1"
+            fontFamily='-apple-system, "SF Pro Text", "Helvetica Neue", Arial, sans-serif'
+          >
+            Samsung
+          </text>
+          <text
+            x="18"
+            y="24"
+            textAnchor="middle"
+            fill="#fff"
+            fontSize="6.4"
+            fontWeight="600"
+            letterSpacing="-0.1"
+            fontFamily='-apple-system, "SF Pro Text", "Helvetica Neue", Arial, sans-serif'
+          >
+            Store
+          </text>
+        </svg>
       </div>
       {/* Name + status */}
       <div className="flex-1 min-w-0 leading-tight">
@@ -505,108 +527,166 @@ export function WhatsAppPhonePreview({ messages, now }: Props) {
     }
   }
 
+  const recipient = sorted[0]?.recipient_phone ?? null;
+
   return (
-    <div className="flex justify-center py-4">
-      {/* Outer phone bezel */}
-      <div
-        className="relative rounded-[44px] bg-black p-[10px] shadow-2xl"
-        style={{ width: 360 }}
-      >
-        {/* Side buttons */}
-        <div
-          aria-hidden
-          className="absolute left-[-3px] top-[110px] w-[3px] h-[30px] bg-black rounded-l-sm"
-        />
-        <div
-          aria-hidden
-          className="absolute left-[-3px] top-[160px] w-[3px] h-[55px] bg-black rounded-l-sm"
-        />
-        <div
-          aria-hidden
-          className="absolute left-[-3px] top-[225px] w-[3px] h-[55px] bg-black rounded-l-sm"
-        />
-        <div
-          aria-hidden
-          className="absolute right-[-3px] top-[180px] w-[3px] h-[80px] bg-black rounded-r-sm"
-        />
-        {/* Screen */}
-        <div
-          className="rounded-[34px] overflow-hidden bg-white"
-          style={{ height: 720 }}
-        >
-          <IosStatusBar time={statusBarTime} />
-          <WhatsAppHeader online={anyRead} />
-
-          {/* Chat area with doodle bg */}
-          <div
-            className="relative overflow-y-auto"
-            style={{
-              height: 720 - 34 - 56 - 48, // roughly statusbar + header + composer
-              backgroundColor: "#EFEAE2",
-              backgroundImage: `url("${DOODLE_DATA_URL}")`,
-              backgroundRepeat: "repeat",
-              backgroundSize: "180px 180px",
-            }}
-          >
-            <div className="p-2 space-y-2">
-              {groups.map((g, gi) => (
-                <Fragment key={gi}>
-                  {/* Day separator pill */}
-                  <div className="flex justify-center my-2">
-                    <span
-                      className="px-2.5 py-0.5 rounded-md bg-[#E1F3FB] text-[#54656F] text-[11px] font-medium shadow-[0_1px_0.5px_rgba(11,20,26,0.13)]"
-                      style={{
-                        fontFamily:
-                          '-apple-system, "SF Pro Text", "Helvetica Neue", sans-serif',
-                      }}
-                    >
-                      {g.dateLabel}
-                    </span>
-                  </div>
-                  {g.messages.map((m, i) => (
-                    <div key={m.message_id} className="flex">
-                      <IncomingBubble msg={m} showTail={i === 0} />
-                    </div>
-                  ))}
-                </Fragment>
-              ))}
-            </div>
-          </div>
-
-          <ChatComposer />
-        </div>
-
-        {/* Home indicator */}
-        <div
-          aria-hidden
-          className="absolute bottom-[6px] left-1/2 -translate-x-1/2 w-32 h-1 bg-white/80 rounded-full"
-        />
-      </div>
-
-      {/* Delivery summary beside the phone (sm+ screens) */}
-      <div className="hidden md:flex flex-col gap-3 ml-6 w-56 text-xs text-muted-foreground self-start pt-16">
-        <div>
-          <div className="font-medium text-foreground uppercase tracking-wide text-[10px] mb-1">
+    <div className="flex flex-col-reverse md:flex-row md:items-start gap-6 py-4">
+      {/* Info panel — takes remaining width on md+, stacks under phone on mobile */}
+      <div className="flex-1 min-w-0 space-y-4">
+        <div className="space-y-1.5">
+          <div className="font-semibold text-foreground uppercase tracking-wide text-[11px]">
             Vista del cliente
           </div>
-          <p>
+          <p className="text-sm text-muted-foreground max-w-prose">
             Réplica de cómo {messages.length === 1 ? "el mensaje" : "los mensajes"} aparec
-            {messages.length === 1 ? "ió" : "ieron"} en el WhatsApp del cliente, con la
-            hora exacta de Colombia.
+            {messages.length === 1 ? "ió" : "ieron"} en el WhatsApp del cliente. La hora
+            de la status bar y dentro de cada burbuja es la hora exacta de Colombia en
+            que el cliente lo vio — independiente de la zona horaria del admin.
           </p>
+          {recipient && (
+            <p className="text-xs text-muted-foreground">
+              Destinatario:{" "}
+              <span className="font-mono text-foreground/80">+{recipient}</span>
+            </p>
+          )}
         </div>
-        <div className="space-y-1">
-          {sorted.map((m) => (
-            <div key={m.message_id} className="flex items-center gap-2">
-              <DeliveryTick w={m} />
-              <span className="tabular-nums">{formatBogotaTime(m.sent_at)}</span>
-              <span className="truncate text-foreground/80">
-                {m.template_name}
-              </span>
+
+        <div className="space-y-2">
+          <div className="font-semibold text-foreground uppercase tracking-wide text-[11px]">
+            Entrega por mensaje
+          </div>
+          <ul className="space-y-1.5 text-sm">
+            {sorted.map((m) => {
+              const state = deliveryState(m);
+              return (
+                <li
+                  key={m.message_id}
+                  className="flex items-start gap-3 py-1.5 px-2 rounded-md bg-muted/40"
+                >
+                  <div className="shrink-0 pt-0.5">
+                    <DeliveryTick w={m} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-baseline justify-between gap-2">
+                      <span className="font-medium text-foreground truncate">
+                        {prettyTemplateName(m.template_name)}
+                      </span>
+                      <span className="text-xs tabular-nums text-muted-foreground shrink-0">
+                        {formatBogotaTime(m.sent_at)}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <span className={state.cls}>{state.label}</span>
+                      {m.delivered_at && (
+                        <span className="text-muted-foreground/70">
+                          · entregado {formatBogotaTime(m.delivered_at)}
+                        </span>
+                      )}
+                      {m.read_at && (
+                        <span className="text-[#53BDEB]">
+                          · leído {formatBogotaTime(m.read_at)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      </div>
+
+      {/* Phone frame — fixed width, right side on md+ */}
+      <div className="shrink-0 mx-auto md:mx-0">
+        <div
+          className="relative rounded-[44px] bg-black p-[10px] shadow-2xl"
+          style={{ width: 360 }}
+        >
+          {/* Side buttons */}
+          <div
+            aria-hidden
+            className="absolute left-[-3px] top-[110px] w-[3px] h-[30px] bg-black rounded-l-sm"
+          />
+          <div
+            aria-hidden
+            className="absolute left-[-3px] top-[160px] w-[3px] h-[55px] bg-black rounded-l-sm"
+          />
+          <div
+            aria-hidden
+            className="absolute left-[-3px] top-[225px] w-[3px] h-[55px] bg-black rounded-l-sm"
+          />
+          <div
+            aria-hidden
+            className="absolute right-[-3px] top-[180px] w-[3px] h-[80px] bg-black rounded-r-sm"
+          />
+          {/* Screen */}
+          <div
+            className="rounded-[34px] overflow-hidden bg-white"
+            style={{ height: 720 }}
+          >
+            <IosStatusBar time={statusBarTime} />
+            <WhatsAppHeader online={anyRead} />
+
+            {/* Chat area with doodle bg */}
+            <div
+              className="relative overflow-y-auto"
+              style={{
+                height: 720 - 34 - 56 - 48, // roughly statusbar + header + composer
+                backgroundColor: "#EFEAE2",
+                backgroundImage: `url("${DOODLE_DATA_URL}")`,
+                backgroundRepeat: "repeat",
+                backgroundSize: "180px 180px",
+              }}
+            >
+              <div className="p-2 space-y-2">
+                {groups.map((g, gi) => (
+                  <Fragment key={gi}>
+                    {/* Day separator pill */}
+                    <div className="flex justify-center my-2">
+                      <span
+                        className="px-2.5 py-0.5 rounded-md bg-[#E1F3FB] text-[#54656F] text-[11px] font-medium shadow-[0_1px_0.5px_rgba(11,20,26,0.13)]"
+                        style={{
+                          fontFamily:
+                            '-apple-system, "SF Pro Text", "Helvetica Neue", sans-serif',
+                        }}
+                      >
+                        {g.dateLabel}
+                      </span>
+                    </div>
+                    {g.messages.map((m, i) => (
+                      <div key={m.message_id} className="flex">
+                        <IncomingBubble msg={m} showTail={i === 0} />
+                      </div>
+                    ))}
+                  </Fragment>
+                ))}
+              </div>
             </div>
-          ))}
+
+            <ChatComposer />
+          </div>
+
+          {/* Home indicator */}
+          <div
+            aria-hidden
+            className="absolute bottom-[6px] left-1/2 -translate-x-1/2 w-32 h-1 bg-white/80 rounded-full"
+          />
         </div>
       </div>
     </div>
   );
+}
+
+function prettyTemplateName(name: string): string {
+  return name
+    .split("_")
+    .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
+    .join(" ");
+}
+
+function deliveryState(m: WhatsappMessage): { label: string; cls: string } {
+  if (m.failed_at) return { label: "Falló", cls: "text-red-600" };
+  if (m.read_at) return { label: "Leído", cls: "text-[#53BDEB]" };
+  if (m.delivered_at) return { label: "Entregado", cls: "text-foreground/80" };
+  return { label: "Enviado", cls: "text-muted-foreground" };
 }
