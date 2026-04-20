@@ -137,6 +137,15 @@ export function ActionsMenu({ detail, onAnularGuia }: ActionsMenuProps) {
             </DropdownMenuItem>
           )}
 
+          {firstGuia && onAnularGuia && (
+            <DropdownMenuItem
+              onClick={() => onAnularGuia(firstGuia)}
+            >
+              <FileX className="mr-2 h-4 w-4" />
+              Anular guía de envío
+            </DropdownMenuItem>
+          )}
+
           <DropdownMenuSeparator />
           <DropdownMenuLabel className="text-muted-foreground">
             Próximamente
@@ -147,13 +156,6 @@ export function ActionsMenu({ detail, onAnularGuia }: ActionsMenuProps) {
           )}
           <DisabledAction icon={Undo2} label="Reembolsar" />
           <DisabledAction icon={ShieldCheck} label="Forzar aprobación manual" />
-          <DropdownMenuItem
-            disabled={!firstGuia || !onAnularGuia}
-            onClick={() => firstGuia && onAnularGuia?.(firstGuia)}
-          >
-            <FileX className="mr-2 h-4 w-4" />
-            Anular guía de envío
-          </DropdownMenuItem>
           <DisabledAction icon={Ban} label="Eliminar orden" />
           <DisabledAction icon={Send} label="Reenviar con monto distinto" />
         </DropdownMenuContent>
