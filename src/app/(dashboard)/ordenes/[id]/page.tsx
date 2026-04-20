@@ -411,17 +411,15 @@ export default function OrderDetailPage({
                         </a>
                       </Button>
                     )}
-                    {e.activo && (
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        className="h-8 w-full"
-                        onClick={() => openCancelGuiaModal(e.numero_guia)}
-                      >
-                        <Ban className="h-3 w-3 mr-1" />
-                        Cancelar guía
-                      </Button>
-                    )}
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="h-8 w-full"
+                      onClick={() => openCancelGuiaModal(e.numero_guia)}
+                    >
+                      <Ban className="h-3 w-3 mr-1" />
+                      Cancelar guía
+                    </Button>
                     {e.eventos.length > 0 && (
                       <div className="space-y-1 pt-1">
                         <span className="text-xs text-muted-foreground">Eventos</span>
