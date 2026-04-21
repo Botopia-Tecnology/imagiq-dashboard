@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { getOrderDetail } from "@/services/orders";
 import { AdminOrderDetail } from "@/types/orders";
 
@@ -22,26 +22,45 @@ export function useOrderDetail(orderId: string | null | undefined) {
     error: null,
   });
 
-  const fetchDetail = useCallback(async () => {
-    if (!orderId) {
-      setState({ detail: null, isLoading: false, error: null });
-      return;
-    }
-    setState((prev) => ({ ...prev, isLoading: true, error: null }));
-    try {
-      const token = getAuthToken();
-      const detail = await getOrderDetail(orderId, token);
-      setState({ detail, isLoading: false, error: null });
-    } catch (err) {
-      const error =
-        err instanceof Error ? err : new Error("Error al obtener detalle");
-      setState({ detail: null, isLoading: false, error });
-    }
-  }, [orderId]);
+  const controllerRef = useRef<AbortController | null>(null);
+
+  const runFetch = useCallback(
+    async (signal: AbortSignal) => {
+      if (!orderId) {
+        setState({ detail: null, isLoading: false, error: null });
+        return;
+      }
+      setState((prev) => ({ ...prev, isLoading: true, error: null }));
+      try {
+        const detail = await getOrderDetail(orderId, {
+          token: getAuthToken(),
+          signal,
+        });
+        if (signal.aborted) return;
+        setState({ detail, isLoading: false, error: null });
+      } catch (err) {
+        if (signal.aborted || (err as Error)?.name === "AbortError") return;
+        const error =
+          err instanceof Error ? err : new Error("Error al obtener detalle");
+        setState({ detail: null, isLoading: false, error });
+      }
+    },
+    [orderId],
+  );
 
   useEffect(() => {
-    fetchDetail();
-  }, [fetchDetail]);
+    const controller = new AbortController();
+    controllerRef.current = controller;
+    void runFetch(controller.signal);
+    return () => controller.abort();
+  }, [runFetch]);
 
-  return { ...state, refetch: fetchDetail };
+  const refetch = useCallback(async () => {
+    controllerRef.current?.abort();
+    const controller = new AbortController();
+    controllerRef.current = controller;
+    await runFetch(controller.signal);
+  }, [runFetch]);
+
+  return { ...state, refetch };
 }

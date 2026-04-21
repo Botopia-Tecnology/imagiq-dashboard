@@ -17,11 +17,116 @@ if (!API_KEY && process.env.NODE_ENV === "development") {
 }
 
 /**
- * Cliente HTTP base con API Key automática
+ * Error tipado de las respuestas del API. A diferencia de un `Error` plano,
+ * transporta el HTTP `status` y — cuando el backend devolvió JSON con
+ * `{message, ...}` — el cuerpo estructurado.
+ *
+ * Los consumidores pueden hacer `if (err instanceof ApiError) ...` para
+ * ramificar lógica (ej. mostrar toast vs redirigir a login) sin parsear
+ * strings.
+ */
+export class ApiError extends Error {
+  readonly status: number;
+  readonly body: unknown;
+  readonly endpoint: string;
+
+  constructor(
+    status: number,
+    message: string,
+    options: { body?: unknown; endpoint: string },
+  ) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+    this.body = options.body;
+    this.endpoint = options.endpoint;
+  }
+}
+
+/**
+ * Lee el mejor mensaje de error disponible en la respuesta. Prefiere JSON
+ * estructurado `{message}` (el contrato del api-gateway); cae a texto plano
+ * y finalmente a `statusText`.
+ *
+ * `statusText` suele ser "" en HTTP/2 (Railway/Vercel), por eso se evita como
+ * primera opción — dejaba al usuario final viendo un `HTTP Error 400:` sin
+ * cuerpo útil.
+ */
+async function readErrorPayload(
+  response: Response,
+): Promise<{ message: string; body: unknown }> {
+  const clone = response.clone();
+  try {
+    const json = (await clone.json()) as Record<string, unknown>;
+    const message =
+      (typeof json?.message === "string" && json.message) ||
+      (typeof json?.error === "string" && json.error) ||
+      null;
+    if (message) return { message, body: json };
+    return {
+      message: response.statusText || `HTTP ${response.status}`,
+      body: json,
+    };
+  } catch {
+    // No es JSON, intentar texto plano.
+    try {
+      const text = await response.text();
+      if (text) return { message: text, body: text };
+    } catch {
+      /* ignore */
+    }
+    return {
+      message: response.statusText || `HTTP ${response.status}`,
+      body: undefined,
+    };
+  }
+}
+
+/**
+ * Maneja los códigos de estado que requieren acción global (sesión expirada,
+ * rate limit). Centralizado aquí para no duplicar entre `apiClient` y
+ * `apiClientFormData`.
+ *
+ * @returns `true` si manejó el status y relanzó; `false` si no.
+ */
+async function handleWellKnownHttpError(
+  response: Response,
+  endpoint: string,
+): Promise<void> {
+  if (response.status === 401) {
+    if (
+      typeof globalThis !== "undefined" &&
+      typeof localStorage !== "undefined"
+    ) {
+      localStorage.removeItem("imagiq_user");
+      localStorage.removeItem("imagiq_token");
+      globalThis.location.href = "/login";
+    }
+    throw new ApiError(
+      401,
+      "Sesión expirada. Por favor, inicie sesión nuevamente.",
+      { endpoint },
+    );
+  }
+  if (response.status === 429) {
+    throw new ApiError(
+      429,
+      "Demasiadas peticiones. Por favor intenta más tarde.",
+      { endpoint },
+    );
+  }
+  // Otros errores: leer body y lanzar ApiError con el mensaje real del backend.
+  const { message, body } = await readErrorPayload(response);
+  throw new ApiError(response.status, message, { body, endpoint });
+}
+
+/**
+ * Cliente HTTP base con API Key automática.
  *
  * @param endpoint - Ruta relativa del API (ej: '/api/products')
- * @param options - Opciones de fetch estándar
- * @returns Promise<Response>
+ * @param options - Opciones de fetch estándar (incluye `signal` para cancelación)
+ * @returns Promise<Response> — el `Response` sin consumir si el status es 2xx
+ * @throws ApiError con `status` y `message` legible si el status no es 2xx
  *
  * @example
  * const response = await apiClient('/api/products', { method: 'GET' });
@@ -47,37 +152,18 @@ export async function apiClient(
       credentials: "include",
     });
 
-    // Manejar errores específicos
     if (!response.ok) {
-      if (response.status === 401) {
-        // Cerrar sesión y redirigir a login
-        if (
-          typeof globalThis !== "undefined" &&
-          typeof localStorage !== "undefined"
-        ) {
-          localStorage.removeItem("imagiq_user");
-          localStorage.removeItem("imagiq_token");
-          globalThis.location.href = "/login";
-        }
-        const error = new Error(
-          "Sesión expirada. Por favor, inicie sesión nuevamente."
-        );
-        console.error("🔐 Error de autenticación:", error.message);
-        throw error;
-      }
-      if (response.status === 429) {
-        const error = new Error(
-          "Demasiadas peticiones. Por favor intenta más tarde."
-        );
-        console.error("⚠️ Rate limit excedido:", error.message);
-        throw error;
-      }
-      throw new Error(`HTTP Error ${response.status}: ${response.statusText}`);
+      await handleWellKnownHttpError(response, endpoint);
     }
 
     return response;
   } catch (error) {
-    if (error instanceof Error) {
+    // Errores de red / AbortError / ApiError: log y re-throw.
+    if (error instanceof ApiError) {
+      console.error(
+        `❌ API ${error.status} ${error.endpoint}: ${error.message}`,
+      );
+    } else if (error instanceof Error && error.name !== "AbortError") {
       console.error("❌ API Client Error:", error.message, { endpoint, url });
     }
     throw error;
@@ -91,6 +177,7 @@ export async function apiClient(
  * @param endpoint - Ruta relativa del API
  * @param options - Opciones de fetch estándar
  * @returns Promise<Response>
+ * @throws ApiError con `status` y `message` legible si el status no es 2xx
  */
 export async function apiClientFormData(
   endpoint: string,
@@ -111,35 +198,16 @@ export async function apiClientFormData(
     });
 
     if (!response.ok) {
-      if (response.status === 401) {
-        // Cerrar sesión y redirigir a login
-        if (
-          typeof globalThis !== "undefined" &&
-          typeof localStorage !== "undefined"
-        ) {
-          localStorage.removeItem("imagiq_user");
-          localStorage.removeItem("imagiq_token");
-          globalThis.location.href = "/login";
-        }
-        const error = new Error(
-          "Sesión expirada. Por favor, inicie sesión nuevamente."
-        );
-        console.error("🔐 Error de autenticación:", error.message);
-        throw error;
-      }
-      if (response.status === 429) {
-        const error = new Error(
-          "Demasiadas peticiones. Por favor intenta más tarde."
-        );
-        console.error("⚠️ Rate limit excedido:", error.message);
-        throw error;
-      }
-      throw new Error(`HTTP Error ${response.status}: ${response.statusText}`);
+      await handleWellKnownHttpError(response, endpoint);
     }
 
     return response;
   } catch (error) {
-    if (error instanceof Error) {
+    if (error instanceof ApiError) {
+      console.error(
+        `❌ API ${error.status} ${error.endpoint}: ${error.message}`,
+      );
+    } else if (error instanceof Error && error.name !== "AbortError") {
       console.error("❌ API Client Error:", error.message, { endpoint, url });
     }
     throw error;
@@ -150,7 +218,7 @@ export async function apiClientFormData(
  * Helper para peticiones GET con tipado TypeScript
  *
  * @param endpoint - Ruta relativa del API
- * @param options - Opciones adicionales (headers, etc.)
+ * @param options - Opciones adicionales (headers, signal, etc.)
  * @returns Promise con datos parseados
  *
  * @example
@@ -188,13 +256,6 @@ export async function apiPost<T = unknown>(
 
 /**
  * Helper para peticiones PUT con tipado TypeScript
- *
- * @param endpoint - Ruta relativa del API
- * @param data - Datos a actualizar
- * @returns Promise con datos parseados
- *
- * @example
- * const updatedUser = await apiPut<User>('/api/users/123', { name: 'New Name' });
  */
 export async function apiPut<T = unknown>(
   endpoint: string,
@@ -209,13 +270,6 @@ export async function apiPut<T = unknown>(
 
 /**
  * Helper para peticiones PATCH con tipado TypeScript
- *
- * @param endpoint - Ruta relativa del API
- * @param data - Datos parciales a actualizar
- * @returns Promise con datos parseados
- *
- * @example
- * const updated = await apiPatch<User>('/api/users/123', { email: 'new@email.com' });
  */
 export async function apiPatch<T = unknown>(
   endpoint: string,
@@ -230,12 +284,6 @@ export async function apiPatch<T = unknown>(
 
 /**
  * Helper para peticiones DELETE con tipado TypeScript
- *
- * @param endpoint - Ruta relativa del API
- * @returns Promise con datos parseados (si los hay)
- *
- * @example
- * await apiDelete('/api/products/123');
  */
 export async function apiDelete<T = unknown>(endpoint: string): Promise<T> {
   const response = await apiClient(endpoint, { method: "DELETE" });
