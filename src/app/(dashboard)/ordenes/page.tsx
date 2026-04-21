@@ -218,14 +218,20 @@ export default function OrdenesPage() {
         </div>
       </div>
 
-      {/* Error Alert */}
-      {(error || metricsError) && (
+      {/* Error Alert — visible solo cuando el fallo impide mostrar datos.
+          Si una sección falló pero otra tiene datos, no alarmamos al usuario:
+          los hooks ya cancelan requests obsoletas vía AbortController, así que
+          un error aquí significa que la última request realmente falló. */}
+      {((error && orders.length === 0) ||
+        (metricsError && !metrics)) && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Error al cargar datos</AlertTitle>
           <AlertDescription>
-            {error?.message || metricsError?.message}. Por favor intenta
-            refrescar la página.
+            {(error && orders.length === 0
+              ? error.message
+              : metricsError?.message) ?? "Error desconocido"}
+            . Por favor intenta refrescar la página.
           </AlertDescription>
         </Alert>
       )}

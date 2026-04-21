@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { getOrdersMetrics } from "@/services/orders";
 import { useTestFilter } from "@/contexts/TestFilterContext";
 import {
@@ -21,7 +21,7 @@ interface UseOrdersMetricsReturn extends UseOrdersMetricsState {
 }
 
 /**
- * Obtiene el token de autenticación del localStorage
+ * Obtiene el token de autenticación del localStorage.
  */
 function getAuthToken(): string | null {
   if (typeof window === "undefined") return null;
@@ -29,22 +29,21 @@ function getAuthToken(): string | null {
 }
 
 /**
- * Hook para obtener métricas de órdenes
+ * Hook para obtener métricas de órdenes.
  *
- * @returns Estado de las métricas, distribución de estados y funciones de control
- *
- * @example
- * const { metrics, statusDistribution, isLoading, error, refetch } = useOrdersMetrics();
- * if (metrics) {
- *   console.log(metrics.total_ordenes, metrics.total_ingresos);
- * }
+ * Usa `AbortController` para cancelar cualquier request en vuelo cuando las
+ * dependencias (rango/filtro test) cambian. Así las respuestas obsoletas nunca
+ * pueden sobrescribir el estado más reciente — especialmente importante en
+ * este hook donde el antes existente "error banner sobre data ya cargada" era
+ * síntoma directo de una race de dos fetches.
  */
 export function useOrdersMetrics(
   range?: { from: Date; to: Date },
 ): UseOrdersMetricsReturn {
   const { excludeTest } = useTestFilter();
-  const rangeFromMs = range?.from.getTime();
-  const rangeToMs = range?.to.getTime();
+  const rangeFromIso = range?.from.toISOString();
+  const rangeToIso = range?.to.toISOString();
+
   const [state, setState] = useState<UseOrdersMetricsState>({
     metrics: null,
     statusDistribution: [],
@@ -52,43 +51,53 @@ export function useOrdersMetrics(
     error: null,
   });
 
-  const fetchMetrics = useCallback(async () => {
-    setState((prev) => ({ ...prev, isLoading: true, error: null }));
+  const controllerRef = useRef<AbortController | null>(null);
 
-    try {
-      const token = getAuthToken();
-      const response: OrdersMetricsResponse = await getOrdersMetrics(token, {
-        excludeTest,
-        dateFrom: range ? range.from.toISOString() : undefined,
-        dateTo: range ? range.to.toISOString() : undefined,
-      });
+  const runFetch = useCallback(
+    async (signal: AbortSignal) => {
+      setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
-      setState({
-        metrics: response.metrics,
-        statusDistribution: response.statusDistribution,
-        isLoading: false,
-        error: null,
-      });
-    } catch (err) {
-      const error =
-        err instanceof Error ? err : new Error("Error al obtener métricas");
-      setState((prev) => ({
-        ...prev,
-        isLoading: false,
-        error,
-      }));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [excludeTest, rangeFromMs, rangeToMs]);
+      try {
+        const response: OrdersMetricsResponse = await getOrdersMetrics({
+          token: getAuthToken(),
+          signal,
+          excludeTest,
+          dateFrom: rangeFromIso,
+          dateTo: rangeToIso,
+        });
 
-  // Fetch on mount
+        if (signal.aborted) return;
+
+        setState({
+          metrics: response.metrics,
+          statusDistribution: response.statusDistribution,
+          isLoading: false,
+          error: null,
+        });
+      } catch (err) {
+        if (signal.aborted || (err as Error)?.name === "AbortError") return;
+
+        const error =
+          err instanceof Error ? err : new Error("Error al obtener métricas");
+        setState((prev) => ({ ...prev, isLoading: false, error }));
+      }
+    },
+    [excludeTest, rangeFromIso, rangeToIso],
+  );
+
   useEffect(() => {
-    fetchMetrics();
-  }, [fetchMetrics]);
+    const controller = new AbortController();
+    controllerRef.current = controller;
+    void runFetch(controller.signal);
+    return () => controller.abort();
+  }, [runFetch]);
 
   const refetch = useCallback(async () => {
-    await fetchMetrics();
-  }, [fetchMetrics]);
+    controllerRef.current?.abort();
+    const controller = new AbortController();
+    controllerRef.current = controller;
+    await runFetch(controller.signal);
+  }, [runFetch]);
 
   return {
     ...state,

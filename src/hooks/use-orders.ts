@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { getOrders } from "@/services/orders";
 import { useTestFilter } from "@/contexts/TestFilterContext";
 import {
@@ -24,7 +24,7 @@ interface UseOrdersReturn extends UseOrdersState {
 }
 
 /**
- * Obtiene el token de autenticación del localStorage
+ * Obtiene el token de autenticación del localStorage.
  */
 function getAuthToken(): string | null {
   if (typeof window === "undefined") return null;
@@ -32,18 +32,14 @@ function getAuthToken(): string | null {
 }
 
 /**
- * Hook para obtener órdenes con paginación y filtros
+ * Hook para obtener órdenes con paginación y filtros.
  *
- * @param initialParams - Parámetros iniciales de consulta
- * @returns Estado de las órdenes, paginación y funciones de control
- *
- * @example
- * const { orders, pagination, isLoading, error, refetch, setParams, params } = useOrders({
- *   page: 1,
- *   limit: 20,
- *   sortField: 'fecha_creacion',
- *   sortOrder: 'desc',
- * });
+ * Cada ejecución del efecto crea un `AbortController` nuevo. Cuando las
+ * dependencias cambian (params/rango/filtro test), el cleanup aborta la
+ * request anterior — así las respuestas obsoletas no pueden sobrescribir
+ * el estado producido por la request más reciente. Ese era el origen del
+ * patrón "data cargada + error banner simultáneos" que se veía cuando un
+ * cambio rápido de estado disparaba dos fetches consecutivos.
  */
 export function useOrders(
   initialParams: OrdersQueryParams = {},
@@ -67,44 +63,53 @@ export function useOrders(
 
   const rangeFromMs = range?.from.getTime();
   const rangeToMs = range?.to.getTime();
+  const rangeFromIso = range?.from.toISOString();
+  const rangeToIso = range?.to.toISOString();
 
-  const fetchOrders = useCallback(async () => {
-    setState((prev) => ({ ...prev, isLoading: true, error: null }));
+  // Ref al controller actual, para que `refetch` pueda también cancelar.
+  const controllerRef = useRef<AbortController | null>(null);
 
-    try {
-      const token = getAuthToken();
-      const response: OrdersApiResponse = await getOrders(
-        {
-          ...params,
-          excludeTest,
-          dateFrom: range ? range.from.toISOString() : undefined,
-          dateTo: range ? range.to.toISOString() : undefined,
-        },
-        token,
-      );
+  const runFetch = useCallback(
+    async (signal: AbortSignal) => {
+      setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
-      setState({
-        orders: response.data,
-        pagination: response.pagination,
-        isLoading: false,
-        error: null,
-      });
-    } catch (err) {
-      const error =
-        err instanceof Error ? err : new Error("Error al obtener órdenes");
-      setState((prev) => ({
-        ...prev,
-        isLoading: false,
-        error,
-      }));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [params, excludeTest, rangeFromMs, rangeToMs]);
+      try {
+        const response: OrdersApiResponse = await getOrders(
+          {
+            ...params,
+            excludeTest,
+            dateFrom: rangeFromIso,
+            dateTo: rangeToIso,
+          },
+          { token: getAuthToken(), signal },
+        );
 
-  // Fetch on mount and when params change
+        if (signal.aborted) return;
+
+        setState({
+          orders: response.data,
+          pagination: response.pagination,
+          isLoading: false,
+          error: null,
+        });
+      } catch (err) {
+        // Request abortada por un re-fetch posterior: silencio total.
+        if (signal.aborted || (err as Error)?.name === "AbortError") return;
+
+        const error =
+          err instanceof Error ? err : new Error("Error al obtener órdenes");
+        setState((prev) => ({ ...prev, isLoading: false, error }));
+      }
+    },
+    [params, excludeTest, rangeFromIso, rangeToIso],
+  );
+
   useEffect(() => {
-    fetchOrders();
-  }, [fetchOrders]);
+    const controller = new AbortController();
+    controllerRef.current = controller;
+    void runFetch(controller.signal);
+    return () => controller.abort();
+  }, [runFetch]);
 
   // Reset page to 1 when filters toggle (avoid landing on an empty page)
   useEffect(() => {
@@ -126,8 +131,11 @@ export function useOrders(
   }, []);
 
   const refetch = useCallback(async () => {
-    await fetchOrders();
-  }, [fetchOrders]);
+    controllerRef.current?.abort();
+    const controller = new AbortController();
+    controllerRef.current = controller;
+    await runFetch(controller.signal);
+  }, [runFetch]);
 
   return {
     ...state,
@@ -138,13 +146,12 @@ export function useOrders(
 }
 
 /**
- * Hook simplificado que solo expone la función de fetch
- * Útil para casos donde se necesita control manual
+ * Hook simplificado que solo expone la función de fetch.
+ * Útil para casos donde se necesita control manual.
  */
 export function useOrdersFetch() {
   const fetchOrders = async (params: OrdersQueryParams = {}) => {
-    const token = getAuthToken();
-    return getOrders(params, token);
+    return getOrders(params, { token: getAuthToken() });
   };
 
   return { fetchOrders };
