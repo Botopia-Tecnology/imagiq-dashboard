@@ -48,11 +48,22 @@ export function useInWebCampaigns(params: UseInWebCampaignsParams = {}): UseInWe
    * Mapea una campaña Email de la API al formato Campaign del frontend
    */
   const mapEmailCampaign = (apiCampaign: EmailCampaignResponse): Campaign => {
+    // Si completedAt está seteado, el envío terminó — aunque el status de la DB
+    // se haya quedado en 'sending' por un crash del background processor.
+    let derivedStatus = apiCampaign.status as Campaign['status'];
+    if (apiCampaign.completedAt && apiCampaign.status === 'sending') {
+      derivedStatus =
+        apiCampaign.failedSends > 0 &&
+        apiCampaign.failedSends === apiCampaign.totalRecipients
+          ? ('failed' as Campaign['status'])
+          : ('completed' as Campaign['status']);
+    }
+
     return {
       id: apiCampaign.id,
       name: apiCampaign.name || apiCampaign.subject || 'Sin nombre',
       type: 'email',
-      status: apiCampaign.status as Campaign['status'],
+      status: derivedStatus,
       reach: apiCampaign.totalRecipients || 0,
       clicks: apiCampaign.clickCount || apiCampaign.uniqueClicks || 0,
       conversions: apiCampaign.openCount || apiCampaign.uniqueOpens || 0,
