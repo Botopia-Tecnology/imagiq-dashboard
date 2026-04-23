@@ -338,17 +338,17 @@ interface UseSeoProductosResult {
    * and brand-new rows (the backend creates the row on first write).
    */
   upsertProductSeo: (
-    sku: string,
+    codigoMarket: string,
     patch: Partial<ProductSeoData>,
   ) => Promise<ProductSeoData>;
   /**
    * Remove an override entirely. The product will fall back to default
    * metadata derived from the catalog.
    */
-  deleteProductSeo: (sku: string) => Promise<void>;
+  deleteProductSeo: (codigoMarket: string) => Promise<void>;
   /**
    * Search the Novasoft catalog (v_bot_productos view) by SKU or product
-   * name. Used to validate that a SKU exists before creating an override.
+   * name. Used to resolve the codigoMarket before creating an override.
    */
   searchCatalog: (query: string, limit?: number) => Promise<CatalogSearchResult[]>;
 }
@@ -379,17 +379,22 @@ export function useSeoProductos(): UseSeoProductosResult {
   }, []);
 
   const upsertProductSeo = useCallback(
-    async (sku: string, patch: Partial<ProductSeoData>): Promise<ProductSeoData> => {
+    async (
+      codigoMarket: string,
+      patch: Partial<ProductSeoData>,
+    ): Promise<ProductSeoData> => {
       const previous = overrides;
       // Optimistic merge
       setOverrides((prev) => {
-        const existing = prev.find((o) => o.sku === sku);
+        const existing = prev.find((o) => o.codigoMarket === codigoMarket);
         if (existing) {
-          return prev.map((o) => (o.sku === sku ? { ...o, ...patch } : o));
+          return prev.map((o) =>
+            o.codigoMarket === codigoMarket ? { ...o, ...patch } : o,
+          );
         }
         return [
           {
-            sku,
+            codigoMarket,
             seo_no_index: false,
             seo_no_follow: false,
             include_in_sitemap: true,
@@ -402,11 +407,13 @@ export function useSeoProductos(): UseSeoProductosResult {
 
       try {
         const saved = await apiPut<ProductSeoData>(
-          `${SEO_PRODUCTOS_ENDPOINT}/${sku}`,
+          `${SEO_PRODUCTOS_ENDPOINT}/${codigoMarket}`,
           patch,
         );
         // Reconcile with whatever the server persisted
-        setOverrides((prev) => prev.map((o) => (o.sku === sku ? saved : o)));
+        setOverrides((prev) =>
+          prev.map((o) => (o.codigoMarket === codigoMarket ? saved : o)),
+        );
         return saved;
       } catch (err) {
         setOverrides(previous);
@@ -421,11 +428,13 @@ export function useSeoProductos(): UseSeoProductosResult {
   );
 
   const deleteProductSeo = useCallback(
-    async (sku: string): Promise<void> => {
+    async (codigoMarket: string): Promise<void> => {
       const previous = overrides;
-      setOverrides((prev) => prev.filter((o) => o.sku !== sku));
+      setOverrides((prev) =>
+        prev.filter((o) => o.codigoMarket !== codigoMarket),
+      );
       try {
-        await apiDelete(`${SEO_PRODUCTOS_ENDPOINT}/${sku}`);
+        await apiDelete(`${SEO_PRODUCTOS_ENDPOINT}/${codigoMarket}`);
       } catch (err) {
         setOverrides(previous);
         throw err;
