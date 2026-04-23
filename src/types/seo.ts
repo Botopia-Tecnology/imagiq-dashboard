@@ -224,13 +224,14 @@ export interface CatalogSearchResult {
 // ---------------------------------------------------------------------------
 
 /**
- * Per-product SEO overrides stored in the product_seo side table (Postgres)
- * that joins to v_bot_productos (MSSQL) by sku. Only products that an admin
- * has explicitly customized appear here; products without a row use the
- * derived defaults built from the catalog data (nombreMarket, descGeneral).
+ * Per-product SEO overrides stored in the product_seo side table (Postgres).
+ * Keyed by `codigoMarket` — the product group identifier that bundles all
+ * variant SKUs of the same model. One row applies to every color/capacity
+ * variant of the same product page, matching how the storefront URL is
+ * keyed (`/productos/view/[codigoMarket]`).
  */
 export interface ProductSeoData {
-  sku: string;
+  codigoMarket: string;
   meta_title?: string;
   meta_description?: string;
   meta_keywords?: string;

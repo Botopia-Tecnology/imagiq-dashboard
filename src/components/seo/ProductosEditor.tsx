@@ -99,7 +99,7 @@ export function ProductosEditor({
 }: ProductosEditorProps) {
   const { overrides, isLoading, upsertProductSeo, deleteProductSeo, searchCatalog } = useSeoProductos()
 
-  const [selectedSku, setSelectedSku] = useState<string | null>(null)
+  const [selectedCodigoMarket, setSelectedCodigoMarket] = useState<string | null>(null)
   const [form, setForm] = useState<FormState>(emptyForm)
   const [originalForm, setOriginalForm] = useState<FormState>(emptyForm)
   const [query, setQuery] = useState("")
@@ -117,15 +117,15 @@ export function ProductosEditor({
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const selected = useMemo(
-    () => overrides.find((o) => o.sku === selectedSku) || null,
-    [overrides, selectedSku]
+    () => overrides.find((o) => o.codigoMarket === selectedCodigoMarket) || null,
+    [overrides, selectedCodigoMarket]
   )
 
   useEffect(() => {
-    if (!selectedSku && overrides.length > 0) {
-      setSelectedSku(overrides[0].sku)
+    if (!selectedCodigoMarket && overrides.length > 0) {
+      setSelectedCodigoMarket(overrides[0].codigoMarket)
     }
-  }, [overrides, selectedSku])
+  }, [overrides, selectedCodigoMarket])
 
   useEffect(() => {
     if (selected) {
@@ -145,7 +145,7 @@ export function ProductosEditor({
     if (!q) return overrides
     return overrides.filter(
       (o) =>
-        o.sku.toLowerCase().includes(q) ||
+        o.codigoMarket.toLowerCase().includes(q) ||
         (o.meta_title || "").toLowerCase().includes(q)
     )
   }, [overrides, query])
@@ -154,9 +154,9 @@ export function ProductosEditor({
     if (!selected) return
     try {
       setIsSaving(true)
-      await upsertProductSeo(selected.sku, form)
+      await upsertProductSeo(selected.codigoMarket, form)
       setOriginalForm(form)
-      toast.success(`SEO guardado: ${selected.sku}`)
+      toast.success(`SEO guardado: ${selected.codigoMarket}`)
     } catch {
       toast.error("No se pudo guardar los cambios")
     } finally {
@@ -181,10 +181,12 @@ export function ProductosEditor({
   }
 
   const handleSelectCatalogResult = async (row: CatalogSearchResult) => {
-    // If an override already exists for this SKU, just select it in the master list.
-    if (overrides.some((o) => o.sku === row.sku)) {
-      toast.info(`${row.sku} ya tiene override, seleccionado en la lista`)
-      setSelectedSku(row.sku)
+    // The override is keyed by codigoMarket — the product group that bundles
+    // every variant SKU of the same model. If an override already exists for
+    // this product, just select it in the master list.
+    if (overrides.some((o) => o.codigoMarket === row.codigoMarket)) {
+      toast.info(`${row.codigoMarket} ya tiene override, seleccionado en la lista`)
+      setSelectedCodigoMarket(row.codigoMarket)
       setIsAddingSku(false)
       setCatalogQuery("")
       setCatalogResults([])
@@ -195,16 +197,16 @@ export function ProductosEditor({
       setIsSaving(true)
       // Pre-populate meta_title with the product name so the editor starts
       // with something useful instead of an empty form.
-      await upsertProductSeo(row.sku, {
+      await upsertProductSeo(row.codigoMarket, {
         meta_title: row.nombreMarket || "",
         include_in_sitemap: true,
       })
-      setSelectedSku(row.sku)
+      setSelectedCodigoMarket(row.codigoMarket)
       setIsAddingSku(false)
       setCatalogQuery("")
       setCatalogResults([])
       setCatalogSearched(false)
-      toast.success(`Override creado para ${row.sku}`)
+      toast.success(`Override creado para ${row.codigoMarket}`)
     } catch {
       toast.error("No se pudo crear el override")
     } finally {
@@ -221,10 +223,10 @@ export function ProductosEditor({
 
   const handleDelete = async () => {
     if (!selected) return
-    if (!confirm(`¿Eliminar el override SEO de ${selected.sku}?`)) return
+    if (!confirm(`¿Eliminar el override SEO de ${selected.codigoMarket}?`)) return
     try {
-      await deleteProductSeo(selected.sku)
-      setSelectedSku(null)
+      await deleteProductSeo(selected.codigoMarket)
+      setSelectedCodigoMarket(null)
       toast.success("Override eliminado")
     } catch {
       toast.error("No se pudo eliminar el override")
@@ -249,7 +251,7 @@ export function ProductosEditor({
       formData.append("image", file)
 
       const res = await fetch(
-        `${API_URL}/api/products/seo/overrides/${encodeURIComponent(selected.sku)}/og-image`,
+        `${API_URL}/api/products/seo/overrides/${encodeURIComponent(selected.codigoMarket)}/og-image`,
         {
           method: "POST",
           headers: { ...(API_KEY && { "X-API-Key": API_KEY }) },
@@ -261,7 +263,7 @@ export function ProductosEditor({
       const json = (await res.json()) as { url: string }
       setForm((f) => ({ ...f, og_image: json.url }))
       setOriginalForm((f) => ({ ...f, og_image: json.url }))
-      await upsertProductSeo(selected.sku, { og_image: json.url })
+      await upsertProductSeo(selected.codigoMarket, { og_image: json.url })
       toast.success("OG image subida")
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Error al subir imagen")
@@ -283,16 +285,18 @@ export function ProductosEditor({
     setForm((f) => ({ ...f, og_image: "" }))
     setOriginalForm((f) => ({ ...f, og_image: "" }))
     try {
-      await upsertProductSeo(selected.sku, { og_image: "" })
+      await upsertProductSeo(selected.codigoMarket, { og_image: "" })
       toast.success("OG image eliminada")
     } catch {
       toast.error("No se pudo eliminar la imagen")
     }
   }
 
-  const defaultUrl = selected ? `${siteUrl}/productos/view/${selected.sku}` : ""
+  const defaultUrl = selected
+    ? `${siteUrl}/productos/view/${selected.codigoMarket}`
+    : ""
   const previewTitle = (() => {
-    const base = form.meta_title || selected?.sku || ""
+    const base = form.meta_title || selected?.codigoMarket || ""
     if (!base) return ""
     if (titleTemplate && titleTemplate.includes("%s")) return titleTemplate.replace("%s", base)
     return base
@@ -364,7 +368,9 @@ export function ProductosEditor({
                     </p>
                   ) : (
                     catalogResults.map((row) => {
-                      const alreadyExists = overrides.some((o) => o.sku === row.sku)
+                      const alreadyExists = overrides.some(
+                        (o) => o.codigoMarket === row.codigoMarket,
+                      )
                       const firstImage = (row.urlImagenes || "").split(/[,;|]/)[0]?.trim()
                       return (
                         <button
@@ -387,10 +393,10 @@ export function ProductosEditor({
                           )}
                           <div className="flex-1 min-w-0">
                             <p className="text-xs font-medium truncate">
-                              {row.nombreMarket || row.sku}
+                              {row.nombreMarket || row.codigoMarket}
                             </p>
                             <p className="text-[10px] text-muted-foreground font-mono truncate">
-                              SKU: {row.sku}
+                              Grupo: {row.codigoMarket}
                               {row.modelo ? ` · ${row.modelo}` : ""}
                             </p>
                           </div>
@@ -410,7 +416,7 @@ export function ProductosEditor({
             <div className="relative">
               <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Filtrar overrides por SKU o título..."
+                placeholder="Filtrar overrides por código market o título..."
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 className="pl-8 h-9"
@@ -430,17 +436,17 @@ export function ProductosEditor({
                 <Package className="h-10 w-10 mx-auto mb-2 opacity-40" />
                 <p className="font-medium">Aún no hay productos con SEO personalizado</p>
                 <p className="text-xs mt-1">
-                  Usa &quot;Añadir SKU&quot; para crear el primer override
+                  Usa &quot;Añadir producto&quot; para crear el primer override
                 </p>
               </div>
             )}
             {filteredOverrides.map((o) => {
               const issues = hasIssues(o)
-              const isSelected = o.sku === selectedSku
+              const isSelected = o.codigoMarket === selectedCodigoMarket
               return (
                 <button
-                  key={o.sku}
-                  onClick={() => setSelectedSku(o.sku)}
+                  key={o.codigoMarket}
+                  onClick={() => setSelectedCodigoMarket(o.codigoMarket)}
                   className={cn(
                     "w-full text-left p-2.5 rounded-md border transition-colors",
                     isSelected
@@ -450,7 +456,9 @@ export function ProductosEditor({
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate font-mono">{o.sku}</p>
+                      <p className="text-sm font-medium truncate font-mono">
+                        {o.codigoMarket}
+                      </p>
                       {o.meta_title && (
                         <p className="text-xs text-muted-foreground truncate">
                           {o.meta_title}
@@ -493,7 +501,7 @@ export function ProductosEditor({
           <CardContent className="text-center py-16">
             <Package className="h-12 w-12 text-muted-foreground/40 mx-auto mb-3" />
             <p className="text-sm text-muted-foreground">
-              Selecciona un producto o añade un SKU para empezar
+              Selecciona un producto o añade uno nuevo para empezar
             </p>
           </CardContent>
         </Card>
@@ -504,11 +512,14 @@ export function ProductosEditor({
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <CardTitle className="text-base truncate font-mono">
-                    {selected.sku}
+                    {selected.codigoMarket}
                   </CardTitle>
                   <CardDescription className="font-mono text-xs truncate">
                     {defaultUrl}
                   </CardDescription>
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    Este override aplica a todas las variantes (color, capacidad) del mismo producto.
+                  </p>
                 </div>
                 <div className="flex gap-2">
                   <Button
@@ -604,7 +615,7 @@ export function ProductosEditor({
                   id="seo_og_title"
                   value={form.seo_og_title || ""}
                   onChange={(e) => setForm({ ...form, seo_og_title: e.target.value })}
-                  placeholder={form.meta_title || selected.sku}
+                  placeholder={form.meta_title || selected.codigoMarket}
                 />
               </div>
               <div className="space-y-2">
