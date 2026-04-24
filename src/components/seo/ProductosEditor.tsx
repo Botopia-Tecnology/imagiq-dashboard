@@ -341,7 +341,7 @@ export function ProductosEditor({
                   <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     autoFocus
-                    placeholder="SKU o nombre del producto..."
+                    placeholder="Código market, SKU o nombre..."
                     value={catalogQuery}
                     onChange={(e) => setCatalogQuery(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleCatalogSearch()}
