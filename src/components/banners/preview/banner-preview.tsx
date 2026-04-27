@@ -7,8 +7,19 @@ import { Monitor, Smartphone, RotateCcw } from "lucide-react";
 import { DndContext, DragEndEvent, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { DraggableBannerOverlay } from "./draggable-banner-overlay";
 import { BannerContentOverlay } from "./banner-content-overlay";
+import { fluidFontSize, fluidPadding } from "./banner-coordinates";
 import type { BannerPosition, ContentBlock } from "@/types/banner";
 import { gridToPercentage, getDefaultPosition } from "../utils/position-utils";
+
+// Viewport widths comunes para mobile preview — el autor puede probar cada uno
+// para ver cómo se ve el banner en producción a ese ancho exacto.
+const MOBILE_VIEWPORT_PRESETS = [
+  { label: "320", width: 320, name: "iPhone SE" },
+  { label: "360", width: 360, name: "Galaxy S20" },
+  { label: "390", width: 390, name: "iPhone 14" },
+  { label: "412", width: 412, name: "S20 Ultra" },
+  { label: "430", width: 430, name: "iPhone 14 Pro Max" },
+] as const;
 
 interface BannerPreviewProps {
   bannerId?: string;
@@ -49,6 +60,11 @@ interface BannerContentProps {
   device: "desktop" | "mobile";
   placement?: string;
   isLandingPage?: boolean;
+  /**
+   * Cuando el autor selecciona un preset de viewport mobile (ej. 360px) queremos
+   * render 1:1 con producción → no aplicar el `sc()` linear scale a gap/borderRadius/etc.
+   */
+  is1to1Preview?: boolean;
   onPositionChange?: (position: BannerPosition) => void;
   textStyles?: import('@/types/banner').BannerTextStyles;
   contentBlocks?: ContentBlock[];
@@ -193,14 +209,31 @@ function ContentBlockOverlay({
   }
 
   // Helper: escalar valores CSS numéricos proporcionalmente al preview
-  // Escala fontSize, padding, gap, textShadow, borderRadius, etc.
-  // Deja intactos valores sin unidades como 'normal', 'none', colores, etc.
+  // Para fontSize/padding usamos `fluidFontSize` con `cqi` (mismo logic que el
+  // frontend) — así el preview muestra IDÉNTICO a producción al ancho del
+  // contenedor del preview. Para otros valores (textShadow, borderRadius, gap)
+  // mantenemos el linear scale legacy.
   const sc = (value: string | undefined, fallback: string): string => {
     const v = value || fallback;
     if (!v || v === 'none' || v === 'normal') return v;
     return v.replace(/([\d.]+)(px|rem|em)/g, (_, num, unit) => {
       return `${(parseFloat(num) * scaleFactor).toFixed(2)}${unit}`;
     });
+  };
+
+  // Reference width: 420 mobile (matches frontend dashboard preview maxWidth),
+  // 1440 desktop (matches frontend max-w-[1440px]).
+  // Mobile: clamp con floor (matchea producción a 360-430 viewport).
+  // Desktop: linear scale sin floor → preview muestra texto proporcionalmente
+  // pequeño (matchea sc() legacy y cómo producción se ve en md/tablet).
+  const refDesignPx = isMobile ? 420 : 1440;
+  const refMinRatio = isMobile ? 0.55 : 0;
+  const refMinPx = isMobile ? 12 : 0;
+  const fz = (value: string | undefined, fallback: string): string => {
+    return fluidFontSize(value || fallback, refDesignPx, refMinRatio, refMinPx) || (value || fallback);
+  };
+  const fp = (value: string | undefined, fallback: string): string => {
+    return fluidPadding(value || fallback, refDesignPx, refMinRatio) || (value || fallback);
   };
 
   return (
@@ -243,7 +276,7 @@ function ContentBlockOverlay({
           return (
             <h2
               style={{
-                fontSize: sc(titleConfig.fontSize, '2rem'),
+                fontSize: fz(titleConfig.fontSize, '2rem'),
                 fontWeight: titleConfig.fontWeight || '700',
                 color: titleConfig.color || '#ffffff',
                 lineHeight: titleConfig.lineHeight || '1.2',
@@ -268,7 +301,7 @@ function ContentBlockOverlay({
           return (
             <h3
               style={{
-                fontSize: sc(subtitleConfig.fontSize, '1.5rem'),
+                fontSize: fz(subtitleConfig.fontSize, '1.5rem'),
                 fontWeight: subtitleConfig.fontWeight || '600',
                 color: subtitleConfig.color || '#ffffff',
                 lineHeight: subtitleConfig.lineHeight || '1.3',
@@ -291,7 +324,7 @@ function ContentBlockOverlay({
           return (
             <p
               style={{
-                fontSize: sc(descriptionConfig.fontSize, '1rem'),
+                fontSize: fz(descriptionConfig.fontSize, '1rem'),
                 fontWeight: descriptionConfig.fontWeight || '400',
                 color: descriptionConfig.color || '#ffffff',
                 lineHeight: descriptionConfig.lineHeight || '1.5',
@@ -317,11 +350,11 @@ function ContentBlockOverlay({
                 type="button"
                 className="inline-block cursor-grab active:cursor-grabbing"
                 style={{
-                  fontSize: sc(ctaConfig.fontSize, '1rem'),
+                  fontSize: fz(ctaConfig.fontSize, '1rem'),
                   fontWeight: ctaConfig.fontWeight || '600',
                   backgroundColor: ctaConfig.backgroundColor || '#ffffff',
                   color: ctaConfig.color || '#000000',
-                  padding: sc(ctaConfig.padding, '12px 24px'),
+                  padding: fp(ctaConfig.padding, '12px 24px'),
                   borderRadius: sc(ctaConfig.borderRadius, '8px'),
                   border: ctaConfig.border || 'none',
                   textTransform: ctaConfig.textTransform || 'none',
@@ -376,7 +409,7 @@ function NavbarMobileBanner({ title, description, cta, linkUrl }: { title?: stri
   );
 }
 
-function BannerContent({ bannerId, image, video, title, description, cta, colorFont, linkUrl, device, placement, isLandingPage, position, onPositionChange, textStyles, contentBlocks, onBlockPositionChange }: Readonly<BannerContentProps>) {
+function BannerContent({ bannerId, image, video, title, description, cta, colorFont, linkUrl, device, placement, isLandingPage, is1to1Preview, position, onPositionChange, textStyles, contentBlocks, onBlockPositionChange }: Readonly<BannerContentProps>) {
   const [showContent, setShowContent] = useState(!video);
   const [imageUrl, setImageUrl] = useState<string>();
   const [videoUrl, setVideoUrl] = useState<string>();
@@ -403,10 +436,15 @@ function BannerContent({ bannerId, image, video, title, description, cta, colorF
   }, []);
 
   // Factor de escala: preview width / banner real width
-  // Clamp a máximo 1.0 para nunca agrandar el texto (solo reducir)
-  const previewScaleFactor = containerWidth > 0
-    ? Math.min(containerWidth / getRealBannerWidth(placement, device), 1.0)
-    : 0.35;
+  // Clamp a máximo 1.0 para nunca agrandar el texto (solo reducir).
+  // Si el autor seleccionó un preset 1:1 (ancho real del dispositivo),
+  // forzar 1.0 para que gap/borderRadius/textShadow se rendericen
+  // literales — IDÉNTICO a producción al mismo ancho.
+  const previewScaleFactor = is1to1Preview
+    ? 1.0
+    : containerWidth > 0
+      ? Math.min(containerWidth / getRealBannerWidth(placement, device), 1.0)
+      : 0.35;
 
   /**
    * Obtiene el tamaño real del banner (no el del preview) según el placement
@@ -570,7 +608,7 @@ function BannerContent({ bannerId, image, video, title, description, cta, colorF
     <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
       <div
         ref={containerRef}
-        className={`relative ${aspectRatio} ${maxWidth} w-full rounded-lg overflow-hidden bg-black`}
+        className={`relative ${aspectRatio} ${maxWidth} w-full rounded-lg overflow-hidden bg-black @container/banner`}
       >
         {video && videoUrl && !showContent && (
           <video ref={videoRef} src={videoUrl} className={mediaClass} autoPlay muted playsInline onEnded={() => setShowContent(true)} />
@@ -627,6 +665,9 @@ export function BannerPreview(props: Readonly<BannerPreviewProps>) {
 
   const [viewMode, setViewMode] = useState<DeviceType>("desktop");
   const [reloadKey, setReloadKey] = useState(0);
+  // Ancho exacto del viewport mobile a previsualizar (matchea producción 1:1).
+  // null = usar el max-w-[420px] por defecto del preview.
+  const [mobileViewportWidth, setMobileViewportWidth] = useState<number | null>(null);
 
   // Preview especial para navbar mobile
   if (placement === "notification") {
@@ -662,29 +703,55 @@ export function BannerPreview(props: Readonly<BannerPreviewProps>) {
     const handler = getHandler(mode);
     const isFlexible = placement === "category-top" || placement === "product-detail" || placement?.startsWith("banner-");
 
+    // Forzar ancho exacto cuando el autor selecciona un viewport mobile específico
+    const forceWidth = mode === "mobile" && mobileViewportWidth ? `${mobileViewportWidth}px` : undefined;
+    const is1to1 = mode === "mobile" && mobileViewportWidth !== null;
+
+    // Producción envuelve el banner en `max-w-[1440px] mx-auto px-4 ...`. Cuando
+    // emulamos viewport real, replicamos ese padding (16px cada lado) para que
+    // el banner-container interno sea EXACTAMENTE el mismo ancho que en prod.
+    const bannerContent = (
+      <BannerContent
+        key={key}
+        bannerId={bannerId}
+        image={mode === "desktop" ? desktop_image : mobile_image}
+        video={mode === "desktop" ? desktop_video : mobile_video}
+        title={title}
+        description={description}
+        cta={cta}
+        colorFont={color_font}
+        linkUrl={link_url}
+        position={pos}
+        onPositionChange={handler}
+        device={mode}
+        placement={placement}
+        isLandingPage={isLandingPage}
+        is1to1Preview={is1to1}
+        textStyles={text_styles}
+        contentBlocks={content_blocks}
+        onBlockPositionChange={onBlockPositionChange ? (blockId, device, pos) => {
+          onBlockPositionChange(blockId, device, pos);
+        } : undefined}
+      />
+    );
+
+    if (forceWidth) {
+      return (
+        <div
+          className="flex justify-center"
+          style={{ width: forceWidth, marginLeft: 'auto', marginRight: 'auto' }}
+        >
+          {/* mimic production page wrapper: px-4 = 16px cada lado */}
+          <div className="w-full px-4">
+            {bannerContent}
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className={`flex justify-center ${isFlexible ? 'max-w-md mx-auto' : ''}`}>
-        <BannerContent
-          key={key}
-          bannerId={bannerId}
-          image={mode === "desktop" ? desktop_image : mobile_image}
-          video={mode === "desktop" ? desktop_video : mobile_video}
-          title={title}
-          description={description}
-          cta={cta}
-          colorFont={color_font}
-          linkUrl={link_url}
-          position={pos}
-          onPositionChange={handler}
-          device={mode}
-          placement={placement}
-          isLandingPage={isLandingPage}
-          textStyles={text_styles}
-          contentBlocks={content_blocks}
-          onBlockPositionChange={onBlockPositionChange ? (blockId, device, pos) => {
-            onBlockPositionChange(blockId, device, pos);
-          } : undefined}
-        />
+        {bannerContent}
       </div>
     );
   };
@@ -718,6 +785,35 @@ export function BannerPreview(props: Readonly<BannerPreviewProps>) {
           <RotateCcw className="h-4 w-4" />
         </Button>
       </div>
+
+      {/* Viewport-width selector (mobile only) — render del banner a 1:1 con el ancho real del dispositivo */}
+      {viewMode === "mobile" && (
+        <div className="flex flex-wrap items-center gap-1.5 px-1">
+          <span className="text-xs text-muted-foreground mr-1">Ancho real:</span>
+          <Button
+            type="button"
+            variant={mobileViewportWidth === null ? "default" : "outline"}
+            size="sm"
+            onClick={() => setMobileViewportWidth(null)}
+            className="h-7 px-2 text-xs"
+          >
+            Auto
+          </Button>
+          {MOBILE_VIEWPORT_PRESETS.map((preset) => (
+            <Button
+              type="button"
+              key={preset.width}
+              variant={mobileViewportWidth === preset.width ? "default" : "outline"}
+              size="sm"
+              onClick={() => setMobileViewportWidth(preset.width)}
+              className="h-7 px-2 text-xs"
+              title={preset.name}
+            >
+              {preset.label}px
+            </Button>
+          ))}
+        </div>
+      )}
       {viewMode === "desktop" ? renderContent("desktop", `d-${reloadKey}`) : renderContent("mobile", `m-${reloadKey}`)}
     </div>
   );
