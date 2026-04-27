@@ -6,6 +6,56 @@ export function coordinatesToString(x: number, y: number): string {
 }
 
 /**
+ * fluidFontSize / fluidPadding — DUPLICADOS desde
+ * `imagiq-frontend/src/utils/bannerCoordinates.ts` para que el preview del
+ * dashboard renderice IDÉNTICO a producción. Si cambias estos helpers,
+ * sincroniza también el frontend.
+ *
+ * Convierte un valor de fontSize/padding (px, rem, em) a una expresión `clamp()`
+ * que escala con el ancho del CONTENEDOR (`cqi`) — el banner se marca con
+ * `@container/banner` y todo dentro escala con su ancho.
+ */
+export function fluidFontSize(
+  value: string | number | undefined | null,
+  designPx = 420,
+  minRatio = 0.55,
+  minPx = 12,
+  unit: 'cqi' | 'vw' = 'cqi',
+): string | undefined {
+  if (value === null || value === undefined || value === '') return undefined;
+  const raw = typeof value === 'number' ? `${value}px` : String(value).trim();
+
+  const match = /^([\d.]+)\s*(px|rem|em)?$/.exec(raw);
+  if (!match) return raw;
+
+  const num = parseFloat(match[1]);
+  const sizeUnit = match[2] || 'px';
+  if (!Number.isFinite(num) || num <= 0) return raw;
+
+  const px = sizeUnit === 'px' ? num : num * 16;
+  const ratio = (px / designPx) * 100;
+  const min = Math.max(px * minRatio, minPx);
+
+  if (min >= px) return `${px.toFixed(2)}px`;
+
+  return `clamp(${min.toFixed(2)}px, ${ratio.toFixed(2)}${unit}, ${px.toFixed(2)}px)`;
+}
+
+export function fluidPadding(
+  value: string | undefined | null,
+  designPx = 420,
+  minRatio = 0.6,
+  unit: 'cqi' | 'vw' = 'cqi',
+): string | undefined {
+  if (!value) return undefined;
+  return value
+    .trim()
+    .split(/\s+/)
+    .map((part) => fluidFontSize(part, designPx, minRatio, 4, unit) ?? part)
+    .join(' ');
+}
+
+/**
  * Parsea coordenadas desde string "x-y" a números
  * @param coordinates - String en formato "x-y" (ej: "4-4")
  * @returns Objeto con coordenadas x e y (0-8), centro por defecto
