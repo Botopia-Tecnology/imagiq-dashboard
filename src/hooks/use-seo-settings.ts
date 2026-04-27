@@ -406,8 +406,13 @@ export function useSeoProductos(): UseSeoProductosResult {
       });
 
       try {
+        // codigoMarket can contain `/` (e.g. "BSM-R177/8" — the Buds family
+        // groups several SKUs under one slash-separated id). Without
+        // encoding, the slash is treated as a path separator and the route
+        // `/seo/overrides/:codigoMarket` no longer matches. The og-image
+        // POST already encodes this; mirror it here.
         const saved = await apiPut<ProductSeoData>(
-          `${SEO_PRODUCTOS_ENDPOINT}/${codigoMarket}`,
+          `${SEO_PRODUCTOS_ENDPOINT}/${encodeURIComponent(codigoMarket)}`,
           patch,
         );
         // Reconcile with whatever the server persisted
@@ -434,7 +439,7 @@ export function useSeoProductos(): UseSeoProductosResult {
         prev.filter((o) => o.codigoMarket !== codigoMarket),
       );
       try {
-        await apiDelete(`${SEO_PRODUCTOS_ENDPOINT}/${codigoMarket}`);
+        await apiDelete(`${SEO_PRODUCTOS_ENDPOINT}/${encodeURIComponent(codigoMarket)}`);
       } catch (err) {
         setOverrides(previous);
         throw err;
