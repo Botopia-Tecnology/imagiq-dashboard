@@ -135,8 +135,37 @@ export function useFormSubmissions({ pageId }: UseFormSubmissionsOptions) {
 
   const exportData = async (format: "csv" | "json") => {
     try {
-      await formSubmissionEndpoints.exportData(pageId, format);
-      toast.success(`Exportación ${format.toUpperCase()} iniciada`);
+      const res = await formSubmissionEndpoints.exportData(pageId, format);
+      // El backend devuelve { format, data, filename }; algunos endpoints
+      // llegan envueltos en otro { data }, así que contemplamos ambos.
+      const raw = res.data as any;
+      const payload = (raw?.filename ? raw : raw?.data) as {
+        data?: string;
+        filename?: string;
+      };
+
+      if (!res.success || !payload?.data) {
+        toast.error("Error al exportar");
+        return;
+      }
+
+      const mime =
+        format === "csv" ? "text/csv;charset=utf-8;" : "application/json";
+      // BOM para que Excel respete acentos (ñ, tildes) en el CSV
+      const content =
+        format === "csv" ? "\uFEFF" + payload.data : payload.data;
+
+      const blob = new Blob([content], { type: mime });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = payload.filename || `respuestas.${format}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast.success(`Exportación ${format.toUpperCase()} completada`);
     } catch (err) {
       toast.error("Error al exportar");
     }
