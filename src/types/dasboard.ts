@@ -41,6 +41,9 @@ export interface PaymentMethod {
   cantidad_ordenes: number;
   valor_vendido: number;
   total_vendido: number;
+  /** Tipo de orden de la que proviene el método: "ecommerce" | "soporte".
+   *  Opcional para compatibilidad; si viene, el dashboard divide en dos grupos. */
+  tipo?: "ecommerce" | "soporte";
 }
 
 export interface Orden {

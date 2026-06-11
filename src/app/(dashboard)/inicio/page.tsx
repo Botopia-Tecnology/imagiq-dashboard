@@ -22,7 +22,7 @@ import {
   mockPaymentMethodData,
   mockTopProducts,
 } from "@/lib/mock-data";
-import { DashboardMetrics } from "@/types/dasboard";
+import { DashboardMetrics, PaymentMethod } from "@/types/dasboard";
 import {
   CreditCard,
   DollarSign,
@@ -230,10 +230,11 @@ export default function InicioPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {metrics?.paymentMethods.map((method) => (
+            {(() => {
+              const methods = metrics?.paymentMethods ?? [];
+              const renderMethod = (method: PaymentMethod) => (
                 <div
-                  key={method.nombre}
+                  key={`${method.tipo ?? ""}-${method.nombre}`}
                   className="flex items-center justify-between"
                 >
                   <div className="flex items-center gap-3">
@@ -257,8 +258,35 @@ export default function InicioPage() {
                     }).format(method.valor_vendido)}
                   </p>
                 </div>
-              ))}
-            </div>
+              );
+
+              const ecommerce = methods.filter((m) => m.tipo === "ecommerce");
+              const soporte = methods.filter((m) => m.tipo === "soporte");
+
+              // Compatibilidad: si el backend no manda `tipo`, lista plana.
+              if (ecommerce.length === 0 && soporte.length === 0) {
+                return (
+                  <div className="space-y-3">{methods.map(renderMethod)}</div>
+                );
+              }
+
+              const renderGroup = (label: string, list: PaymentMethod[]) =>
+                list.length > 0 ? (
+                  <div className="space-y-3">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      {label}
+                    </p>
+                    {list.map(renderMethod)}
+                  </div>
+                ) : null;
+
+              return (
+                <div className="space-y-5">
+                  {renderGroup("Órdenes", ecommerce)}
+                  {renderGroup("Órdenes de Soporte", soporte)}
+                </div>
+              );
+            })()}
           </CardContent>
         </Card>
       </div>
