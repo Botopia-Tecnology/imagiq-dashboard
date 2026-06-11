@@ -37,8 +37,8 @@ export function TestFilterToggle() {
         <TooltipContent>
           <p className="max-w-xs text-xs">
             {showTest
-              ? "Mostrando órdenes reales y de prueba. Las de prueba son las que tienen 'TEST' como palabra en el nombre o apellido del cliente."
-              : "Ocultando órdenes de prueba (clientes con la palabra 'TEST' en nombre o apellido). Activa para ver todo."}
+              ? "Mostrando órdenes reales y de prueba. Las de prueba son las hechas desde localhost, las marcadas como prueba en ePayco, o las de clientes con 'TEST' en el nombre/apellido."
+              : "Ocultando órdenes de prueba (hechas desde localhost, marcadas como prueba en ePayco, o de clientes con 'TEST' en nombre/apellido). Activa para ver todo."}
           </p>
         </TooltipContent>
       </Tooltip>
