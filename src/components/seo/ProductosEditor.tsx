@@ -305,7 +305,12 @@ export function ProductosEditor({
   const previewUrl = form.seo_canonical || defaultUrl
   const previewOgTitle = form.seo_og_title || previewTitle
   const previewOgDescription = form.seo_og_description || previewDescription
-  const previewOgImage = form.og_image || defaultOgImage
+  // Sin imagen manual, el frontend usa la OG branded dinámica (next/og) por
+  // producto. Mostramos esa misma URL en el preview para que marketing vea lo
+  // que realmente se comparte; si no hay producto seleccionado, el default global.
+  const previewOgImage =
+    form.og_image ||
+    (selected ? `${siteUrl}/og/product/${selected.codigoMarket}` : defaultOgImage)
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
