@@ -100,6 +100,10 @@ export function UnlayerEmailEditor({
   const [showSendDialog, setShowSendDialog] = useState(false);
   const [recipients, setRecipients] = useState<Recipient[]>([]);
   const [selectedRecipients, setSelectedRecipients] = useState<Set<string>>(new Set());
+  // Datos completos de los seleccionados (id -> {email,name}), aparte del Set de IDs.
+  // Evita perder al destinatario cuando la lista cargada cambia (p. ej. tras una
+  // búsqueda sin resultados) y enviar recipients:[] → 400 @ArrayMinSize(1).
+  const [selectedRecipientsData, setSelectedRecipientsData] = useState<Map<string, { email: string; name: string }>>(new Map());
   const [recipientSearch, setRecipientSearch] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [emailSubject, setEmailSubject] = useState("");
@@ -304,25 +308,37 @@ export function UnlayerEmailEditor({
 
   const filteredRecipients = recipients;
 
-  const toggleRecipient = (id: string) => {
+  const toggleRecipient = (recipient: Recipient) => {
     setSelectedRecipients((prev) => {
       const newSet = new Set(prev);
-      if (newSet.has(id)) {
-        newSet.delete(id);
+      if (newSet.has(recipient.id)) {
+        newSet.delete(recipient.id);
       } else {
-        newSet.add(id);
+        newSet.add(recipient.id);
       }
       return newSet;
+    });
+    setSelectedRecipientsData((prev) => {
+      const newMap = new Map(prev);
+      if (newMap.has(recipient.id)) {
+        newMap.delete(recipient.id);
+      } else {
+        newMap.set(recipient.id, { email: recipient.email, name: recipient.name });
+      }
+      return newMap;
     });
   };
 
   const selectAllRecipients = () => {
-    const allIds = filteredRecipients.map((r) => r.id);
-    setSelectedRecipients(new Set(allIds));
+    setSelectedRecipients(new Set(filteredRecipients.map((r) => r.id)));
+    setSelectedRecipientsData(
+      new Map(filteredRecipients.map((r) => [r.id, { email: r.email, name: r.name }])),
+    );
   };
 
   const deselectAllRecipients = () => {
     setSelectedRecipients(new Set());
+    setSelectedRecipientsData(new Map());
   };
 
   // Helper: export HTML from Unlayer (Promise-based)
@@ -369,9 +385,18 @@ export function UnlayerEmailEditor({
 
     try {
       const { html, design } = await exportHtmlAsync();
-      const selectedEmails = recipients
-        .filter((r) => selectedRecipients.has(r.id))
-        .map((r) => ({ email: r.email, name: r.name }));
+      // Usar los datos guardados de los seleccionados (no la lista cargada actual),
+      // así no se pierde al destinatario si la lista cambió tras una búsqueda.
+      const selectedEmails = Array.from(selectedRecipientsData.values()).map((r) => ({
+        email: r.email,
+        name: r.name,
+      }));
+
+      if (selectedEmails.length === 0) {
+        toast.error("No hay destinatarios seleccionados válidos");
+        setIsSending(false);
+        return;
+      }
 
       const response = await csvCampaignEndpoints.sendEmails({
         subject: emailSubject,
@@ -395,6 +420,7 @@ export function UnlayerEmailEditor({
         toast.success(`Envío iniciado para ${total} destinatario(s)`);
         setShowSendDialog(false);
         setSelectedRecipients(new Set());
+        setSelectedRecipientsData(new Map());
         setEmailSubject("");
       } else {
         toast.error(response.message || "Error al enviar los emails");
@@ -1454,11 +1480,11 @@ export function UnlayerEmailEditor({
                                 ? "bg-primary/10 border border-primary/20"
                                 : "hover:bg-muted"
                             }`}
-                            onClick={() => toggleRecipient(recipient.id)}
+                            onClick={() => toggleRecipient(recipient)}
                           >
                             <Checkbox
                               checked={selectedRecipients.has(recipient.id)}
-                              onCheckedChange={() => toggleRecipient(recipient.id)}
+                              onCheckedChange={() => toggleRecipient(recipient)}
                             />
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2">
@@ -1504,6 +1530,7 @@ export function UnlayerEmailEditor({
               onClick={() => {
                 setShowSendDialog(false);
                 setSelectedRecipients(new Set());
+                setSelectedRecipientsData(new Map());
                 setEmailSubject("");
                 setExtraEmails([]);
                 setExtraEmailsText("");
