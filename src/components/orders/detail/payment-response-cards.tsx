@@ -50,21 +50,25 @@ function extractTx(rawResponse: unknown): Record<string, unknown> | null {
   return null;
 }
 
-function statusTone(estado: string | null | undefined): {
+function statusTone(estado: unknown): {
   variant: "default" | "destructive" | "secondary" | "outline";
   label: string;
 } {
-  const raw = (estado ?? "").toLowerCase();
+  // `estado` puede venir como número (p. ej. el `status` numérico de ePayco),
+  // no solo string → coercionar antes de .toLowerCase() para no reventar el
+  // detalle de la orden con "(estado ?? '').toLowerCase is not a function".
+  const text = estado == null ? "" : String(estado);
+  const raw = text.toLowerCase();
   if (raw.includes("acept") || raw.includes("aprob")) {
-    return { variant: "default", label: estado ?? "Aceptada" };
+    return { variant: "default", label: text || "Aceptada" };
   }
   if (raw.includes("rechaz") || raw.includes("fail")) {
-    return { variant: "destructive", label: estado ?? "Rechazada" };
+    return { variant: "destructive", label: text || "Rechazada" };
   }
   if (raw.includes("pend")) {
-    return { variant: "secondary", label: estado ?? "Pendiente" };
+    return { variant: "secondary", label: text || "Pendiente" };
   }
-  return { variant: "outline", label: estado ?? "—" };
+  return { variant: "outline", label: text || "—" };
 }
 
 function severityClass(severity: "info" | "warning" | "error"): string {
@@ -96,10 +100,9 @@ export function PaymentResponseCards({ pseAttempts, cardAttempts }: Props) {
   const isCard = attempt.kind === "card";
 
   // ---- ePayco (gateway) layer ----
+  const gatewayStatusRaw = tx?.status ?? attempt.estado ?? null;
   const gatewayStatus =
-    (tx?.status as string | undefined) ??
-    attempt.estado ??
-    null;
+    gatewayStatusRaw == null ? null : String(gatewayStatusRaw);
   const gatewayCode =
     (tx?.codeResponse as number | string | undefined) ??
     (tx?.codTransactionState as number | string | undefined) ??
