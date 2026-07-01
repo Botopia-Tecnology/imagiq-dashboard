@@ -72,16 +72,20 @@ export default function ServicioTecnicoPage() {
     });
   }, [orders, activeTab]);
 
+  // Contadores por pestaña desde la distribución por estado del endpoint de
+  // métricas (cubre todo el rango), no `orders`, que es solo la página actual.
   const tabCounts = useMemo(() => {
+    const countFor = (estados: Array<string | null>) =>
+      statusDistribution
+        .filter((s) => estados.includes((s.estado_pago as string | null) ?? null))
+        .reduce((sum, s) => sum + Number(s.cantidad), 0);
     return {
-      all: orders.length,
-      approved: orders.filter((o) => o.estado_pago === "APPROVED").length,
-      pending: orders.filter(
-        (o) => o.estado_pago === "PENDING" || o.estado_pago === null
-      ).length,
-      rejected: orders.filter((o) => o.estado_pago === "REJECTED").length,
+      all: statusDistribution.reduce((sum, s) => sum + Number(s.cantidad), 0),
+      approved: countFor(["APPROVED"]),
+      pending: countFor(["PENDING", null, ""]),
+      rejected: countFor(["REJECTED"]),
     };
-  }, [orders]);
+  }, [statusDistribution]);
 
   const tableFilters = [
     {

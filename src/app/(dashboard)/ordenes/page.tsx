@@ -94,18 +94,22 @@ export default function OrdenesPage() {
     });
   }, [orders, statusFilter, activeTab]);
 
-  // Calcular contadores para las pestañas
+  // Calcular contadores para las pestañas. Se usa la distribución por estado del
+  // endpoint de métricas (cubre TODO el rango de fechas), no `orders`, que es
+  // solo la página actual (antes las pestañas mostraban conteos de una página).
   const tabCounts = useMemo(() => {
+    const countFor = (estados: string[]) =>
+      statusDistribution
+        .filter((s) => estados.includes(s.estado))
+        .reduce((sum, s) => sum + Number(s.cantidad), 0);
     return {
-      all: orders.length,
-      pending: orders.filter((o) => o.estado === "PENDING").length,
-      approved: orders.filter((o) => o.estado === "APPROVED").length,
-      cancelled: orders.filter(
-        (o) => o.estado === "CANCELLED" || o.estado === "REJECTED"
-      ).length,
-      abandoned: orders.filter((o) => o.estado === "ABANDONED").length,
+      all: statusDistribution.reduce((sum, s) => sum + Number(s.cantidad), 0),
+      pending: countFor(["PENDING"]),
+      approved: countFor(["APPROVED"]),
+      cancelled: countFor(["CANCELLED", "REJECTED"]),
+      abandoned: countFor(["ABANDONED"]),
     };
-  }, [orders]);
+  }, [statusDistribution]);
 
   // Configuración de filtros para la tabla
   const tableFilters = [

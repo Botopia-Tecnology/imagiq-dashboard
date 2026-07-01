@@ -21,8 +21,21 @@ interface OverviewChartProps {
   }>;
 }
 
+const currencyCOP = (value: number | string) =>
+  Intl.NumberFormat("es-CO", {
+    currency: "COP",
+    style: "currency",
+    maximumFractionDigits: 0,
+  }).format(Number(value) || 0);
+
 export function OverviewChart({ data }: Readonly<OverviewChartProps>) {
-  console.log("OverviewChart data:", data);
+  if (!data || data.length === 0) {
+    return (
+      <div className="flex h-[250px] sm:h-[300px] lg:h-[350px] w-full items-center justify-center text-sm text-muted-foreground">
+        Sin datos para el período seleccionado
+      </div>
+    );
+  }
   return (
     <ChartContainer
       config={chartConfig}
@@ -51,7 +64,13 @@ export function OverviewChart({ data }: Readonly<OverviewChartProps>) {
             width={45}
             tick={{ fontSize: 10 }}
           />
-          <ChartTooltip content={<ChartTooltipContent />} />
+          <ChartTooltip
+            content={
+              <ChartTooltipContent
+                formatter={(value) => [currencyCOP(value as number), " Ventas"]}
+              />
+            }
+          />
           <Area
             type="monotone"
             dataKey="sales"

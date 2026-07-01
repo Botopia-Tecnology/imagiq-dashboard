@@ -34,8 +34,17 @@ export function MetricCard({
         )}
         {trend && (
           <p className="text-xs text-muted-foreground mt-1">
-            <span className={trend.value >= 0 ? "text-green-600" : "text-red-600"}>
-              {trend.value >= 0 ? "+" : ""}{Number(trend.value).toFixed(2)}%
+            <span
+              className={
+                trend.value > 0
+                  ? "text-green-600"
+                  : trend.value < 0
+                    ? "text-red-600"
+                    : "text-muted-foreground"
+              }
+            >
+              {trend.value > 0 ? "+" : ""}
+              {Number(trend.value).toFixed(2)}%
             </span>{" "}
             {trend.label}
           </p>
