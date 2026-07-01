@@ -6,7 +6,9 @@ interface BannerStatsCardProps {
   title: string;
   value: string;
   subtitle: string;
-  progress: number;
+  /** Progreso hacia un objetivo (0-100). Opcional: si no se pasa, no se muestra
+   *  la barra ni el "% del objetivo" (para métricas reales sin meta). */
+  progress?: number;
   icon: LucideIcon;
   trend?: {
     value: string;
@@ -44,10 +46,12 @@ export function BannerStatsCard({
             </div>
           )}
 
-          <div className="space-y-1">
-            <Progress value={progress} className="h-1" />
-            <p className="text-xs text-muted-foreground">{progress}% del objetivo</p>
-          </div>
+          {progress !== undefined && (
+            <div className="space-y-1">
+              <Progress value={progress} className="h-1" />
+              <p className="text-xs text-muted-foreground">{progress}% del objetivo</p>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

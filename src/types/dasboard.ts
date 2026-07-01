@@ -5,6 +5,15 @@ export interface DashboardMetrics {
   topProducts: TopProduct[];
   paymentMethods: PaymentMethod[];
   ordenes: Orden[];
+  /** Ventas por categoría (real). Opcional: el backend puede no estar aún
+   *  desplegado; en ese caso el widget se oculta en vez de mostrar mock. */
+  salesByCategory?: SalesByCategory[];
+}
+
+export interface SalesByCategory {
+  categoria: string;
+  sales: number;
+  orders: number;
 }
 
 export interface Sales {

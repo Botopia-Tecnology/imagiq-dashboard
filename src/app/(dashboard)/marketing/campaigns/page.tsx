@@ -10,16 +10,27 @@ import { useRouter } from "next/navigation";
 import { BrandIcon } from "@/components/icons/BrandIcon";
 import Link from "next/link";
 import { useInWebCampaigns } from "@/hooks/use-inweb-campaigns";
-import { useMemo } from "react";
+import { useCampaignMetrics, CampaignMetrics } from "@/hooks/use-campaign-metrics";
+import { useEffect, useMemo, useState } from "react";
 
 export default function CampañasPage() {
   const router = useRouter();
-  
+
   // Obtener campañas In-Web para contar las activas
   const { campaigns: inWebCampaigns } = useInWebCampaigns({
     page: 1,
     limit: 100,
   });
+
+  // Métricas reales de email (aperturas/clicks reales; antes hardcodeadas)
+  const { getMetrics } = useCampaignMetrics();
+  const [metrics, setMetrics] = useState<CampaignMetrics | null>(null);
+  useEffect(() => {
+    getMetrics()
+      .then(setMetrics)
+      .catch((err) => console.error("Error fetching campaign metrics:", err));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Contar campañas activas por tipo
   const activeInWebCount = useMemo(() => {
@@ -48,31 +59,27 @@ export default function CampañasPage() {
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <CampaignStatsCard
-          title="Nuevos leads"
-          value="137"
-          subtitle="Objetivo diario"
-          progress={70}
-          icon={Users}
-        />
-        <CampaignStatsCard
-          title="Tasa de conversión"
-          value="0.7%"
-          subtitle="Objetivo diario"
-          progress={96}
+          title="Campañas de email"
+          value={metrics ? metrics.campanas.toLocaleString("es-CO") : "…"}
+          subtitle="Total creadas"
           icon={Mail}
         />
         <CampaignStatsCard
+          title="Destinatarios"
+          value={metrics ? metrics.destinatarios.toLocaleString("es-CO") : "…"}
+          subtitle="Correos enviados"
+          icon={Users}
+        />
+        <CampaignStatsCard
           title="Tasa de apertura"
-          value="24.3%"
-          subtitle="Promedio mensual"
-          progress={90}
+          value={metrics ? `${metrics.tasa_apertura}%` : "…"}
+          subtitle="Aperturas / destinatarios"
           icon={Eye}
         />
         <CampaignStatsCard
-          title="CTR Promedio"
-          value="3.2%"
-          subtitle="Click-through rate"
-          progress={85}
+          title="CTR"
+          value={metrics ? `${metrics.ctr}%` : "…"}
+          subtitle="Clics / destinatarios"
           icon={MessageSquare}
         />
       </div>

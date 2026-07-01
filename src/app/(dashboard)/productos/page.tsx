@@ -125,7 +125,11 @@ export default function ProductosPage() {
             ) : (
               <>
                 <div className="text-2xl font-bold">
-                  ${(summary?.totalValue ?? 0).toLocaleString()}
+                  {Intl.NumberFormat("es-CO", {
+                    currency: "COP",
+                    style: "currency",
+                    maximumFractionDigits: 0,
+                  }).format(summary?.totalValue ?? 0)}
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Valor del inventario

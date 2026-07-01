@@ -16,12 +16,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { DateRange, makeDefaultRange } from "@/types/date-range";
-import {
-  mockCategoryData,
-  mockDashboardMetrics,
-  mockPaymentMethodData,
-  mockTopProducts,
-} from "@/lib/mock-data";
 import { DashboardMetrics, PaymentMethod } from "@/types/dasboard";
 import {
   CreditCard,
@@ -53,6 +47,56 @@ export default function InicioPage() {
     fetchMetrics();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [excludeTest, rangeFromMs, rangeToMs, orderType]);
+
+  const currencyCOP = (v: number) =>
+    Intl.NumberFormat("es-CO", {
+      currency: "COP",
+      style: "currency",
+      maximumFractionDigits: 0,
+    }).format(v || 0);
+
+  // % REAL de facturación. Antes esta tarjeta mostraba `percent_difference`, que
+  // es la variación en NÚMERO de órdenes (no en dinero) → engañoso: podía decir
+  // "-13%" mientras la facturación en realidad subía. Se calcula sobre montos.
+  const currentSales = Number(metrics?.sales?.current_sales ?? 0);
+  const previousSales = Number(metrics?.sales?.previous_sales ?? 0);
+  const salesPercent =
+    previousSales > 0
+      ? ((currentSales - previousSales) / previousSales) * 100
+      : currentSales > 0
+        ? 100
+        : 0;
+
+  // Variación en número de órdenes (esto SÍ es `percent_difference`).
+  const ordersPercent = Number(metrics?.sales?.percent_difference ?? 0);
+
+  // Ticket promedio real (reemplaza la "Tasa de Conversión" que era mock).
+  const currentCount = Number(metrics?.sales?.current_count ?? 0);
+  const ticketPromedio = currentCount > 0 ? currentSales / currentCount : 0;
+
+  // Ventas por categoría REAL (orden_items.categoria). Mapea el código Samsung a
+  // un nombre legible y calcula el % sobre el total del período.
+  const CATEGORY_LABELS: Record<string, string> = {
+    IM: "Dispositivos Móviles",
+    AV: "TV y Audio",
+    DA: "Electrodomésticos",
+    IT: "Computación",
+    OTROS: "Otros",
+  };
+  const categorySource = metrics?.salesByCategory ?? [];
+  const categoryTotal = categorySource.reduce(
+    (sum, c) => sum + Number(c.sales),
+    0
+  );
+  const categoryData = categorySource.map((c) => ({
+    name: CATEGORY_LABELS[c.categoria] ?? c.categoria,
+    value:
+      categoryTotal > 0
+        ? Math.round((Number(c.sales) / categoryTotal) * 100)
+        : 0,
+    sales: Number(c.sales),
+  }));
+
   return (
     <div className="space-y-3">
       <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -83,38 +127,34 @@ export default function InicioPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <MetricCard
           title="Ventas Totales"
-          value={`${Intl.NumberFormat("es-CO", {
-            currency: "COP",
-            style: "currency",
-            maximumFractionDigits: 0,
-          }).format(metrics?.sales.current_sales ?? 0)}`}
-          description="Total de ingresos este mes"
+          value={currencyCOP(currentSales)}
+          description="Ingresos del período seleccionado"
           icon={DollarSign}
           trend={{
-            value: Number(metrics?.sales?.percent_difference ?? 0),
-            label: "desde el mes pasado",
+            value: salesPercent,
+            label: "vs. período anterior",
           }}
         />
         <MetricCard
           title="Órdenes"
-          value={metrics?.sales.current_count ?? 0}
-          description="Órdenes procesadas este mes"
+          value={currentCount}
+          description="Órdenes procesadas en el período"
           icon={ShoppingCart}
           trend={{
-            value: Number(metrics?.sales?.percent_difference ?? 0),
-            label: "desde el mes pasado",
+            value: ordersPercent,
+            label: "vs. período anterior",
           }}
         />
         <MetricCard
           title="Clientes"
           value={metrics?.newUsers.current_count ?? 0}
-          description="Total de clientes registrados"
+          description="Nuevos clientes en el período"
           icon={Users}
         />
         <MetricCard
-          title="Tasa de Conversión"
-          value={`${mockDashboardMetrics.conversionRate}%`}
-          description="Porcentaje de conversión de visitas a ventas"
+          title="Ticket Promedio"
+          value={currencyCOP(ticketPromedio)}
+          description="Valor promedio por orden"
           icon={TrendingUp}
         />
       </div>
@@ -143,38 +183,46 @@ export default function InicioPage() {
             <CardTitle>Ventas por Categoría</CardTitle>
           </CardHeader>
           <CardContent>
-            <CategoryChart data={mockCategoryData} />
-            <div className="mt-4 space-y-2">
-              {mockCategoryData.map((category, index) => (
-                <div
-                  key={category.name}
-                  className="flex items-center justify-between"
-                >
-                  <div className="flex items-center gap-2">
+            {categoryData.length === 0 ? (
+              <div className="flex h-[200px] items-center justify-center text-sm text-muted-foreground">
+                Sin datos para el período seleccionado
+              </div>
+            ) : (
+              <>
+                <CategoryChart data={categoryData} />
+                <div className="mt-4 space-y-2">
+                  {categoryData.map((category, index) => (
                     <div
-                      className="w-3 h-3 rounded-full"
-                      style={{
-                        backgroundColor: [
-                          "hsl(142, 76%, 36%)", // Verde principal
-                          "hsl(120, 60%, 50%)", // Verde claro
-                          "hsl(160, 70%, 40%)", // Verde azulado
-                          "hsl(100, 65%, 45%)", // Verde amarillento
-                          "hsl(180, 55%, 45%)", // Verde agua
-                          "hsl(var(--muted-foreground))", // Fallback
-                        ][index % 6],
-                      }}
-                    />
-                    <span className="text-sm">{category.name}</span>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-medium">{category.value}%</p>
-                    <p className="text-xs text-muted-foreground">
-                      ${category.sales.toLocaleString()}
-                    </p>
-                  </div>
+                      key={category.name}
+                      className="flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-3 h-3 rounded-full"
+                          style={{
+                            backgroundColor: [
+                              "hsl(142, 76%, 36%)", // Verde principal
+                              "hsl(120, 60%, 50%)", // Verde claro
+                              "hsl(160, 70%, 40%)", // Verde azulado
+                              "hsl(100, 65%, 45%)", // Verde amarillento
+                              "hsl(180, 55%, 45%)", // Verde agua
+                              "hsl(var(--muted-foreground))", // Fallback
+                            ][index % 6],
+                          }}
+                        />
+                        <span className="text-sm">{category.name}</span>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-medium">{category.value}%</p>
+                        <p className="text-xs text-muted-foreground">
+                          {currencyCOP(category.sales)}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </>
+            )}
           </CardContent>
         </Card>
 
