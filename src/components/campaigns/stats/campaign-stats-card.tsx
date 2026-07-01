@@ -6,7 +6,9 @@ interface CampaignStatsCardProps {
   title: string;
   value: string;
   subtitle: string;
-  progress: number;
+  /** Progreso hacia un objetivo (0-100). Opcional: si no se pasa, no se muestra
+   *  la barra ni el texto "% del objetivo" (para métricas reales sin meta). */
+  progress?: number;
   icon: LucideIcon;
 }
 
@@ -28,10 +30,14 @@ export function CampaignStatsCard({
         <p className="text-xs text-muted-foreground mb-2">
           {subtitle}
         </p>
-        <Progress value={progress} className="h-2" />
-        <p className="text-xs text-muted-foreground mt-1">
-          {progress}% del objetivo
-        </p>
+        {progress !== undefined && (
+          <>
+            <Progress value={progress} className="h-2" />
+            <p className="text-xs text-muted-foreground mt-1">
+              {progress}% del objetivo
+            </p>
+          </>
+        )}
       </CardContent>
     </Card>
   );

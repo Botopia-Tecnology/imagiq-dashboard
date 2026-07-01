@@ -53,36 +53,41 @@ export default function BannersPage() {
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {/* Métricas reales de banners. Impresiones/clicks/CTR NO se muestran
+            porque no existe tracking de banners en el sistema (requeriría
+            instrumentar el storefront y una tabla banner_events). */}
         <BannerStatsCard
-          title="Total Impresiones"
-          value="105,780"
-          subtitle="Último mes"
-          progress={82}
-          icon={Eye}
-          trend={{ value: "15.3%", isPositive: true }}
-        />
-        <BannerStatsCard
-          title="Total Clicks"
-          value="3,540"
-          subtitle="Último mes"
-          progress={89}
-          icon={MousePointer}
-          trend={{ value: "9.7%", isPositive: true }}
-        />
-        <BannerStatsCard
-          title="CTR Promedio"
-          value="3.35%"
-          subtitle="Click-through rate"
-          progress={85}
-          icon={TrendingUp}
-          trend={{ value: "0.2%", isPositive: true }}
+          title="Total Banners"
+          value={statsLoading ? "..." : String(stats?.total || 0)}
+          subtitle="Banners creados"
+          icon={Image}
         />
         <BannerStatsCard
           title="Banners Activos"
           value={statsLoading ? "..." : String(stats?.activos || 0)}
           subtitle={statsLoading ? "Cargando..." : `De ${stats?.total || 0} totales`}
-          progress={stats ? Math.round((stats.activos / stats.total) * 100) : 0}
-          icon={Image}
+          progress={
+            stats && stats.total > 0
+              ? Math.round((stats.activos / stats.total) * 100)
+              : 0
+          }
+          icon={Eye}
+        />
+        <BannerStatsCard
+          title="Banners Inactivos"
+          value={statsLoading ? "..." : String(stats?.inactivos || 0)}
+          subtitle="No visibles en la tienda"
+          icon={MousePointer}
+        />
+        <BannerStatsCard
+          title="% Activos"
+          value={
+            statsLoading || !stats || stats.total === 0
+              ? "..."
+              : `${Math.round((stats.activos / stats.total) * 100)}%`
+          }
+          subtitle="Proporción de banners activos"
+          icon={TrendingUp}
         />
       </div>
 

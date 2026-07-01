@@ -17,8 +17,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "E-Commerce Dashboard",
-  description: "Dashboard administrativo moderno para e-commerce",
+  title: "Imagiq · Dashboard",
+  description: "Dashboard administrativo de Imagiq",
 };
 
 export default function RootLayout({

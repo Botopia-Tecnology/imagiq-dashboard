@@ -1,7 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
+import { useClientesMetrics, ClientesMetrics } from "@/hooks/use-clientes-metrics"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -35,36 +36,48 @@ import {
 export default function ClientesPage() {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState("overview")
+  const { getMetrics } = useClientesMetrics()
+  const [metrics, setMetrics] = useState<ClientesMetrics | null>(null)
 
-  // Métricas generales
+  useEffect(() => {
+    getMetrics()
+      .then(setMetrics)
+      .catch((err) => console.error("Error fetching clientes metrics:", err))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const currencyCOP = (v: number) =>
+    Intl.NumberFormat("es-CO", {
+      currency: "COP",
+      style: "currency",
+      maximumFractionDigits: 0,
+    }).format(v || 0)
+
+  // Métricas generales (reales; "…" mientras cargan)
   const generalMetrics = [
     {
       title: "Total Clientes",
-      value: "24,589",
-      subtitle: "+12.5% vs mes anterior",
+      value: metrics ? metrics.total_clientes.toLocaleString("es-CO") : "…",
+      subtitle: "Clientes registrados",
       icon: Users,
-      trend: { value: "+3,072", isPositive: true },
     },
     {
       title: "Clientes Activos",
-      value: "18,234",
-      subtitle: "Última actividad 30 días",
+      value: metrics ? metrics.clientes_activos.toLocaleString("es-CO") : "…",
+      subtitle: "Con login en los últimos 30 días",
       icon: Activity,
-      trend: { value: "74%", isPositive: true },
     },
     {
       title: "Valor Promedio Cliente",
-      value: "$2,450",
-      subtitle: "Lifetime value",
+      value: metrics ? currencyCOP(metrics.valor_promedio_cliente) : "…",
+      subtitle: "Compra total promedio por cliente (LTV)",
       icon: DollarSign,
-      trend: { value: "+8.2%", isPositive: true },
     },
     {
       title: "Tasa de Retención",
-      value: "68%",
-      subtitle: "Clientes que regresan",
+      value: metrics ? `${metrics.tasa_retencion}%` : "…",
+      subtitle: "Clientes con más de una compra",
       icon: TrendingUp,
-      trend: { value: "+5.1%", isPositive: true },
     },
   ]
 
@@ -258,16 +271,6 @@ export default function ClientesPage() {
                   <div className="text-2xl font-bold">{metric.value}</div>
                   <div className="flex items-center gap-2 mt-1">
                     <p className="text-xs text-muted-foreground">{metric.subtitle}</p>
-                    {metric.trend && (
-                      <Badge
-                        variant="outline"
-                        className={`text-xs ${
-                          metric.trend.isPositive ? "text-green-600" : "text-red-600"
-                        }`}
-                      >
-                        {metric.trend.value}
-                      </Badge>
-                    )}
                   </div>
                 </CardContent>
               </Card>
