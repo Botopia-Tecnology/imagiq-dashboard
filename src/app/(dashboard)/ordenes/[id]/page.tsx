@@ -44,6 +44,7 @@ import {
   ExternalLink,
   Ban,
   Loader2,
+  Wallet,
 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -360,6 +361,28 @@ export default function OrderDetailPage({
               )}
             </div>
           </DetailSection>
+
+          {payment.addi && (
+            <DetailSection title="Financiación (ADDI)" icon={Wallet}>
+              <div className="space-y-3">
+                <CopyField label="Estado ADDI" value={payment.addi.estado} />
+                <CopyField label="Application ID" value={payment.addi.applicationId} mono />
+                <CopyField
+                  label="Monto aprobado"
+                  value={payment.addi.approvedAmount != null ? formatCurrency(payment.addi.approvedAmount) : null}
+                />
+                <CopyField
+                  label="Fecha de la decisión"
+                  value={payment.addi.statusTimestamp ? formatDate(payment.addi.statusTimestamp) : null}
+                />
+                <p className="text-xs text-muted-foreground">
+                  ADDI (financiación) no revela el motivo de la decisión. Para el
+                  detalle, consulta esta solicitud en el panel de ADDI usando el
+                  Application ID.
+                </p>
+              </div>
+            </DetailSection>
+          )}
 
           {shippingAddress && (
             <DetailSection title="Dirección de envío" icon={MapPin}>
