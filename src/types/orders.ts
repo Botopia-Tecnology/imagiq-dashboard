@@ -140,6 +140,15 @@ export interface AdminOrderDetail {
       masked: string | null;
       franchise: string | null;
     } | null;
+    // ADDI (financiación). Presente solo cuando el medio de pago es ADDI.
+    // ADDI no envía un motivo de rechazo; solo status + montos + applicationId.
+    addi: {
+      estado: string | null;
+      applicationId: string | null;
+      approvedAmount: number | null;
+      statusTimestamp: string | null;
+      raw: unknown;
+    } | null;
   };
   transactionAttempts: {
     pse: Array<PseAttempt>;
