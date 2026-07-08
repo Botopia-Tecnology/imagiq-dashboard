@@ -86,7 +86,10 @@ export default function ProductDetailPage() {
   const currentStock = selectedColor?.stockTotal ?? product.stock ?? 0
   const currentStockEcommerce = selectedColor?.stock ?? 0
   const currentStockTiendas = selectedColor?.stockTiendas || {}
-  const currentImage = selectedColor?.imageUrl || product.image
+  // Si hay una variante seleccionada, usar SOLO su imagen propia.
+  // NO hacer fallback a product.image: puede ser de otro color y engaña
+  // al equipo haciéndole creer que la variante sí tiene imágenes.
+  const currentImage = selectedColor ? selectedColor.imageUrl : product.image
   console.log(selectedColor)
 
   return (
