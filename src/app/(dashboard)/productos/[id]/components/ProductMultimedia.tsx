@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import Image from "next/image"
-import { ChevronLeft, ChevronRight, Pencil } from "lucide-react"
+import { ChevronLeft, ChevronRight, ImageOff, Pencil } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -17,7 +17,7 @@ import { toast } from "sonner"
 interface ProductMultimediaProps {
   product: ProductCardProps
   selectedColor: ProductColor | null
-  currentImage: string | any
+  currentImage?: string | any
   currentDiscount: string | undefined
   currentStock: number
 }
@@ -49,6 +49,9 @@ export function ProductMultimedia({
   const videoRef = useRef<HTMLVideoElement>(null)
   const [videoError, setVideoError] = useState<string | null>(null)
   const [videoLoading, setVideoLoading] = useState(false)
+
+  // La variante seleccionada NO tiene imagen preview propia (sin fallback engañoso)
+  const variantMissingImage = !!selectedColor && !selectedColor.imageUrl
 
   // Función helper para verificar si el producto es premium (insensible a mayúsculas)
   const isPremiumProduct = (() => {
@@ -377,6 +380,12 @@ export function ProductMultimedia({
                     <p className="text-sm text-muted-foreground">No hay contenido premium disponible</p>
                   </div>
                 )}
+              {selectedColor?.sku && (
+                <p className="text-xs text-muted-foreground">
+                  SKU del color:{' '}
+                  <span className="font-mono font-medium text-foreground">{selectedColor.sku}</span>
+                </p>
+              )}
             </div>
           </>
         ) : (
@@ -386,26 +395,35 @@ export function ProductMultimedia({
             <div className="space-y-2">
               <h3 className="text-sm font-medium text-muted-foreground">Imagen preview</h3>
               <div className="relative w-full h-64 overflow-hidden rounded-lg bg-muted group">
-                {typeof currentImage === 'string' ? (
-                  <Image
-                    key={selectedColor?.sku || 'default'}
-                    src={currentImage}
-                    alt={`${product.name} - ${selectedColor?.label || ''}`}
-                    fill
-                    priority
-                    className="object-contain"
-                  />
+                {variantMissingImage || !currentImage ? (
+                  /* Estado vacío explícito: la variante seleccionada no tiene imagen propia.
+                     NO mostrar product.image como fallback (puede ser de otro color). */
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-6 text-center rounded-lg border-2 border-dashed border-amber-500/60">
+                    <ImageOff className="h-10 w-10 text-amber-500" aria-hidden="true" />
+                    <p className="text-sm font-medium">
+                      Esta variante{selectedColor?.sku ? ` (SKU ${selectedColor.sku})` : ''} no tiene imágenes propias
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Usa &quot;Editar imágenes&quot; para subirlas
+                    </p>
+                  </div>
                 ) : (
                   <Image
                     key={selectedColor?.sku || 'default'}
                     src={currentImage}
                     alt={`${product.name} - ${selectedColor?.label || ''}`}
                     fill
-                    className="object-contain"
                     priority
+                    className="object-contain"
                   />
                 )}
               </div>
+              {selectedColor?.sku && (
+                <p className="text-xs text-muted-foreground">
+                  SKU del color:{' '}
+                  <span className="font-mono font-medium text-foreground">{selectedColor.sku}</span>
+                </p>
+              )}
             </div>
 
             {/* Imágenes detalladas - Carrusel */}

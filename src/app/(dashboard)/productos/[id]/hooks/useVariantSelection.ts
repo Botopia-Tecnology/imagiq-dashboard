@@ -11,8 +11,9 @@ export function useVariantSelection(
   const [activeRamFilter, setActiveRamFilter] = useState<string | undefined>()
 
   // Obtener colores únicos filtrados por capacidad y RAM seleccionados
+  // missingImages: true si ALGUNA variante del grupo no tiene imagen propia (imageUrl)
   const getUniqueColors = () => {
-    const colorMap = new Map<string, { hex: string; label: string; hasStock: boolean }>()
+    const colorMap = new Map<string, { hex: string; label: string; hasStock: boolean; missingImages: boolean }>()
 
     product.colors.forEach((variant) => {
       const matchesCapacity = !activeCapacityFilter || variant.capacity === activeCapacityFilter
@@ -23,13 +24,19 @@ export function useVariantSelection(
           colorMap.set(variant.hex, {
             hex: variant.hex,
             label: variant.label,
-            hasStock: false
+            hasStock: false,
+            missingImages: false
           })
         }
 
+        const colorData = colorMap.get(variant.hex)!
+
         if (variant.stockTotal && variant.stockTotal > 0) {
-          const colorData = colorMap.get(variant.hex)!
           colorData.hasStock = true
+        }
+
+        if (!variant.imageUrl) {
+          colorData.missingImages = true
         }
       }
     })
@@ -38,8 +45,9 @@ export function useVariantSelection(
   }
 
   // Obtener opciones de capacidad disponibles según el color y RAM seleccionados
+  // missingImages: true si ALGUNA variante que coincide no tiene imagen propia (imageUrl)
   const getCapacityOptions = () => {
-    const capacities = new Set<string>()
+    const capacities = new Map<string, boolean>()
 
     product.colors.forEach((variant) => {
       if (!variant.capacity) return
@@ -48,20 +56,24 @@ export function useVariantSelection(
       const matchesRam = !activeRamFilter || variant.ram === activeRamFilter
 
       if (matchesColor && matchesRam) {
-        capacities.add(variant.capacity)
+        const missingImages = capacities.get(variant.capacity) || false
+        capacities.set(variant.capacity, missingImages || !variant.imageUrl)
       }
     })
 
-    return Array.from(capacities).sort((a, b) => {
-      const aNum = parseInt(a)
-      const bNum = parseInt(b)
-      return aNum - bNum
-    })
+    return Array.from(capacities.entries())
+      .map(([value, missingImages]) => ({ value, missingImages }))
+      .sort((a, b) => {
+        const aNum = parseInt(a.value)
+        const bNum = parseInt(b.value)
+        return aNum - bNum
+      })
   }
 
   // Obtener opciones de RAM disponibles según el color y capacidad seleccionados
+  // missingImages: true si ALGUNA variante que coincide no tiene imagen propia (imageUrl)
   const getRamOptions = () => {
-    const rams = new Set<string>()
+    const rams = new Map<string, boolean>()
 
     product.colors.forEach((variant) => {
       if (!variant.ram) return
@@ -70,15 +82,18 @@ export function useVariantSelection(
       const matchesCapacity = !activeCapacityFilter || variant.capacity === activeCapacityFilter
 
       if (matchesColor && matchesCapacity) {
-        rams.add(variant.ram)
+        const missingImages = rams.get(variant.ram) || false
+        rams.set(variant.ram, missingImages || !variant.imageUrl)
       }
     })
 
-    return Array.from(rams).sort((a, b) => {
-      const aNum = parseInt(a)
-      const bNum = parseInt(b)
-      return aNum - bNum
-    })
+    return Array.from(rams.entries())
+      .map(([value, missingImages]) => ({ value, missingImages }))
+      .sort((a, b) => {
+        const aNum = parseInt(a.value)
+        const bNum = parseInt(b.value)
+        return aNum - bNum
+      })
   }
 
   // Encontrar la variante exacta que coincida con los parámetros

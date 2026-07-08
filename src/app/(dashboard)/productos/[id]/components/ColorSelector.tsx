@@ -1,7 +1,7 @@
 import { ProductColor } from "@/features/products/useProducts"
 
 interface ColorSelectorProps {
-  colors: Array<{ hex: string; label: string; hasStock: boolean }>
+  colors: Array<{ hex: string; label: string; hasStock: boolean; missingImages: boolean }>
   selectedColor: ProductColor | null
   onColorChange: (hex: string) => void
   getStockColor: (stock: number) => string
@@ -33,7 +33,7 @@ export function ColorSelector({
       </div>
       <div className="flex flex-wrap gap-3">
         {colors.map((colorGroup) => (
-          <div key={colorGroup.hex} className="flex flex-col items-center gap-1">
+          <div key={colorGroup.hex} className="relative flex flex-col items-center gap-1">
             <button
               onClick={() => onColorChange(colorGroup.hex)}
               className={`h-10 w-10 rounded-full border-2 transition-all cursor-pointer hover:scale-105 ${
@@ -44,8 +44,15 @@ export function ColorSelector({
               style={{
                 backgroundColor: colorGroup.hex
               }}
-              title={`${colorGroup.label} - ${colorGroup.hasStock ? 'Disponible' : 'Sin stock'}`}
+              title={`${colorGroup.label} - ${colorGroup.hasStock ? 'Disponible' : 'Sin stock'}${colorGroup.missingImages ? ' - Sin imágenes' : ''}`}
             />
+            {colorGroup.missingImages && (
+              <span
+                className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-amber-500 border-2 border-background"
+                title="Sin imágenes"
+                aria-label="Sin imágenes"
+              />
+            )}
           </div>
         ))}
       </div>
