@@ -41,7 +41,14 @@ export async function getStores(): Promise<Store[]> {
   try {
     // Asegurar que la URL tenga /api si no lo tiene
     const baseUrl = API_BASE_URL.endsWith('/api') ? API_BASE_URL : `${API_BASE_URL}/api`
-    const response = await fetch(`${baseUrl}/stores`)
+    // X-API-Key obligatoria desde que el gateway aplica ApiKeyGuard global
+    // (backend 54f16285, nov-2025). Sin ella el gateway responde 401 y la
+    // lista de tiendas quedaba vacía. Mismo patrón que src/lib/api.ts.
+    const response = await fetch(`${baseUrl}/stores`, {
+      headers: {
+        "X-API-Key": process.env.NEXT_PUBLIC_API_KEY || "",
+      },
+    })
     
     if (!response.ok) {
       throw new Error(`Error al obtener tiendas: ${response.statusText}`)
