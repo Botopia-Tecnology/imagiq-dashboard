@@ -7,6 +7,7 @@ import {
   Globe,
   Volume2,
   Users,
+  Building2,
   Store,
   Warehouse,
   Receipt,
@@ -100,6 +101,11 @@ const navMain = [
     title: "Clientes",
     url: "/clientes",
     icon: Users,
+  },
+  {
+    title: "Empresas",
+    url: "/empresas",
+    icon: Building2,
   },
   {
     title: "Punto Físico",
