@@ -18,8 +18,11 @@ export function coordinatesToString(x: number, y: number): string {
 export function fluidFontSize(
   value: string | number | undefined | null,
   designPx = 420,
-  minRatio = 0.55,
-  minPx = 12,
+  // Synced with imagiq-frontend (PR #974). Lower floor so small CMS
+  // values (e.g. 14px CTA fontSize) actually shrink visibly between
+  // 420 → 360 viewport widths.
+  minRatio = 0.4,
+  minPx = 8,
   unit: 'cqi' | 'vw' = 'cqi',
 ): string | undefined {
   if (value === null || value === undefined || value === '') return undefined;
@@ -44,7 +47,7 @@ export function fluidFontSize(
 export function fluidPadding(
   value: string | undefined | null,
   designPx = 420,
-  minRatio = 0.6,
+  minRatio = 0.4,
   unit: 'cqi' | 'vw' = 'cqi',
 ): string | undefined {
   if (!value) return undefined;
